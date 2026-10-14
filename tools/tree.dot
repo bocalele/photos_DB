@@ -1,0 +1,2314 @@
+digraph tree {
+	"Oiseaux" [label="Oiseaux", shape=circle]
+	"Accipitriformes" [label="Accipitriformes", shape=circle]
+	"Ansériformes" [label="Ansériformes", shape=circle]
+	"Apodiformes" [label="Apodiformes", shape=circle]
+	"Bucérotiformes" [label="Bucérotiformes", shape=circle]
+	"Caprimulgiformes" [label="Caprimulgiformes", shape=circle]
+	"Charadriiformes" [label="Charadriiformes", shape=circle]
+	"Ciconiiformes" [label="Ciconiiformes", shape=circle]
+	"Columbiformes" [label="Columbiformes", shape=circle]
+	"Coraciiformes" [label="Coraciiformes", shape=circle]
+	"Cuculiformes" [label="Cuculiformes", shape=circle]
+	"Falconiformes" [label="Falconiformes", shape=circle]
+	"Galliformes" [label="Galliformes", shape=circle]
+	"Gaviiformes" [label="Gaviiformes", shape=circle]
+	"Gruiformes" [label="Gruiformes", shape=circle]
+	"Otidiformes" [label="Otidiformes", shape=circle]
+	"Passériformes" [label="Passériformes", shape=circle]
+	"Phaethontiformes" [label="Phaethontiformes", shape=circle]
+	"Phoenicoptériformes" [label="Phoenicoptériformes", shape=circle]
+	"Piciformes" [label="Piciformes", shape=circle]
+	"Podicipédiformes" [label="Podicipédiformes", shape=circle]
+	"Procellariiformes" [label="Procellariiformes", shape=circle]
+	"Psittaciformes" [label="Psittaciformes", shape=circle]
+	"Ptéroclidiformes" [label="Ptéroclidiformes", shape=circle]
+	"Pélécaniformes" [label="Pélécaniformes", shape=circle]
+	"Strigiformes" [label="Strigiformes", shape=circle]
+	"Accipitridés" [label="Accipitridés", shape=circle]
+	"Cathartidés" [label="Cathartidés", shape=circle]
+	"Pandionidés" [label="Pandionidés", shape=circle]
+	"Anatidés" [label="Anatidés", shape=circle]
+	"Apodidés" [label="Apodidés", shape=circle]
+	"Trochilidés" [label="Trochilidés", shape=circle]
+	"Upupidés" [label="Upupidés", shape=circle]
+	"Caprimulgidés" [label="Caprimulgidés", shape=circle]
+	"Stéatornithidés" [label="Stéatornithidés", shape=circle]
+	"Alcidés" [label="Alcidés", shape=circle]
+	"Burhinidés" [label="Burhinidés", shape=circle]
+	"Charadriidés" [label="Charadriidés", shape=circle]
+	"Glaréolidés" [label="Glaréolidés", shape=circle]
+	"Haematopodidés" [label="Haematopodidés", shape=circle]
+	"Jacanidés" [label="Jacanidés", shape=circle]
+	"Laridés" [label="Laridés", shape=circle]
+	"Pluvianidés" [label="Pluvianidés", shape=circle]
+	"Récurvirostridés" [label="Récurvirostridés", shape=circle]
+	"Scolopacidés" [label="Scolopacidés", shape=circle]
+	"Stercorariidés" [label="Stercorariidés", shape=circle]
+	"Turnicidés" [label="Turnicidés", shape=circle]
+	"Ciconiidés" [label="Ciconiidés", shape=circle]
+	"Columbidés" [label="Columbidés", shape=circle]
+	"Alcédinidés" [label="Alcédinidés", shape=circle]
+	"Coraciidés" [label="Coraciidés", shape=circle]
+	"Méropidés" [label="Méropidés", shape=circle]
+	"Cuculidés" [label="Cuculidés", shape=circle]
+	"Falconidés" [label="Falconidés", shape=circle]
+	"Numididés" [label="Numididés", shape=circle]
+	"Odontophoridés" [label="Odontophoridés", shape=circle]
+	"Phasianidés" [label="Phasianidés", shape=circle]
+	"Gaviidés" [label="Gaviidés", shape=circle]
+	"Gruidés" [label="Gruidés", shape=circle]
+	"Rallidés" [label="Rallidés", shape=circle]
+	"Otididés" [label="Otididés", shape=circle]
+	"Acrocephalidés" [label="Acrocephalidés", shape=circle]
+	"Aegithalidés" [label="Aegithalidés", shape=circle]
+	"Alaudidés" [label="Alaudidés", shape=circle]
+	"Bombycillidés" [label="Bombycillidés", shape=circle]
+	"Calcariidés" [label="Calcariidés", shape=circle]
+	"Cardinalidés" [label="Cardinalidés", shape=circle]
+	"Certhiidés" [label="Certhiidés", shape=circle]
+	"Cettidés" [label="Cettidés", shape=circle]
+	"Cinclidés" [label="Cinclidés", shape=circle]
+	"Cisticolidés" [label="Cisticolidés", shape=circle]
+	"Coerébidés" [label="Coerébidés", shape=circle]
+	"Corvidés" [label="Corvidés", shape=circle]
+	"Emberizidés" [label="Emberizidés", shape=circle]
+	"Estrildidés" [label="Estrildidés", shape=circle]
+	"Fringillidés" [label="Fringillidés", shape=circle]
+	"Hirundinidés" [label="Hirundinidés", shape=circle]
+	"Hypocoliidés" [label="Hypocoliidés", shape=circle]
+	"Ictéridés" [label="Ictéridés", shape=circle]
+	"Incertain" [label="Incertain", shape=circle]
+	"Laniidés" [label="Laniidés", shape=circle]
+	"Mimidés" [label="Mimidés", shape=circle]
+	"Motacillidés" [label="Motacillidés", shape=circle]
+	"Muscicapidés" [label="Muscicapidés", shape=circle]
+	"Mégaluridés" [label="Mégaluridés", shape=circle]
+	"Oriolidés" [label="Oriolidés", shape=circle]
+	"Panuridés" [label="Panuridés", shape=circle]
+	"Paridés" [label="Paridés", shape=circle]
+	"Parulidés" [label="Parulidés", shape=circle]
+	"Passeridés" [label="Passeridés", shape=circle]
+	"Phylloscopidés" [label="Phylloscopidés", shape=circle]
+	"Plocéidés" [label="Plocéidés", shape=circle]
+	"Prunellidés" [label="Prunellidés", shape=circle]
+	"Pycnonotidés" [label="Pycnonotidés", shape=circle]
+	"Régulidés" [label="Régulidés", shape=circle]
+	"Rémizidés" [label="Rémizidés", shape=circle]
+	"Sittidés" [label="Sittidés", shape=circle]
+	"Sturnidés" [label="Sturnidés", shape=circle]
+	"Sylviidés" [label="Sylviidés", shape=circle]
+	"Thraupidés" [label="Thraupidés", shape=circle]
+	"Tichodromidés" [label="Tichodromidés", shape=circle]
+	"Timaliidés" [label="Timaliidés", shape=circle]
+	"Troglodytidés" [label="Troglodytidés", shape=circle]
+	"Turdidés" [label="Turdidés", shape=circle]
+	"Tyrannidés" [label="Tyrannidés", shape=circle]
+	"Viduidés" [label="Viduidés", shape=circle]
+	"Viréonidés" [label="Viréonidés", shape=circle]
+	"Phaethontidés" [label="Phaethontidés", shape=circle]
+	"Phoenicoptéridés" [label="Phoenicoptéridés", shape=circle]
+	"Picidés" [label="Picidés", shape=circle]
+	"Podicipédidés" [label="Podicipédidés", shape=circle]
+	"Diomédéidés" [label="Diomédéidés", shape=circle]
+	"Hydrobatidés" [label="Hydrobatidés", shape=circle]
+	"Procellariidés" [label="Procellariidés", shape=circle]
+	"Psittacidés" [label="Psittacidés", shape=circle]
+	"Ptéroclididés" [label="Ptéroclididés", shape=circle]
+	"Anhingidés" [label="Anhingidés", shape=circle]
+	"Ardéidés" [label="Ardéidés", shape=circle]
+	"Frégatidés" [label="Frégatidés", shape=circle]
+	"Phalacrocoracidés" [label="Phalacrocoracidés", shape=circle]
+	"Pélécanidés" [label="Pélécanidés", shape=circle]
+	"Sulidés" [label="Sulidés", shape=circle]
+	"Threskiornithidés" [label="Threskiornithidés", shape=circle]
+	"Strigidés" [label="Strigidés", shape=circle]
+	"Tytonidés" [label="Tytonidés", shape=circle]
+	"Aigle criard" [label="Aigle criard", shape=circle]
+	"Aigle de Bonelli" [label="Aigle de Bonelli", shape=circle]
+	"Aigle des steppes" [label="Aigle des steppes", shape=circle]
+	"Aigle ibérique" [label="Aigle ibérique", shape=circle]
+	"Aigle impérial" [label="Aigle impérial", shape=circle]
+	"Aigle pomarin" [label="Aigle pomarin", shape=circle]
+	"Aigle ravisseur" [label="Aigle ravisseur", shape=circle]
+	"Aigle royal" [label="Aigle royal", shape=circle]
+	"Autour des palombes" [label="Autour des palombes", shape=circle]
+	"Autour sombre" [label="Autour sombre", shape=circle]
+	"Bondrée apivore" [label="Bondrée apivore", shape=circle]
+	"Busard Saint-Martin" [label="Busard Saint-Martin", shape=circle]
+	"Busard cendré" [label="Busard cendré", shape=circle]
+	"Busard des roseaux" [label="Busard des roseaux", shape=circle]
+	"Busard pâle" [label="Busard pâle", shape=circle]
+	"Buse de Swainson" [label="Buse de Swainson", shape=circle]
+	"Buse féroce" [label="Buse féroce", shape=circle]
+	"Buse noire" [label="Buse noire", shape=circle]
+	"Buse pattue" [label="Buse pattue", shape=circle]
+	"Buse variable" [label="Buse variable", shape=circle]
+	"Buse à queue blanche" [label="Buse à queue blanche", shape=circle]
+	"Buse à queue rousse" [label="Buse à queue rousse", shape=circle]
+	"Circaète Jean-le-Blanc" [label="Circaète Jean-le-Blanc", shape=circle]
+	"Gypaète barbu" [label="Gypaète barbu", shape=circle]
+	"Milan bec-en-croc" [label="Milan bec-en-croc", shape=circle]
+	"Milan noir" [label="Milan noir", shape=circle]
+	"Milan royal" [label="Milan royal", shape=circle]
+	"Milan à queue fourchue" [label="Milan à queue fourchue", shape=circle]
+	"Petite Buse" [label="Petite Buse", shape=circle]
+	"Pygargue de Pallas" [label="Pygargue de Pallas", shape=circle]
+	"Pygargue à queue blanche" [label="Pygargue à queue blanche", shape=circle]
+	"Pygargue à tête blanche" [label="Pygargue à tête blanche", shape=circle]
+	"Vautour de Rüppell" [label="Vautour de Rüppell", shape=circle]
+	"Vautour fauve" [label="Vautour fauve", shape=circle]
+	"Vautour moine" [label="Vautour moine", shape=circle]
+	"Vautour oricou" [label="Vautour oricou", shape=circle]
+	"Vautour percnoptère" [label="Vautour percnoptère", shape=circle]
+	"Élanion blanc" [label="Élanion blanc", shape=circle]
+	"Épervier d'Europe" [label="Épervier d'Europe", shape=circle]
+	"Épervier à pieds courts" [label="Épervier à pieds courts", shape=circle]
+	"Urubu noir" [label="Urubu noir", shape=circle]
+	"Balbuzard pêcheur" [label="Balbuzard pêcheur", shape=circle]
+	"Arlequin plongeur" [label="Arlequin plongeur", shape=circle]
+	"Bernache cravant" [label="Bernache cravant", shape=circle]
+	"Bernache de Hutchins" [label="Bernache de Hutchins", shape=circle]
+	"Bernache du Canada" [label="Bernache du Canada", shape=circle]
+	"Bernache du Pacifique" [label="Bernache du Pacifique", shape=circle]
+	"Bernache nonnette" [label="Bernache nonnette", shape=circle]
+	"Bernache à cou roux" [label="Bernache à cou roux", shape=circle]
+	"Canard carolin" [label="Canard carolin", shape=circle]
+	"Canard chipeau" [label="Canard chipeau", shape=circle]
+	"Canard colvert" [label="Canard colvert", shape=circle]
+	"Canard des Bahamas" [label="Canard des Bahamas", shape=circle]
+	"Canard mandarin" [label="Canard mandarin", shape=circle]
+	"Canard noir" [label="Canard noir", shape=circle]
+	"Canard pilet" [label="Canard pilet", shape=circle]
+	"Canard siffleur" [label="Canard siffleur", shape=circle]
+	"Canard souchet" [label="Canard souchet", shape=circle]
+	"Canard à bosse" [label="Canard à bosse", shape=circle]
+	"Canard à faucilles" [label="Canard à faucilles", shape=circle]
+	"Canard à front blanc" [label="Canard à front blanc", shape=circle]
+	"Cygne chanteur" [label="Cygne chanteur", shape=circle]
+	"Cygne de Bewick" [label="Cygne de Bewick", shape=circle]
+	"Cygne noir" [label="Cygne noir", shape=circle]
+	"Cygne tuberculé" [label="Cygne tuberculé", shape=circle]
+	"Dendrocygne des Antilles" [label="Dendrocygne des Antilles", shape=circle]
+	"Dendrocygne fauve" [label="Dendrocygne fauve", shape=circle]
+	"Dendrocygne veuf" [label="Dendrocygne veuf", shape=circle]
+	"Dendrocygne à ventre noir" [label="Dendrocygne à ventre noir", shape=circle]
+	"Eider de Steller" [label="Eider de Steller", shape=circle]
+	"Eider à duvet" [label="Eider à duvet", shape=circle]
+	"Eider à lunettes" [label="Eider à lunettes", shape=circle]
+	"Eider à tête grise" [label="Eider à tête grise", shape=circle]
+	"Fuligule milouin" [label="Fuligule milouin", shape=circle]
+	"Fuligule milouinan" [label="Fuligule milouinan", shape=circle]
+	"Fuligule morillon" [label="Fuligule morillon", shape=circle]
+	"Fuligule nyroca" [label="Fuligule nyroca", shape=circle]
+	"Fuligule à bec cerclé" [label="Fuligule à bec cerclé", shape=circle]
+	"Fuligule à dos blanc" [label="Fuligule à dos blanc", shape=circle]
+	"Fuligule à tête noire" [label="Fuligule à tête noire", shape=circle]
+	"Fuligule à tête rouge" [label="Fuligule à tête rouge", shape=circle]
+	"Garrot albéole" [label="Garrot albéole", shape=circle]
+	"Garrot d'Islande" [label="Garrot d'Islande", shape=circle]
+	"Garrot à oeil d'or" [label="Garrot à oeil d'or", shape=circle]
+	"Harelde boréale" [label="Harelde boréale", shape=circle]
+	"Harle bièvre" [label="Harle bièvre", shape=circle]
+	"Harle couronné" [label="Harle couronné", shape=circle]
+	"Harle huppé" [label="Harle huppé", shape=circle]
+	"Harle piette" [label="Harle piette", shape=circle]
+	"Macreuse brune" [label="Macreuse brune", shape=circle]
+	"Macreuse noire" [label="Macreuse noire", shape=circle]
+	"Macreuse à ailes blanches" [label="Macreuse à ailes blanches", shape=circle]
+	"Macreuse à bec jaune" [label="Macreuse à bec jaune", shape=circle]
+	"Macreuse à front blanc" [label="Macreuse à front blanc", shape=circle]
+	"Nette rousse" [label="Nette rousse", shape=circle]
+	"Oie cendrée" [label="Oie cendrée", shape=circle]
+	"Oie de Ross" [label="Oie de Ross", shape=circle]
+	"Oie de la toundra" [label="Oie de la toundra", shape=circle]
+	"Oie des moissons" [label="Oie des moissons", shape=circle]
+	"Oie des neiges" [label="Oie des neiges", shape=circle]
+	"Oie empereur" [label="Oie empereur", shape=circle]
+	"Oie naine" [label="Oie naine", shape=circle]
+	"Oie rieuse" [label="Oie rieuse", shape=circle]
+	"Oie à bec court" [label="Oie à bec court", shape=circle]
+	"Oie à tête barrée" [label="Oie à tête barrée", shape=circle]
+	"Ouette d'Egypte" [label="Ouette d'Egypte", shape=circle]
+	"Sarcelle cannelle" [label="Sarcelle cannelle", shape=circle]
+	"Sarcelle d'hiver" [label="Sarcelle d'hiver", shape=circle]
+	"Sarcelle d'été" [label="Sarcelle d'été", shape=circle]
+	"Sarcelle marbrée" [label="Sarcelle marbrée", shape=circle]
+	"Sarcelle à ailes bleues" [label="Sarcelle à ailes bleues", shape=circle]
+	"Sarcelle à ailes vertes" [label="Sarcelle à ailes vertes", shape=circle]
+	"Sarcelle élégante" [label="Sarcelle élégante", shape=circle]
+	"Tadorne casarca" [label="Tadorne casarca", shape=circle]
+	"Tadorne de Belon" [label="Tadorne de Belon", shape=circle]
+	"Érismature rousse" [label="Érismature rousse", shape=circle]
+	"Érismature routoutou" [label="Érismature routoutou", shape=circle]
+	"Érismature à tête blanche" [label="Érismature à tête blanche", shape=circle]
+	"Martinet cafre" [label="Martinet cafre", shape=circle]
+	"Martinet chiquesol" [label="Martinet chiquesol", shape=circle]
+	"Martinet de Sibérie" [label="Martinet de Sibérie", shape=circle]
+	"Martinet des maisons" [label="Martinet des maisons", shape=circle]
+	"Martinet noir" [label="Martinet noir", shape=circle]
+	"Martinet polioure" [label="Martinet polioure", shape=circle]
+	"Martinet pâle" [label="Martinet pâle", shape=circle]
+	"Martinet ramoneur" [label="Martinet ramoneur", shape=circle]
+	"Martinet sombre" [label="Martinet sombre", shape=circle]
+	"Martinet unicolore" [label="Martinet unicolore", shape=circle]
+	"Martinet à collier blanc" [label="Martinet à collier blanc", shape=circle]
+	"Martinet à croupion gris" [label="Martinet à croupion gris", shape=circle]
+	"Martinet à ventre blanc" [label="Martinet à ventre blanc", shape=circle]
+	"Martinet épineux" [label="Martinet épineux", shape=circle]
+	"Colibri falle-vert" [label="Colibri falle-vert", shape=circle]
+	"Colibri huppé" [label="Colibri huppé", shape=circle]
+	"Colibri jacobin" [label="Colibri jacobin", shape=circle]
+	"Colibri madère" [label="Colibri madère", shape=circle]
+	"Colibri rubis-topaze" [label="Colibri rubis-topaze", shape=circle]
+	"Colibri à tête bleue" [label="Colibri à tête bleue", shape=circle]
+	"Ermite hirsute" [label="Ermite hirsute", shape=circle]
+	"Ermite à gorge rayée" [label="Ermite à gorge rayée", shape=circle]
+	"Mango à cravate verte" [label="Mango à cravate verte", shape=circle]
+	"Émeraude orvert" [label="Émeraude orvert", shape=circle]
+	"Huppe fasciée" [label="Huppe fasciée", shape=circle]
+	"Engoulevent coré" [label="Engoulevent coré", shape=circle]
+	"Engoulevent d'Amérique" [label="Engoulevent d'Amérique", shape=circle]
+	"Engoulevent d'Europe" [label="Engoulevent d'Europe", shape=circle]
+	"Engoulevent de Caroline" [label="Engoulevent de Caroline", shape=circle]
+	"Engoulevent du désert" [label="Engoulevent du désert", shape=circle]
+	"Engoulevent piramidig" [label="Engoulevent piramidig", shape=circle]
+	"Engoulevent à collier roux" [label="Engoulevent à collier roux", shape=circle]
+	"Guacharo des cavernes" [label="Guacharo des cavernes", shape=circle]
+	"Guillemot de Brünnich" [label="Guillemot de Brünnich", shape=circle]
+	"Guillemot de Troïl" [label="Guillemot de Troïl", shape=circle]
+	"Guillemot à cou blanc" [label="Guillemot à cou blanc", shape=circle]
+	"Guillemot à long bec" [label="Guillemot à long bec", shape=circle]
+	"Guillemot à miroir" [label="Guillemot à miroir", shape=circle]
+	"Macareux huppé" [label="Macareux huppé", shape=circle]
+	"Macareux moine" [label="Macareux moine", shape=circle]
+	"Mergule nain" [label="Mergule nain", shape=circle]
+	"Pingouin torda" [label="Pingouin torda", shape=circle]
+	"Starique cristatelle" [label="Starique cristatelle", shape=circle]
+	"Starique perroquet" [label="Starique perroquet", shape=circle]
+	"Oedicnème criard" [label="Oedicnème criard", shape=circle]
+	"Oedicnème du Sénégal" [label="Oedicnème du Sénégal", shape=circle]
+	"Grand Gravelot" [label="Grand Gravelot", shape=circle]
+	"Gravelot asiatique" [label="Gravelot asiatique", shape=circle]
+	"Gravelot d'Azara" [label="Gravelot d'Azara", shape=circle]
+	"Gravelot de Leschenault" [label="Gravelot de Leschenault", shape=circle]
+	"Gravelot de Wilson" [label="Gravelot de Wilson", shape=circle]
+	"Gravelot guignard" [label="Gravelot guignard", shape=circle]
+	"Gravelot kildir" [label="Gravelot kildir", shape=circle]
+	"Gravelot mongol" [label="Gravelot mongol", shape=circle]
+	"Gravelot oriental" [label="Gravelot oriental", shape=circle]
+	"Gravelot pâtre" [label="Gravelot pâtre", shape=circle]
+	"Gravelot semipalmé" [label="Gravelot semipalmé", shape=circle]
+	"Gravelot siffleur" [label="Gravelot siffleur", shape=circle]
+	"Gravelot à collier interrompu" [label="Gravelot à collier interrompu", shape=circle]
+	"Petit Gravelot" [label="Petit Gravelot", shape=circle]
+	"Pluvier argenté" [label="Pluvier argenté", shape=circle]
+	"Pluvier bronzé" [label="Pluvier bronzé", shape=circle]
+	"Pluvier doré" [label="Pluvier doré", shape=circle]
+	"Pluvier fauve" [label="Pluvier fauve", shape=circle]
+	"Vanneau huppé" [label="Vanneau huppé", shape=circle]
+	"Vanneau indien" [label="Vanneau indien", shape=circle]
+	"Vanneau sociable" [label="Vanneau sociable", shape=circle]
+	"Vanneau téro" [label="Vanneau téro", shape=circle]
+	"Vanneau à queue blanche" [label="Vanneau à queue blanche", shape=circle]
+	"Vanneau à tête noire" [label="Vanneau à tête noire", shape=circle]
+	"Vanneau éperonné" [label="Vanneau éperonné", shape=circle]
+	"Courvite isabelle" [label="Courvite isabelle", shape=circle]
+	"Glaréole orientale" [label="Glaréole orientale", shape=circle]
+	"Glaréole à ailes noires" [label="Glaréole à ailes noires", shape=circle]
+	"Glaréole à collier" [label="Glaréole à collier", shape=circle]
+	"Huîtrier d'Amérique" [label="Huîtrier d'Amérique", shape=circle]
+	"Huîtrier pie" [label="Huîtrier pie", shape=circle]
+	"Jacana noir" [label="Jacana noir", shape=circle]
+	"Bec-en-ciseaux d'Afrique" [label="Bec-en-ciseaux d'Afrique", shape=circle]
+	"Bec-en-ciseaux noir" [label="Bec-en-ciseaux noir", shape=circle]
+	"Goéland argenté" [label="Goéland argenté", shape=circle]
+	"Goéland bourgmestre" [label="Goéland bourgmestre", shape=circle]
+	"Goéland brun" [label="Goéland brun", shape=circle]
+	"Goéland cendré" [label="Goéland cendré", shape=circle]
+	"Goéland d'Amérique" [label="Goéland d'Amérique", shape=circle]
+	"Goéland d'Arménie" [label="Goéland d'Arménie", shape=circle]
+	"Goéland d'Audouin" [label="Goéland d'Audouin", shape=circle]
+	"Goéland de Thayer" [label="Goéland de Thayer", shape=circle]
+	"Goéland ichthyaète" [label="Goéland ichthyaète", shape=circle]
+	"Goéland leucophée" [label="Goéland leucophée", shape=circle]
+	"Goéland marin" [label="Goéland marin", shape=circle]
+	"Goéland pontique" [label="Goéland pontique", shape=circle]
+	"Goéland railleur" [label="Goéland railleur", shape=circle]
+	"Goéland à ailes blanches" [label="Goéland à ailes blanches", shape=circle]
+	"Goéland à ailes grises" [label="Goéland à ailes grises", shape=circle]
+	"Goéland à bec cerclé" [label="Goéland à bec cerclé", shape=circle]
+	"Goéland à iris blanc" [label="Goéland à iris blanc", shape=circle]
+	"Guifette leucoptère" [label="Guifette leucoptère", shape=circle]
+	"Guifette moustac" [label="Guifette moustac", shape=circle]
+	"Guifette noire" [label="Guifette noire", shape=circle]
+	"Mouette atricille" [label="Mouette atricille", shape=circle]
+	"Mouette blanche" [label="Mouette blanche", shape=circle]
+	"Mouette de Bonaparte" [label="Mouette de Bonaparte", shape=circle]
+	"Mouette de Franklin" [label="Mouette de Franklin", shape=circle]
+	"Mouette de Ross" [label="Mouette de Ross", shape=circle]
+	"Mouette de Sabine" [label="Mouette de Sabine", shape=circle]
+	"Mouette mélanocéphale" [label="Mouette mélanocéphale", shape=circle]
+	"Mouette pygmée" [label="Mouette pygmée", shape=circle]
+	"Mouette rieuse" [label="Mouette rieuse", shape=circle]
+	"Mouette tridactyle" [label="Mouette tridactyle", shape=circle]
+	"Mouette à tête grise" [label="Mouette à tête grise", shape=circle]
+	"Noddi brun" [label="Noddi brun", shape=circle]
+	"Noddi noir" [label="Noddi noir", shape=circle]
+	"Petite Sterne" [label="Petite Sterne", shape=circle]
+	"Sterne arctique" [label="Sterne arctique", shape=circle]
+	"Sterne bridée" [label="Sterne bridée", shape=circle]
+	"Sterne caspienne" [label="Sterne caspienne", shape=circle]
+	"Sterne caugek" [label="Sterne caugek", shape=circle]
+	"Sterne de Dougall" [label="Sterne de Dougall", shape=circle]
+	"Sterne de Forster" [label="Sterne de Forster", shape=circle]
+	"Sterne des Aléoutiennes" [label="Sterne des Aléoutiennes", shape=circle]
+	"Sterne fuligineuse" [label="Sterne fuligineuse", shape=circle]
+	"Sterne hansel" [label="Sterne hansel", shape=circle]
+	"Sterne naine" [label="Sterne naine", shape=circle]
+	"Sterne pierregarin" [label="Sterne pierregarin", shape=circle]
+	"Sterne royale" [label="Sterne royale", shape=circle]
+	"Sterne voyageuse" [label="Sterne voyageuse", shape=circle]
+	"Sterne à gros bec" [label="Sterne à gros bec", shape=circle]
+	"Sterne élégante" [label="Sterne élégante", shape=circle]
+	"Pluvian fluviatile" [label="Pluvian fluviatile", shape=circle]
+	"Avocette d'Amérique" [label="Avocette d'Amérique", shape=circle]
+	"Avocette élégante" [label="Avocette élégante", shape=circle]
+	"Échasse blanche" [label="Échasse blanche", shape=circle]
+	"Échasse d'Amérique" [label="Échasse d'Amérique", shape=circle]
+	"Barge hudsonienne" [label="Barge hudsonienne", shape=circle]
+	"Barge marbrée" [label="Barge marbrée", shape=circle]
+	"Barge rousse" [label="Barge rousse", shape=circle]
+	"Barge à queue noire" [label="Barge à queue noire", shape=circle]
+	"Bartramie des champs" [label="Bartramie des champs", shape=circle]
+	"Bécasse d'Amérique" [label="Bécasse d'Amérique", shape=circle]
+	"Bécasse des bois" [label="Bécasse des bois", shape=circle]
+	"Bécasseau cocorli" [label="Bécasseau cocorli", shape=circle]
+	"Bécasseau d'Alaska" [label="Bécasseau d'Alaska", shape=circle]
+	"Bécasseau de Baird" [label="Bécasseau de Baird", shape=circle]
+	"Bécasseau de Bonaparte" [label="Bécasseau de Bonaparte", shape=circle]
+	"Bécasseau de Temminck" [label="Bécasseau de Temminck", shape=circle]
+	"Bécasseau de l'Anadyr" [label="Bécasseau de l'Anadyr", shape=circle]
+	"Bécasseau falcinelle" [label="Bécasseau falcinelle", shape=circle]
+	"Bécasseau maubèche" [label="Bécasseau maubèche", shape=circle]
+	"Bécasseau minuscule" [label="Bécasseau minuscule", shape=circle]
+	"Bécasseau minute" [label="Bécasseau minute", shape=circle]
+	"Bécasseau rousset" [label="Bécasseau rousset", shape=circle]
+	"Bécasseau sanderling" [label="Bécasseau sanderling", shape=circle]
+	"Bécasseau semipalmé" [label="Bécasseau semipalmé", shape=circle]
+	"Bécasseau spatule" [label="Bécasseau spatule", shape=circle]
+	"Bécasseau tacheté" [label="Bécasseau tacheté", shape=circle]
+	"Bécasseau variable" [label="Bécasseau variable", shape=circle]
+	"Bécasseau violet" [label="Bécasseau violet", shape=circle]
+	"Bécasseau à cou roux" [label="Bécasseau à cou roux", shape=circle]
+	"Bécasseau à longs doigts" [label="Bécasseau à longs doigts", shape=circle]
+	"Bécasseau à queue pointue" [label="Bécasseau à queue pointue", shape=circle]
+	"Bécasseau à échasses" [label="Bécasseau à échasses", shape=circle]
+	"Bécassin à bec court" [label="Bécassin à bec court", shape=circle]
+	"Bécassin à long bec" [label="Bécassin à long bec", shape=circle]
+	"Bécassine de Swinhoe" [label="Bécassine de Swinhoe", shape=circle]
+	"Bécassine de Wilson" [label="Bécassine de Wilson", shape=circle]
+	"Bécassine des marais" [label="Bécassine des marais", shape=circle]
+	"Bécassine double" [label="Bécassine double", shape=circle]
+	"Bécassine sourde" [label="Bécassine sourde", shape=circle]
+	"Bécassine à queue pointue" [label="Bécassine à queue pointue", shape=circle]
+	"Chevalier aboyeur" [label="Chevalier aboyeur", shape=circle]
+	"Chevalier arlequin" [label="Chevalier arlequin", shape=circle]
+	"Chevalier bargette" [label="Chevalier bargette", shape=circle]
+	"Chevalier criard" [label="Chevalier criard", shape=circle]
+	"Chevalier culblanc" [label="Chevalier culblanc", shape=circle]
+	"Chevalier de Sibérie" [label="Chevalier de Sibérie", shape=circle]
+	"Chevalier gambette" [label="Chevalier gambette", shape=circle]
+	"Chevalier grivelé" [label="Chevalier grivelé", shape=circle]
+	"Chevalier guignette" [label="Chevalier guignette", shape=circle]
+	"Chevalier semipalmé" [label="Chevalier semipalmé", shape=circle]
+	"Chevalier solitaire" [label="Chevalier solitaire", shape=circle]
+	"Chevalier stagnatile" [label="Chevalier stagnatile", shape=circle]
+	"Chevalier sylvain" [label="Chevalier sylvain", shape=circle]
+	"Chevalier à pattes jaunes" [label="Chevalier à pattes jaunes", shape=circle]
+	"Combattant varié" [label="Combattant varié", shape=circle]
+	"Courlis cendré" [label="Courlis cendré", shape=circle]
+	"Courlis corlieu" [label="Courlis corlieu", shape=circle]
+	"Courlis esquimau" [label="Courlis esquimau", shape=circle]
+	"Courlis nain" [label="Courlis nain", shape=circle]
+	"Courlis à bec grêle" [label="Courlis à bec grêle", shape=circle]
+	"Phalarope de Wilson" [label="Phalarope de Wilson", shape=circle]
+	"Phalarope à bec large" [label="Phalarope à bec large", shape=circle]
+	"Phalarope à bec étroit" [label="Phalarope à bec étroit", shape=circle]
+	"Tournepierre à collier" [label="Tournepierre à collier", shape=circle]
+	"Grand Labbe" [label="Grand Labbe", shape=circle]
+	"Labbe de McCormick" [label="Labbe de McCormick", shape=circle]
+	"Labbe parasite" [label="Labbe parasite", shape=circle]
+	"Labbe pomarin" [label="Labbe pomarin", shape=circle]
+	"Labbe à longue queue" [label="Labbe à longue queue", shape=circle]
+	"Turnix mugissant" [label="Turnix mugissant", shape=circle]
+	"Cigogne blanche" [label="Cigogne blanche", shape=circle]
+	"Cigogne noire" [label="Cigogne noire", shape=circle]
+	"Cigogne épiscopale" [label="Cigogne épiscopale", shape=circle]
+	"Marabout d'Afrique" [label="Marabout d'Afrique", shape=circle]
+	"Tantale ibis" [label="Tantale ibis", shape=circle]
+	"Colombe rouviolette" [label="Colombe rouviolette", shape=circle]
+	"Colombe à croissants" [label="Colombe à croissants", shape=circle]
+	"Colombe à queue noire" [label="Colombe à queue noire", shape=circle]
+	"Pigeon biset" [label="Pigeon biset", shape=circle]
+	"Pigeon colombin" [label="Pigeon colombin", shape=circle]
+	"Pigeon d'Eversmann" [label="Pigeon d'Eversmann", shape=circle]
+	"Pigeon de Bolle" [label="Pigeon de Bolle", shape=circle]
+	"Pigeon des lauriers" [label="Pigeon des lauriers", shape=circle]
+	"Pigeon jounud" [label="Pigeon jounud", shape=circle]
+	"Pigeon ramier" [label="Pigeon ramier", shape=circle]
+	"Pigeon trocaz" [label="Pigeon trocaz", shape=circle]
+	"Pigeon à cou rouge" [label="Pigeon à cou rouge", shape=circle]
+	"Tourterelle des bois" [label="Tourterelle des bois", shape=circle]
+	"Tourterelle maillée" [label="Tourterelle maillée", shape=circle]
+	"Tourterelle oreillarde" [label="Tourterelle oreillarde", shape=circle]
+	"Tourterelle orientale" [label="Tourterelle orientale", shape=circle]
+	"Tourterelle rieuse" [label="Tourterelle rieuse", shape=circle]
+	"Tourterelle triste" [label="Tourterelle triste", shape=circle]
+	"Tourterelle turque" [label="Tourterelle turque", shape=circle]
+	"Tourterelle à queue carrée" [label="Tourterelle à queue carrée", shape=circle]
+	"Martin-chasseur de Smyrne" [label="Martin-chasseur de Smyrne", shape=circle]
+	"Martin-pêcheur d'Amérique" [label="Martin-pêcheur d'Amérique", shape=circle]
+	"Martin-pêcheur d'Europe" [label="Martin-pêcheur d'Europe", shape=circle]
+	"Martin-pêcheur pie" [label="Martin-pêcheur pie", shape=circle]
+	"Martin-pêcheur à ventre roux" [label="Martin-pêcheur à ventre roux", shape=circle]
+	"Rollier d'Europe" [label="Rollier d'Europe", shape=circle]
+	"Rollier indien" [label="Rollier indien", shape=circle]
+	"Guêpier d'Europe" [label="Guêpier d'Europe", shape=circle]
+	"Guêpier de Madagascar" [label="Guêpier de Madagascar", shape=circle]
+	"Guêpier de Perse" [label="Guêpier de Perse", shape=circle]
+	"Ani à bec lisse" [label="Ani à bec lisse", shape=circle]
+	"Coucou de l'Himalaya" [label="Coucou de l'Himalaya", shape=circle]
+	"Coucou didric" [label="Coucou didric", shape=circle]
+	"Coucou geai" [label="Coucou geai", shape=circle]
+	"Coucou gris" [label="Coucou gris", shape=circle]
+	"Coulicou de Vieillot" [label="Coulicou de Vieillot", shape=circle]
+	"Coulicou manioc" [label="Coulicou manioc", shape=circle]
+	"Coulicou à bec jaune" [label="Coulicou à bec jaune", shape=circle]
+	"Coulicou à bec noir" [label="Coulicou à bec noir", shape=circle]
+	"Coulicou à tête grise" [label="Coulicou à tête grise", shape=circle]
+	"Guira cantara" [label="Guira cantara", shape=circle]
+	"Caracara à tête jaune" [label="Caracara à tête jaune", shape=circle]
+	"Crécerelle d'Amérique" [label="Crécerelle d'Amérique", shape=circle]
+	"Faucon concolore" [label="Faucon concolore", shape=circle]
+	"Faucon crécerelle" [label="Faucon crécerelle", shape=circle]
+	"Faucon crécerellette" [label="Faucon crécerellette", shape=circle]
+	"Faucon d'Éléonore" [label="Faucon d'Éléonore", shape=circle]
+	"Faucon de Barbarie" [label="Faucon de Barbarie", shape=circle]
+	"Faucon de l'Amour" [label="Faucon de l'Amour", shape=circle]
+	"Faucon gerfaut" [label="Faucon gerfaut", shape=circle]
+	"Faucon hobereau" [label="Faucon hobereau", shape=circle]
+	"Faucon kobez" [label="Faucon kobez", shape=circle]
+	"Faucon lanier" [label="Faucon lanier", shape=circle]
+	"Faucon pèlerin" [label="Faucon pèlerin", shape=circle]
+	"Faucon sacre" [label="Faucon sacre", shape=circle]
+	"Faucon émerillon" [label="Faucon émerillon", shape=circle]
+	"Pintade de Numidie" [label="Pintade de Numidie", shape=circle]
+	"Colin de Californie" [label="Colin de Californie", shape=circle]
+	"Colin de Virginie" [label="Colin de Virginie", shape=circle]
+	"Caille des blés" [label="Caille des blés", shape=circle]
+	"Dindon sauvage" [label="Dindon sauvage", shape=circle]
+	"Faisan argenté" [label="Faisan argenté", shape=circle]
+	"Faisan de Colchide" [label="Faisan de Colchide", shape=circle]
+	"Faisan de Lady Amherst" [label="Faisan de Lady Amherst", shape=circle]
+	"Faisan doré" [label="Faisan doré", shape=circle]
+	"Faisan vénéré" [label="Faisan vénéré", shape=circle]
+	"Francolin d'Erckel" [label="Francolin d'Erckel", shape=circle]
+	"Francolin noir" [label="Francolin noir", shape=circle]
+	"Grand Tétras" [label="Grand Tétras", shape=circle]
+	"Gélinotte des bois" [label="Gélinotte des bois", shape=circle]
+	"Lagopède alpin" [label="Lagopède alpin", shape=circle]
+	"Lagopède des saules" [label="Lagopède des saules", shape=circle]
+	"Perdrix bartavelle" [label="Perdrix bartavelle", shape=circle]
+	"Perdrix choukar" [label="Perdrix choukar", shape=circle]
+	"Perdrix de Daourie" [label="Perdrix de Daourie", shape=circle]
+	"Perdrix gambra" [label="Perdrix gambra", shape=circle]
+	"Perdrix grise" [label="Perdrix grise", shape=circle]
+	"Perdrix rouge" [label="Perdrix rouge", shape=circle]
+	"Perdrix si-si" [label="Perdrix si-si", shape=circle]
+	"Tétraogalle de Perse" [label="Tétraogalle de Perse", shape=circle]
+	"Tétraogalle du Caucase" [label="Tétraogalle du Caucase", shape=circle]
+	"Tétras du Caucase" [label="Tétras du Caucase", shape=circle]
+	"Tétras lyre" [label="Tétras lyre", shape=circle]
+	"Plongeon arctique" [label="Plongeon arctique", shape=circle]
+	"Plongeon catmarin" [label="Plongeon catmarin", shape=circle]
+	"Plongeon du Pacifique" [label="Plongeon du Pacifique", shape=circle]
+	"Plongeon imbrin" [label="Plongeon imbrin", shape=circle]
+	"Plongeon à bec blanc" [label="Plongeon à bec blanc", shape=circle]
+	"Grue cendrée" [label="Grue cendrée", shape=circle]
+	"Grue de Sibérie" [label="Grue de Sibérie", shape=circle]
+	"Grue demoiselle" [label="Grue demoiselle", shape=circle]
+	"Grue du Canada" [label="Grue du Canada", shape=circle]
+	"Foulque caronculée" [label="Foulque caronculée", shape=circle]
+	"Foulque d'Amérique" [label="Foulque d'Amérique", shape=circle]
+	"Foulque macroule" [label="Foulque macroule", shape=circle]
+	"Foulque à cachet blanc" [label="Foulque à cachet blanc", shape=circle]
+	"Gallinule poule-d'eau" [label="Gallinule poule-d'eau", shape=circle]
+	"Marouette de Baillon" [label="Marouette de Baillon", shape=circle]
+	"Marouette de Caroline" [label="Marouette de Caroline", shape=circle]
+	"Marouette ponctuée" [label="Marouette ponctuée", shape=circle]
+	"Marouette poussin" [label="Marouette poussin", shape=circle]
+	"Marouette rayée" [label="Marouette rayée", shape=circle]
+	"Râle d'eau" [label="Râle d'eau", shape=circle]
+	"Râle de Virginie" [label="Râle de Virginie", shape=circle]
+	"Râle des genêts" [label="Râle des genêts", shape=circle]
+	"Râle des prés" [label="Râle des prés", shape=circle]
+	"Râle gris" [label="Râle gris", shape=circle]
+	"Râle à bec jaune" [label="Râle à bec jaune", shape=circle]
+	"Talève d'Allen" [label="Talève d'Allen", shape=circle]
+	"Talève sultane" [label="Talève sultane", shape=circle]
+	"Talève violacée" [label="Talève violacée", shape=circle]
+	"Outarde barbue" [label="Outarde barbue", shape=circle]
+	"Outarde canepetière" [label="Outarde canepetière", shape=circle]
+	"Outarde de Macqueen" [label="Outarde de Macqueen", shape=circle]
+	"Outarde houbara" [label="Outarde houbara", shape=circle]
+	"Hypolaïs bottée" [label="Hypolaïs bottée", shape=circle]
+	"Hypolaïs d'Upcher" [label="Hypolaïs d'Upcher", shape=circle]
+	"Hypolaïs des oliviers" [label="Hypolaïs des oliviers", shape=circle]
+	"Hypolaïs ictérine" [label="Hypolaïs ictérine", shape=circle]
+	"Hypolaïs obscure" [label="Hypolaïs obscure", shape=circle]
+	"Hypolaïs polyglotte" [label="Hypolaïs polyglotte", shape=circle]
+	"Hypolaïs pâle" [label="Hypolaïs pâle", shape=circle]
+	"Hypolaïs rama" [label="Hypolaïs rama", shape=circle]
+	"Lusciniole à moustaches" [label="Lusciniole à moustaches", shape=circle]
+	"Phragmite aquatique" [label="Phragmite aquatique", shape=circle]
+	"Phragmite des joncs" [label="Phragmite des joncs", shape=circle]
+	"Rousserolle d'Irak" [label="Rousserolle d'Irak", shape=circle]
+	"Rousserolle des buissons" [label="Rousserolle des buissons", shape=circle]
+	"Rousserolle effarvatte" [label="Rousserolle effarvatte", shape=circle]
+	"Rousserolle isabelle" [label="Rousserolle isabelle", shape=circle]
+	"Rousserolle turdoïde" [label="Rousserolle turdoïde", shape=circle]
+	"Rousserolle verderolle" [label="Rousserolle verderolle", shape=circle]
+	"Rousserolle à gros bec" [label="Rousserolle à gros bec", shape=circle]
+	"Mésange à longue queue" [label="Mésange à longue queue", shape=circle]
+	"Alouette bilophe" [label="Alouette bilophe", shape=circle]
+	"Alouette calandre" [label="Alouette calandre", shape=circle]
+	"Alouette calandrelle" [label="Alouette calandrelle", shape=circle]
+	"Alouette des champs" [label="Alouette des champs", shape=circle]
+	"Alouette haussecol" [label="Alouette haussecol", shape=circle]
+	"Alouette leucoptère" [label="Alouette leucoptère", shape=circle]
+	"Alouette lulu" [label="Alouette lulu", shape=circle]
+	"Alouette monticole" [label="Alouette monticole", shape=circle]
+	"Alouette nègre" [label="Alouette nègre", shape=circle]
+	"Alouette pispolette" [label="Alouette pispolette", shape=circle]
+	"Alouette raytal" [label="Alouette raytal", shape=circle]
+	"Ammomane isabelline" [label="Ammomane isabelline", shape=circle]
+	"Ammomane élégante" [label="Ammomane élégante", shape=circle]
+	"Cochevis de Thékla" [label="Cochevis de Thékla", shape=circle]
+	"Cochevis huppé" [label="Cochevis huppé", shape=circle]
+	"Sirli de Dupont" [label="Sirli de Dupont", shape=circle]
+	"Sirli du désert" [label="Sirli du désert", shape=circle]
+	"Jaseur boréal" [label="Jaseur boréal", shape=circle]
+	"Jaseur d'Amérique" [label="Jaseur d'Amérique", shape=circle]
+	"Bruant des neiges" [label="Bruant des neiges", shape=circle]
+	"Bruant lapon" [label="Bruant lapon", shape=circle]
+	"Cardinal à poitrine rose" [label="Cardinal à poitrine rose", shape=circle]
+	"Cardinal à tête noire" [label="Cardinal à tête noire", shape=circle]
+	"Dickcissel d'Amérique" [label="Dickcissel d'Amérique", shape=circle]
+	"Guiraca bleu" [label="Guiraca bleu", shape=circle]
+	"Passerin azuré" [label="Passerin azuré", shape=circle]
+	"Passerin indigo" [label="Passerin indigo", shape=circle]
+	"Passerin nonpareil" [label="Passerin nonpareil", shape=circle]
+	"Passerin varié" [label="Passerin varié", shape=circle]
+	"Grimpereau des bois" [label="Grimpereau des bois", shape=circle]
+	"Grimpereau des jardins" [label="Grimpereau des jardins", shape=circle]
+	"Bouscarle de Cetti" [label="Bouscarle de Cetti", shape=circle]
+	"Cincle plongeur" [label="Cincle plongeur", shape=circle]
+	"Cisticole des joncs" [label="Cisticole des joncs", shape=circle]
+	"Prinia gracile" [label="Prinia gracile", shape=circle]
+	"Sucrier à ventre jaune" [label="Sucrier à ventre jaune", shape=circle]
+	"Cassenoix moucheté" [label="Cassenoix moucheté", shape=circle]
+	"Chocard à bec jaune" [label="Chocard à bec jaune", shape=circle]
+	"Choucas de Daourie" [label="Choucas de Daourie", shape=circle]
+	"Corbeau brun" [label="Corbeau brun", shape=circle]
+	"Corbeau familier" [label="Corbeau familier", shape=circle]
+	"Corbeau freux" [label="Corbeau freux", shape=circle]
+	"Corbeau pie" [label="Corbeau pie", shape=circle]
+	"Corneille mantelée" [label="Corneille mantelée", shape=circle]
+	"Corneille noire" [label="Corneille noire", shape=circle]
+	"Crave à bec rouge" [label="Crave à bec rouge", shape=circle]
+	"Geai des chênes" [label="Geai des chênes", shape=circle]
+	"Grand Corbeau" [label="Grand Corbeau", shape=circle]
+	"Mésangeai imitateur" [label="Mésangeai imitateur", shape=circle]
+	"Pie bavarde" [label="Pie bavarde", shape=circle]
+	"Pie bleue" [label="Pie bleue", shape=circle]
+	"Bruant auréole" [label="Bruant auréole", shape=circle]
+	"Bruant cendrillard" [label="Bruant cendrillard", shape=circle]
+	"Bruant cendré" [label="Bruant cendré", shape=circle]
+	"Bruant chanteur" [label="Bruant chanteur", shape=circle]
+	"Bruant chingolo" [label="Bruant chingolo", shape=circle]
+	"Bruant de Lincoln" [label="Bruant de Lincoln", shape=circle]
+	"Bruant de Pallas" [label="Bruant de Pallas", shape=circle]
+	"Bruant de Stewart" [label="Bruant de Stewart", shape=circle]
+	"Bruant des prés" [label="Bruant des prés", shape=circle]
+	"Bruant des roseaux" [label="Bruant des roseaux", shape=circle]
+	"Bruant fauve" [label="Bruant fauve", shape=circle]
+	"Bruant fou" [label="Bruant fou", shape=circle]
+	"Bruant jaune" [label="Bruant jaune", shape=circle]
+	"Bruant masqué" [label="Bruant masqué", shape=circle]
+	"Bruant mélanocéphale" [label="Bruant mélanocéphale", shape=circle]
+	"Bruant nain" [label="Bruant nain", shape=circle]
+	"Bruant ortolan" [label="Bruant ortolan", shape=circle]
+	"Bruant proyer" [label="Bruant proyer", shape=circle]
+	"Bruant roux" [label="Bruant roux", shape=circle]
+	"Bruant rustique" [label="Bruant rustique", shape=circle]
+	"Bruant striolé" [label="Bruant striolé", shape=circle]
+	"Bruant zizi" [label="Bruant zizi", shape=circle]
+	"Bruant à calotte blanche" [label="Bruant à calotte blanche", shape=circle]
+	"Bruant à cou gris" [label="Bruant à cou gris", shape=circle]
+	"Bruant à couronne blanche" [label="Bruant à couronne blanche", shape=circle]
+	"Bruant à gorge blanche" [label="Bruant à gorge blanche", shape=circle]
+	"Bruant à joues marron" [label="Bruant à joues marron", shape=circle]
+	"Bruant à longue queue" [label="Bruant à longue queue", shape=circle]
+	"Bruant à sourcils jaunes" [label="Bruant à sourcils jaunes", shape=circle]
+	"Bruant à tête rousse" [label="Bruant à tête rousse", shape=circle]
+	"Junco ardoisé" [label="Junco ardoisé", shape=circle]
+	"Tohi à flancs roux" [label="Tohi à flancs roux", shape=circle]
+	"Amadine cou-coupé" [label="Amadine cou-coupé", shape=circle]
+	"Astrild cendré" [label="Astrild cendré", shape=circle]
+	"Astrild ondulé" [label="Astrild ondulé", shape=circle]
+	"Astrild à joues orange" [label="Astrild à joues orange", shape=circle]
+	"Astrild à tête noire" [label="Astrild à tête noire", shape=circle]
+	"Bengali rouge" [label="Bengali rouge", shape=circle]
+	"Capucin bec-d'argent" [label="Capucin bec-d'argent", shape=circle]
+	"Capucin bec-de-plomb" [label="Capucin bec-de-plomb", shape=circle]
+	"Capucin à dos marron" [label="Capucin à dos marron", shape=circle]
+	"Capucin à tête blanche" [label="Capucin à tête blanche", shape=circle]
+	"Diamant mandarin" [label="Diamant mandarin", shape=circle]
+	"Bec-croisé bifascié" [label="Bec-croisé bifascié", shape=circle]
+	"Bec-croisé des sapins" [label="Bec-croisé des sapins", shape=circle]
+	"Bec-croisé perroquet" [label="Bec-croisé perroquet", shape=circle]
+	"Bouvreuil des Açores" [label="Bouvreuil des Açores", shape=circle]
+	"Bouvreuil pivoine" [label="Bouvreuil pivoine", shape=circle]
+	"Chardonneret élégant" [label="Chardonneret élégant", shape=circle]
+	"Durbec des sapins" [label="Durbec des sapins", shape=circle]
+	"Gros-bec migrateur" [label="Gros-bec migrateur", shape=circle]
+	"Grosbec casse-noyaux" [label="Grosbec casse-noyaux", shape=circle]
+	"Grosbec errant" [label="Grosbec errant", shape=circle]
+	"Linotte mélodieuse" [label="Linotte mélodieuse", shape=circle]
+	"Linotte à bec jaune" [label="Linotte à bec jaune", shape=circle]
+	"Organiste louis-d'or" [label="Organiste louis-d'or", shape=circle]
+	"Pinson bleu" [label="Pinson bleu", shape=circle]
+	"Pinson des arbres" [label="Pinson des arbres", shape=circle]
+	"Pinson du Nord" [label="Pinson du Nord", shape=circle]
+	"Roselin cramoisi" [label="Roselin cramoisi", shape=circle]
+	"Roselin de Lichtenstein" [label="Roselin de Lichtenstein", shape=circle]
+	"Roselin de Mongolie" [label="Roselin de Mongolie", shape=circle]
+	"Roselin de l'Atlas" [label="Roselin de l'Atlas", shape=circle]
+	"Roselin githagine" [label="Roselin githagine", shape=circle]
+	"Roselin rose" [label="Roselin rose", shape=circle]
+	"Roselin tacheté" [label="Roselin tacheté", shape=circle]
+	"Roselin à longue queue" [label="Roselin à longue queue", shape=circle]
+	"Serin cini" [label="Serin cini", shape=circle]
+	"Serin des Canaries" [label="Serin des Canaries", shape=circle]
+	"Serin du Mozambique" [label="Serin du Mozambique", shape=circle]
+	"Serin à front rouge" [label="Serin à front rouge", shape=circle]
+	"Sizerin blanchâtre" [label="Sizerin blanchâtre", shape=circle]
+	"Sizerin cabaret" [label="Sizerin cabaret", shape=circle]
+	"Sizerin flammé" [label="Sizerin flammé", shape=circle]
+	"Tarin des aulnes" [label="Tarin des aulnes", shape=circle]
+	"Venturon corse" [label="Venturon corse", shape=circle]
+	"Venturon montagnard" [label="Venturon montagnard", shape=circle]
+	"Verdier d'Europe" [label="Verdier d'Europe", shape=circle]
+	"Verdier de Chine" [label="Verdier de Chine", shape=circle]
+	"Hirondelle bicolore" [label="Hirondelle bicolore", shape=circle]
+	"Hirondelle de Cuba" [label="Hirondelle de Cuba", shape=circle]
+	"Hirondelle de fenêtre" [label="Hirondelle de fenêtre", shape=circle]
+	"Hirondelle de rivage" [label="Hirondelle de rivage", shape=circle]
+	"Hirondelle de rochers" [label="Hirondelle de rochers", shape=circle]
+	"Hirondelle paludicole" [label="Hirondelle paludicole", shape=circle]
+	"Hirondelle rousseline" [label="Hirondelle rousseline", shape=circle]
+	"Hirondelle rustique" [label="Hirondelle rustique", shape=circle]
+	"Hirondelle à ailes blanches" [label="Hirondelle à ailes blanches", shape=circle]
+	"Hirondelle à front blanc" [label="Hirondelle à front blanc", shape=circle]
+	"Hirondelle à front brun" [label="Hirondelle à front brun", shape=circle]
+	"Hirondelle à ventre blanc" [label="Hirondelle à ventre blanc", shape=circle]
+	"Hypocolius gris" [label="Hypocolius gris", shape=circle]
+	"Carouge à capuchon" [label="Carouge à capuchon", shape=circle]
+	"Carouge à tête jaune" [label="Carouge à tête jaune", shape=circle]
+	"Goglu des prés" [label="Goglu des prés", shape=circle]
+	"Oriole cul-noir" [label="Oriole cul-noir", shape=circle]
+	"Oriole du Nord" [label="Oriole du Nord", shape=circle]
+	"Oriole jaune" [label="Oriole jaune", shape=circle]
+	"Oriole troupiale" [label="Oriole troupiale", shape=circle]
+	"Quiscale bronzé" [label="Quiscale bronzé", shape=circle]
+	"Quiscale merle" [label="Quiscale merle", shape=circle]
+	"Quiscale rouilleux" [label="Quiscale rouilleux", shape=circle]
+	"Sturnelle des prés" [label="Sturnelle des prés", shape=circle]
+	"Vacher luisant" [label="Vacher luisant", shape=circle]
+	"Vacher à tête brune" [label="Vacher à tête brune", shape=circle]
+	"Paruline polyglotte" [label="Paruline polyglotte", shape=circle]
+	"Pie-grièche brune" [label="Pie-grièche brune", shape=circle]
+	"Pie-grièche grise" [label="Pie-grièche grise", shape=circle]
+	"Pie-grièche isabelle" [label="Pie-grièche isabelle", shape=circle]
+	"Pie-grièche masquée" [label="Pie-grièche masquée", shape=circle]
+	"Pie-grièche méridionale" [label="Pie-grièche méridionale", shape=circle]
+	"Pie-grièche schach" [label="Pie-grièche schach", shape=circle]
+	"Pie-grièche à poitrine rose" [label="Pie-grièche à poitrine rose", shape=circle]
+	"Pie-grièche à tête rousse" [label="Pie-grièche à tête rousse", shape=circle]
+	"Pie-grièche écorcheur" [label="Pie-grièche écorcheur", shape=circle]
+	"Moqueur chat" [label="Moqueur chat", shape=circle]
+	"Moqueur corossol" [label="Moqueur corossol", shape=circle]
+	"Moqueur des savanes" [label="Moqueur des savanes", shape=circle]
+	"Moqueur grivotte" [label="Moqueur grivotte", shape=circle]
+	"Moqueur polyglotte" [label="Moqueur polyglotte", shape=circle]
+	"Moqueur roux" [label="Moqueur roux", shape=circle]
+	"Trembleur brun" [label="Trembleur brun", shape=circle]
+	"Trembleur gris" [label="Trembleur gris", shape=circle]
+	"Bergeronnette citrine" [label="Bergeronnette citrine", shape=circle]
+	"Bergeronnette de Yarrell" [label="Bergeronnette de Yarrell", shape=circle]
+	"Bergeronnette des Balkans" [label="Bergeronnette des Balkans", shape=circle]
+	"Bergeronnette des ruisseaux" [label="Bergeronnette des ruisseaux", shape=circle]
+	"Bergeronnette grise" [label="Bergeronnette grise", shape=circle]
+	"Bergeronnette printanière" [label="Bergeronnette printanière", shape=circle]
+	"Pipit de Berthelot" [label="Pipit de Berthelot", shape=circle]
+	"Pipit de Godlewski" [label="Pipit de Godlewski", shape=circle]
+	"Pipit de Richard" [label="Pipit de Richard", shape=circle]
+	"Pipit de la Petchora" [label="Pipit de la Petchora", shape=circle]
+	"Pipit des arbres" [label="Pipit des arbres", shape=circle]
+	"Pipit farlousane" [label="Pipit farlousane", shape=circle]
+	"Pipit farlouse" [label="Pipit farlouse", shape=circle]
+	"Pipit maritime" [label="Pipit maritime", shape=circle]
+	"Pipit rousseline" [label="Pipit rousseline", shape=circle]
+	"Pipit spioncelle" [label="Pipit spioncelle", shape=circle]
+	"Pipit à dos olive" [label="Pipit à dos olive", shape=circle]
+	"Pipit à gorge rousse" [label="Pipit à gorge rousse", shape=circle]
+	"Pipit à long bec" [label="Pipit à long bec", shape=circle]
+	"Agrobate roux" [label="Agrobate roux", shape=circle]
+	"Calliope sibérienne" [label="Calliope sibérienne", shape=circle]
+	"Gobemouche brun" [label="Gobemouche brun", shape=circle]
+	"Gobemouche de la taïga" [label="Gobemouche de la taïga", shape=circle]
+	"Gobemouche gris" [label="Gobemouche gris", shape=circle]
+	"Gobemouche mugimaki" [label="Gobemouche mugimaki", shape=circle]
+	"Gobemouche nain" [label="Gobemouche nain", shape=circle]
+	"Gobemouche noir" [label="Gobemouche noir", shape=circle]
+	"Gobemouche à collier" [label="Gobemouche à collier", shape=circle]
+	"Gobemouche à demi-collier" [label="Gobemouche à demi-collier", shape=circle]
+	"Gorgebleue à miroir" [label="Gorgebleue à miroir", shape=circle]
+	"Iranie à gorge blanche" [label="Iranie à gorge blanche", shape=circle]
+	"Monticole bleu" [label="Monticole bleu", shape=circle]
+	"Monticole de roche" [label="Monticole de roche", shape=circle]
+	"Robin à flancs roux" [label="Robin à flancs roux", shape=circle]
+	"Rossignol bleu" [label="Rossignol bleu", shape=circle]
+	"Rossignol philomèle" [label="Rossignol philomèle", shape=circle]
+	"Rossignol progné" [label="Rossignol progné", shape=circle]
+	"Rougegorge familier" [label="Rougegorge familier", shape=circle]
+	"Rougequeue aurore" [label="Rougequeue aurore", shape=circle]
+	"Rougequeue de Güldenstädt" [label="Rougequeue de Güldenstädt", shape=circle]
+	"Rougequeue de Moussier" [label="Rougequeue de Moussier", shape=circle]
+	"Rougequeue noir" [label="Rougequeue noir", shape=circle]
+	"Rougequeue à front blanc" [label="Rougequeue à front blanc", shape=circle]
+	"Tarier de Sibérie" [label="Tarier de Sibérie", shape=circle]
+	"Tarier des Canaries" [label="Tarier des Canaries", shape=circle]
+	"Tarier des prés" [label="Tarier des prés", shape=circle]
+	"Tarier pie" [label="Tarier pie", shape=circle]
+	"Tarier pâtre" [label="Tarier pâtre", shape=circle]
+	"Traquet de Chypre" [label="Traquet de Chypre", shape=circle]
+	"Traquet de Finsch" [label="Traquet de Finsch", shape=circle]
+	"Traquet de Perse" [label="Traquet de Perse", shape=circle]
+	"Traquet deuil" [label="Traquet deuil", shape=circle]
+	"Traquet du désert" [label="Traquet du désert", shape=circle]
+	"Traquet isabelle" [label="Traquet isabelle", shape=circle]
+	"Traquet motteux" [label="Traquet motteux", shape=circle]
+	"Traquet oreillard" [label="Traquet oreillard", shape=circle]
+	"Traquet pie" [label="Traquet pie", shape=circle]
+	"Traquet rieur" [label="Traquet rieur", shape=circle]
+	"Traquet à capuchon" [label="Traquet à capuchon", shape=circle]
+	"Traquet à tête blanche" [label="Traquet à tête blanche", shape=circle]
+	"Traquet à tête grise" [label="Traquet à tête grise", shape=circle]
+	"Locustelle de Pallas" [label="Locustelle de Pallas", shape=circle]
+	"Locustelle fasciée" [label="Locustelle fasciée", shape=circle]
+	"Locustelle fluviatile" [label="Locustelle fluviatile", shape=circle]
+	"Locustelle lancéolée" [label="Locustelle lancéolée", shape=circle]
+	"Locustelle luscinioïde" [label="Locustelle luscinioïde", shape=circle]
+	"Locustelle tachetée" [label="Locustelle tachetée", shape=circle]
+	"Loriot d'Europe" [label="Loriot d'Europe", shape=circle]
+	"Panure à moustaches" [label="Panure à moustaches", shape=circle]
+	"Mésange azurée" [label="Mésange azurée", shape=circle]
+	"Mésange bleue" [label="Mésange bleue", shape=circle]
+	"Mésange boréale" [label="Mésange boréale", shape=circle]
+	"Mésange charbonnière" [label="Mésange charbonnière", shape=circle]
+	"Mésange huppée" [label="Mésange huppée", shape=circle]
+	"Mésange lapone" [label="Mésange lapone", shape=circle]
+	"Mésange lugubre" [label="Mésange lugubre", shape=circle]
+	"Mésange noire" [label="Mésange noire", shape=circle]
+	"Mésange nonnette" [label="Mésange nonnette", shape=circle]
+	"Paruline azurée" [label="Paruline azurée", shape=circle]
+	"Paruline bleue" [label="Paruline bleue", shape=circle]
+	"Paruline caféiette" [label="Paruline caféiette", shape=circle]
+	"Paruline couronnée" [label="Paruline couronnée", shape=circle]
+	"Paruline d'Adélaïde" [label="Paruline d'Adélaïde", shape=circle]
+	"Paruline des pins" [label="Paruline des pins", shape=circle]
+	"Paruline des prés" [label="Paruline des prés", shape=circle]
+	"Paruline des rochers" [label="Paruline des rochers", shape=circle]
+	"Paruline des ruisseaux" [label="Paruline des ruisseaux", shape=circle]
+	"Paruline du Canada" [label="Paruline du Canada", shape=circle]
+	"Paruline du Kentucky" [label="Paruline du Kentucky", shape=circle]
+	"Paruline flamboyante" [label="Paruline flamboyante", shape=circle]
+	"Paruline hochequeue" [label="Paruline hochequeue", shape=circle]
+	"Paruline jaune" [label="Paruline jaune", shape=circle]
+	"Paruline masquée" [label="Paruline masquée", shape=circle]
+	"Paruline noir et blanc" [label="Paruline noir et blanc", shape=circle]
+	"Paruline obscure" [label="Paruline obscure", shape=circle]
+	"Paruline orangée" [label="Paruline orangée", shape=circle]
+	"Paruline rayée" [label="Paruline rayée", shape=circle]
+	"Paruline tigrée" [label="Paruline tigrée", shape=circle]
+	"Paruline triste" [label="Paruline triste", shape=circle]
+	"Paruline verdâtre" [label="Paruline verdâtre", shape=circle]
+	"Paruline à ailes bleues" [label="Paruline à ailes bleues", shape=circle]
+	"Paruline à ailes dorées" [label="Paruline à ailes dorées", shape=circle]
+	"Paruline à calotte noire" [label="Paruline à calotte noire", shape=circle]
+	"Paruline à capuchon" [label="Paruline à capuchon", shape=circle]
+	"Paruline à collier" [label="Paruline à collier", shape=circle]
+	"Paruline à couronne rousse" [label="Paruline à couronne rousse", shape=circle]
+	"Paruline à croupion jaune" [label="Paruline à croupion jaune", shape=circle]
+	"Paruline à flancs marron" [label="Paruline à flancs marron", shape=circle]
+	"Paruline à gorge grise" [label="Paruline à gorge grise", shape=circle]
+	"Paruline à gorge jaune" [label="Paruline à gorge jaune", shape=circle]
+	"Paruline à gorge noire" [label="Paruline à gorge noire", shape=circle]
+	"Paruline à gorge orangée" [label="Paruline à gorge orangée", shape=circle]
+	"Paruline à joues grises" [label="Paruline à joues grises", shape=circle]
+	"Paruline à poitrine baie" [label="Paruline à poitrine baie", shape=circle]
+	"Paruline à tête cendrée" [label="Paruline à tête cendrée", shape=circle]
+	"Moineau cisalpin" [label="Moineau cisalpin", shape=circle]
+	"Moineau de la mer Morte" [label="Moineau de la mer Morte", shape=circle]
+	"Moineau domestique" [label="Moineau domestique", shape=circle]
+	"Moineau espagnol" [label="Moineau espagnol", shape=circle]
+	"Moineau friquet" [label="Moineau friquet", shape=circle]
+	"Moineau pâle" [label="Moineau pâle", shape=circle]
+	"Moineau soulcie" [label="Moineau soulcie", shape=circle]
+	"Moineau à gorge jaune" [label="Moineau à gorge jaune", shape=circle]
+	"Niverolle alpine" [label="Niverolle alpine", shape=circle]
+	"Pouillot boréal" [label="Pouillot boréal", shape=circle]
+	"Pouillot brun" [label="Pouillot brun", shape=circle]
+	"Pouillot de Bonelli" [label="Pouillot de Bonelli", shape=circle]
+	"Pouillot de Hume" [label="Pouillot de Hume", shape=circle]
+	"Pouillot de Pallas" [label="Pouillot de Pallas", shape=circle]
+	"Pouillot de Schwarz" [label="Pouillot de Schwarz", shape=circle]
+	"Pouillot de Temminck" [label="Pouillot de Temminck", shape=circle]
+	"Pouillot des Canaries" [label="Pouillot des Canaries", shape=circle]
+	"Pouillot du Caucase" [label="Pouillot du Caucase", shape=circle]
+	"Pouillot fitis" [label="Pouillot fitis", shape=circle]
+	"Pouillot ibérique" [label="Pouillot ibérique", shape=circle]
+	"Pouillot modeste" [label="Pouillot modeste", shape=circle]
+	"Pouillot montagnard" [label="Pouillot montagnard", shape=circle]
+	"Pouillot oriental" [label="Pouillot oriental", shape=circle]
+	"Pouillot siffleur" [label="Pouillot siffleur", shape=circle]
+	"Pouillot verdâtre" [label="Pouillot verdâtre", shape=circle]
+	"Pouillot véloce" [label="Pouillot véloce", shape=circle]
+	"Pouillot à grands sourcils" [label="Pouillot à grands sourcils", shape=circle]
+	"Euplecte franciscain" [label="Euplecte franciscain", shape=circle]
+	"Euplecte vorabé" [label="Euplecte vorabé", shape=circle]
+	"Tisserin gendarme" [label="Tisserin gendarme", shape=circle]
+	"Tisserin jaune" [label="Tisserin jaune", shape=circle]
+	"Travailleur à bec rouge" [label="Travailleur à bec rouge", shape=circle]
+	"Accenteur alpin" [label="Accenteur alpin", shape=circle]
+	"Accenteur de Radde" [label="Accenteur de Radde", shape=circle]
+	"Accenteur montanelle" [label="Accenteur montanelle", shape=circle]
+	"Accenteur mouchet" [label="Accenteur mouchet", shape=circle]
+	"Accenteur à gorge noire" [label="Accenteur à gorge noire", shape=circle]
+	"Bulbul d'Arabie" [label="Bulbul d'Arabie", shape=circle]
+	"Bulbul des jardins" [label="Bulbul des jardins", shape=circle]
+	"Bulbul orphée" [label="Bulbul orphée", shape=circle]
+	"Roitelet de Madère" [label="Roitelet de Madère", shape=circle]
+	"Roitelet huppé" [label="Roitelet huppé", shape=circle]
+	"Roitelet triple-bandeau" [label="Roitelet triple-bandeau", shape=circle]
+	"Roitelet à couronne rubis" [label="Roitelet à couronne rubis", shape=circle]
+	"Rémiz couronnée" [label="Rémiz couronnée", shape=circle]
+	"Rémiz penduline" [label="Rémiz penduline", shape=circle]
+	"Sittelle corse" [label="Sittelle corse", shape=circle]
+	"Sittelle de Krüper" [label="Sittelle de Krüper", shape=circle]
+	"Sittelle de Neumayer" [label="Sittelle de Neumayer", shape=circle]
+	"Sittelle torchepot" [label="Sittelle torchepot", shape=circle]
+	"Sittelle à poitrine rousse" [label="Sittelle à poitrine rousse", shape=circle]
+	"Choucador pourpré" [label="Choucador pourpré", shape=circle]
+	"Mainate religieux" [label="Mainate religieux", shape=circle]
+	"Martin triste" [label="Martin triste", shape=circle]
+	"Étourneau de Daourie" [label="Étourneau de Daourie", shape=circle]
+	"Étourneau roselin" [label="Étourneau roselin", shape=circle]
+	"Étourneau sansonnet" [label="Étourneau sansonnet", shape=circle]
+	"Étourneau unicolore" [label="Étourneau unicolore", shape=circle]
+	"Fauvelle de Moltoni" [label="Fauvelle de Moltoni", shape=circle]
+	"Fauvette babillarde" [label="Fauvette babillarde", shape=circle]
+	"Fauvette de Chypre" [label="Fauvette de Chypre", shape=circle]
+	"Fauvette de Ménétries" [label="Fauvette de Ménétries", shape=circle]
+	"Fauvette de Rüppell" [label="Fauvette de Rüppell", shape=circle]
+	"Fauvette de l'Atlas" [label="Fauvette de l'Atlas", shape=circle]
+	"Fauvette des jardins" [label="Fauvette des jardins", shape=circle]
+	"Fauvette grisette" [label="Fauvette grisette", shape=circle]
+	"Fauvette mélanocéphale" [label="Fauvette mélanocéphale", shape=circle]
+	"Fauvette naine" [label="Fauvette naine", shape=circle]
+	"Fauvette orphée" [label="Fauvette orphée", shape=circle]
+	"Fauvette passerinette" [label="Fauvette passerinette", shape=circle]
+	"Fauvette pitchou" [label="Fauvette pitchou", shape=circle]
+	"Fauvette sarde" [label="Fauvette sarde", shape=circle]
+	"Fauvette à lunettes" [label="Fauvette à lunettes", shape=circle]
+	"Fauvette à tête noire" [label="Fauvette à tête noire", shape=circle]
+	"Fauvette épervière" [label="Fauvette épervière", shape=circle]
+	"Calliste dos-bleu" [label="Calliste dos-bleu", shape=circle]
+	"Jacarini noir" [label="Jacarini noir", shape=circle]
+	"Sicale bouton-d'or" [label="Sicale bouton-d'or", shape=circle]
+	"Sicale des savanes" [label="Sicale des savanes", shape=circle]
+	"Sporophile cici" [label="Sporophile cici", shape=circle]
+	"Sporophile rougegorge" [label="Sporophile rougegorge", shape=circle]
+	"Sporophile à ventre jaune" [label="Sporophile à ventre jaune", shape=circle]
+	"Tangara orangé" [label="Tangara orangé", shape=circle]
+	"Tangara vermillon" [label="Tangara vermillon", shape=circle]
+	"Tangara écarlate" [label="Tangara écarlate", shape=circle]
+	"Tichodrome échelette" [label="Tichodrome échelette", shape=circle]
+	"Léiothrix jaune" [label="Léiothrix jaune", shape=circle]
+	"Paradoxornis à gorge cendrée" [label="Paradoxornis à gorge cendrée", shape=circle]
+	"Troglodyte des marais" [label="Troglodyte des marais", shape=circle]
+	"Troglodyte familier" [label="Troglodyte familier", shape=circle]
+	"Troglodyte mignon" [label="Troglodyte mignon", shape=circle]
+	"Grive dama" [label="Grive dama", shape=circle]
+	"Grive de Bicknell" [label="Grive de Bicknell", shape=circle]
+	"Grive de Naumann" [label="Grive de Naumann", shape=circle]
+	"Grive de Sibérie" [label="Grive de Sibérie", shape=circle]
+	"Grive des bois" [label="Grive des bois", shape=circle]
+	"Grive dorée" [label="Grive dorée", shape=circle]
+	"Grive draine" [label="Grive draine", shape=circle]
+	"Grive fauve" [label="Grive fauve", shape=circle]
+	"Grive litorne" [label="Grive litorne", shape=circle]
+	"Grive mauvis" [label="Grive mauvis", shape=circle]
+	"Grive musicienne" [label="Grive musicienne", shape=circle]
+	"Grive obscure" [label="Grive obscure", shape=circle]
+	"Grive solitaire" [label="Grive solitaire", shape=circle]
+	"Grive à ailes rousses" [label="Grive à ailes rousses", shape=circle]
+	"Grive à collier" [label="Grive à collier", shape=circle]
+	"Grive à dos olive" [label="Grive à dos olive", shape=circle]
+	"Grive à gorge noire" [label="Grive à gorge noire", shape=circle]
+	"Grive à gorge rousse" [label="Grive à gorge rousse", shape=circle]
+	"Grive à joues grises" [label="Grive à joues grises", shape=circle]
+	"Merle cacao" [label="Merle cacao", shape=circle]
+	"Merle d'Amérique" [label="Merle d'Amérique", shape=circle]
+	"Merle noir" [label="Merle noir", shape=circle]
+	"Merle pâle" [label="Merle pâle", shape=circle]
+	"Merle unicolore" [label="Merle unicolore", shape=circle]
+	"Merle vantard" [label="Merle vantard", shape=circle]
+	"Merle à plastron" [label="Merle à plastron", shape=circle]
+	"Solitaire siffleur" [label="Solitaire siffleur", shape=circle]
+	"Moucherolle d'Euler" [label="Moucherolle d'Euler", shape=circle]
+	"Moucherolle gobemouche" [label="Moucherolle gobemouche", shape=circle]
+	"Moucherolle phébi" [label="Moucherolle phébi", shape=circle]
+	"Moucherolle vert" [label="Moucherolle vert", shape=circle]
+	"Moucherolle à côtés olive" [label="Moucherolle à côtés olive", shape=circle]
+	"Moucherolle à ventre jaune" [label="Moucherolle à ventre jaune", shape=circle]
+	"Tyran bavard" [label="Tyran bavard", shape=circle]
+	"Tyran de Wied" [label="Tyran de Wied", shape=circle]
+	"Tyran des savanes" [label="Tyran des savanes", shape=circle]
+	"Tyran gris" [label="Tyran gris", shape=circle]
+	"Tyran janeau" [label="Tyran janeau", shape=circle]
+	"Tyran mélancolique" [label="Tyran mélancolique", shape=circle]
+	"Tyran tritri" [label="Tyran tritri", shape=circle]
+	"Tyranneau des palétuviers" [label="Tyranneau des palétuviers", shape=circle]
+	"Élénie menue" [label="Élénie menue", shape=circle]
+	"Élénie siffleuse" [label="Élénie siffleuse", shape=circle]
+	"Élénie à bec court" [label="Élénie à bec court", shape=circle]
+	"Élénie à ventre jaune" [label="Élénie à ventre jaune", shape=circle]
+	"Veuve de paradis" [label="Veuve de paradis", shape=circle]
+	"Veuve dominicaine" [label="Veuve dominicaine", shape=circle]
+	"Viréo de Philadelphie" [label="Viréo de Philadelphie", shape=circle]
+	"Viréo à gorge jaune" [label="Viréo à gorge jaune", shape=circle]
+	"Viréo à moustaches" [label="Viréo à moustaches", shape=circle]
+	"Viréo à oeil rouge" [label="Viréo à oeil rouge", shape=circle]
+	"Phaéton à bec jaune" [label="Phaéton à bec jaune", shape=circle]
+	"Phaéton à bec rouge" [label="Phaéton à bec rouge", shape=circle]
+	"Flamant des Caraïbes" [label="Flamant des Caraïbes", shape=circle]
+	"Flamant du Chili" [label="Flamant du Chili", shape=circle]
+	"Flamant nain" [label="Flamant nain", shape=circle]
+	"Flamant rose" [label="Flamant rose", shape=circle]
+	"Pic cendré" [label="Pic cendré", shape=circle]
+	"Pic flamboyant" [label="Pic flamboyant", shape=circle]
+	"Pic maculé" [label="Pic maculé", shape=circle]
+	"Pic mar" [label="Pic mar", shape=circle]
+	"Pic noir" [label="Pic noir", shape=circle]
+	"Pic syriaque" [label="Pic syriaque", shape=circle]
+	"Pic tridactyle" [label="Pic tridactyle", shape=circle]
+	"Pic vert" [label="Pic vert", shape=circle]
+	"Pic à dos blanc" [label="Pic à dos blanc", shape=circle]
+	"Pic épeiche" [label="Pic épeiche", shape=circle]
+	"Pic épeichette" [label="Pic épeichette", shape=circle]
+	"Torcol fourmilier" [label="Torcol fourmilier", shape=circle]
+	"Grand Grèbe" [label="Grand Grèbe", shape=circle]
+	"Grèbe castagneux" [label="Grèbe castagneux", shape=circle]
+	"Grèbe esclavon" [label="Grèbe esclavon", shape=circle]
+	"Grèbe huppé" [label="Grèbe huppé", shape=circle]
+	"Grèbe jougris" [label="Grèbe jougris", shape=circle]
+	"Grèbe à bec bigarré" [label="Grèbe à bec bigarré", shape=circle]
+	"Grèbe à cou noir" [label="Grèbe à cou noir", shape=circle]
+	"Albatros hurleur" [label="Albatros hurleur", shape=circle]
+	"Albatros à nez jaune" [label="Albatros à nez jaune", shape=circle]
+	"Albatros à pieds noirs" [label="Albatros à pieds noirs", shape=circle]
+	"Albatros à sourcils noirs" [label="Albatros à sourcils noirs", shape=circle]
+	"Océanite culblanc" [label="Océanite culblanc", shape=circle]
+	"Océanite de Castro" [label="Océanite de Castro", shape=circle]
+	"Océanite de Swinhoe" [label="Océanite de Swinhoe", shape=circle]
+	"Océanite de Wilson" [label="Océanite de Wilson", shape=circle]
+	"Océanite frégate" [label="Océanite frégate", shape=circle]
+	"Océanite tempête" [label="Océanite tempête", shape=circle]
+	"Damier du Cap" [label="Damier du Cap", shape=circle]
+	"Fulmar boréal" [label="Fulmar boréal", shape=circle]
+	"Petit Puffin" [label="Petit Puffin", shape=circle]
+	"Puffin cendré" [label="Puffin cendré", shape=circle]
+	"Puffin d'Audubon" [label="Puffin d'Audubon", shape=circle]
+	"Puffin de Buller" [label="Puffin de Buller", shape=circle]
+	"Puffin de Macaronésie" [label="Puffin de Macaronésie", shape=circle]
+	"Puffin des Anglais" [label="Puffin des Anglais", shape=circle]
+	"Puffin des Baléares" [label="Puffin des Baléares", shape=circle]
+	"Puffin fuligineux" [label="Puffin fuligineux", shape=circle]
+	"Puffin majeur" [label="Puffin majeur", shape=circle]
+	"Puffin yelkouan" [label="Puffin yelkouan", shape=circle]
+	"Pétrel de Bulwer" [label="Pétrel de Bulwer", shape=circle]
+	"Pétrel de Jouanin" [label="Pétrel de Jouanin", shape=circle]
+	"Pétrel de Madère" [label="Pétrel de Madère", shape=circle]
+	"Pétrel de Schlegel" [label="Pétrel de Schlegel", shape=circle]
+	"Pétrel de la Trinité" [label="Pétrel de la Trinité", shape=circle]
+	"Pétrel diablotin" [label="Pétrel diablotin", shape=circle]
+	"Pétrel gongon" [label="Pétrel gongon", shape=circle]
+	"Pétrel hérault" [label="Pétrel hérault", shape=circle]
+	"Pétrel soyeux" [label="Pétrel soyeux", shape=circle]
+	"Amazone à front bleu" [label="Amazone à front bleu", shape=circle]
+	"Amazone à épaulettes jaunes" [label="Amazone à épaulettes jaunes", shape=circle]
+	"Conure cuivrée" [label="Conure cuivrée", shape=circle]
+	"Conure de Patagonie" [label="Conure de Patagonie", shape=circle]
+	"Conure nanday" [label="Conure nanday", shape=circle]
+	"Conure veuve" [label="Conure veuve", shape=circle]
+	"Conure à tête bleue" [label="Conure à tête bleue", shape=circle]
+	"Conure à tête rouge" [label="Conure à tête rouge", shape=circle]
+	"Inséparable de Fischer" [label="Inséparable de Fischer", shape=circle]
+	"Inséparable masqué" [label="Inséparable masqué", shape=circle]
+	"Perroquet youyou" [label="Perroquet youyou", shape=circle]
+	"Perruche alexandre" [label="Perruche alexandre", shape=circle]
+	"Perruche ondulée" [label="Perruche ondulée", shape=circle]
+	"Perruche à collier" [label="Perruche à collier", shape=circle]
+	"Toui été" [label="Toui été", shape=circle]
+	"Ganga cata" [label="Ganga cata", shape=circle]
+	"Ganga quadribande" [label="Ganga quadribande", shape=circle]
+	"Ganga tacheté" [label="Ganga tacheté", shape=circle]
+	"Ganga unibande" [label="Ganga unibande", shape=circle]
+	"Ganga à ventre brun" [label="Ganga à ventre brun", shape=circle]
+	"Syrrhapte paradoxal" [label="Syrrhapte paradoxal", shape=circle]
+	"Anhinga d'Afrique" [label="Anhinga d'Afrique", shape=circle]
+	"Anhinga d'Amérique" [label="Anhinga d'Amérique", shape=circle]
+	"Aigrette bleue" [label="Aigrette bleue", shape=circle]
+	"Aigrette des récifs" [label="Aigrette des récifs", shape=circle]
+	"Aigrette garzette" [label="Aigrette garzette", shape=circle]
+	"Aigrette neigeuse" [label="Aigrette neigeuse", shape=circle]
+	"Aigrette roussâtre" [label="Aigrette roussâtre", shape=circle]
+	"Aigrette tricolore" [label="Aigrette tricolore", shape=circle]
+	"Bihoreau gris" [label="Bihoreau gris", shape=circle]
+	"Bihoreau violacé" [label="Bihoreau violacé", shape=circle]
+	"Blongios de Sturm" [label="Blongios de Sturm", shape=circle]
+	"Blongios mandchou" [label="Blongios mandchou", shape=circle]
+	"Blongios nain" [label="Blongios nain", shape=circle]
+	"Butor d'Amérique" [label="Butor d'Amérique", shape=circle]
+	"Butor mirasol" [label="Butor mirasol", shape=circle]
+	"Butor étoilé" [label="Butor étoilé", shape=circle]
+	"Crabier chevelu" [label="Crabier chevelu", shape=circle]
+	"Crabier chinois" [label="Crabier chinois", shape=circle]
+	"Grand Héron" [label="Grand Héron", shape=circle]
+	"Grande Aigrette" [label="Grande Aigrette", shape=circle]
+	"Héron cendré" [label="Héron cendré", shape=circle]
+	"Héron garde-boeufs" [label="Héron garde-boeufs", shape=circle]
+	"Héron mélanocéphale" [label="Héron mélanocéphale", shape=circle]
+	"Héron pourpré" [label="Héron pourpré", shape=circle]
+	"Héron strié" [label="Héron strié", shape=circle]
+	"Héron vert" [label="Héron vert", shape=circle]
+	"Petit Blongios" [label="Petit Blongios", shape=circle]
+	"Frégate aigle-de-mer" [label="Frégate aigle-de-mer", shape=circle]
+	"Frégate superbe" [label="Frégate superbe", shape=circle]
+	"Cormoran huppé" [label="Cormoran huppé", shape=circle]
+	"Cormoran pygmée" [label="Cormoran pygmée", shape=circle]
+	"Cormoran vigua" [label="Cormoran vigua", shape=circle]
+	"Cormoran à aigrettes" [label="Cormoran à aigrettes", shape=circle]
+	"Grand Cormoran" [label="Grand Cormoran", shape=circle]
+	"Pélican blanc" [label="Pélican blanc", shape=circle]
+	"Pélican frisé" [label="Pélican frisé", shape=circle]
+	"Pélican gris" [label="Pélican gris", shape=circle]
+	"Fou brun" [label="Fou brun", shape=circle]
+	"Fou de Bassan" [label="Fou de Bassan", shape=circle]
+	"Fou du Cap" [label="Fou du Cap", shape=circle]
+	"Fou masqué" [label="Fou masqué", shape=circle]
+	"Fou à pieds rouges" [label="Fou à pieds rouges", shape=circle]
+	"Ibis chauve" [label="Ibis chauve", shape=circle]
+	"Ibis falcinelle" [label="Ibis falcinelle", shape=circle]
+	"Ibis rouge" [label="Ibis rouge", shape=circle]
+	"Ibis sacré" [label="Ibis sacré", shape=circle]
+	"Spatule blanche" [label="Spatule blanche", shape=circle]
+	"Spatule d'Afrique" [label="Spatule d'Afrique", shape=circle]
+	"Spatule rosée" [label="Spatule rosée", shape=circle]
+	"Chevêche d'Athéna" [label="Chevêche d'Athéna", shape=circle]
+	"Chevêche des terriers" [label="Chevêche des terriers", shape=circle]
+	"Chevêchette d'Europe" [label="Chevêchette d'Europe", shape=circle]
+	"Chouette de Tengmalm" [label="Chouette de Tengmalm", shape=circle]
+	"Chouette de l'Oural" [label="Chouette de l'Oural", shape=circle]
+	"Chouette hulotte" [label="Chouette hulotte", shape=circle]
+	"Chouette lapone" [label="Chouette lapone", shape=circle]
+	"Chouette épervière" [label="Chouette épervière", shape=circle]
+	"Grand-duc d'Europe" [label="Grand-duc d'Europe", shape=circle]
+	"Harfang des neiges" [label="Harfang des neiges", shape=circle]
+	"Hibou des marais" [label="Hibou des marais", shape=circle]
+	"Hibou du Cap" [label="Hibou du Cap", shape=circle]
+	"Hibou moyen-duc" [label="Hibou moyen-duc", shape=circle]
+	"Kétoupa brun" [label="Kétoupa brun", shape=circle]
+	"Petit-duc de Bruce" [label="Petit-duc de Bruce", shape=circle]
+	"Petit-duc scops" [label="Petit-duc scops", shape=circle]
+	"Effraie des clochers" [label="Effraie des clochers", shape=circle]
+
+	"Oiseaux" -> "Accipitriformes"
+	"Oiseaux" -> "Ansériformes"
+	"Oiseaux" -> "Apodiformes"
+	"Oiseaux" -> "Bucérotiformes"
+	"Oiseaux" -> "Caprimulgiformes"
+	"Oiseaux" -> "Charadriiformes"
+	"Oiseaux" -> "Ciconiiformes"
+	"Oiseaux" -> "Columbiformes"
+	"Oiseaux" -> "Coraciiformes"
+	"Oiseaux" -> "Cuculiformes"
+	"Oiseaux" -> "Falconiformes"
+	"Oiseaux" -> "Galliformes"
+	"Oiseaux" -> "Gaviiformes"
+	"Oiseaux" -> "Gruiformes"
+	"Oiseaux" -> "Otidiformes"
+	"Oiseaux" -> "Passériformes"
+	"Oiseaux" -> "Pélécaniformes"
+	"Oiseaux" -> "Phaethontiformes"
+	"Oiseaux" -> "Phoenicoptériformes"
+	"Oiseaux" -> "Piciformes"
+	"Oiseaux" -> "Podicipédiformes"
+	"Oiseaux" -> "Procellariiformes"
+	"Oiseaux" -> "Psittaciformes"
+	"Oiseaux" -> "Ptéroclidiformes"
+	"Oiseaux" -> "Strigiformes"
+	"Accipitriformes" -> "Accipitridés"
+	"Accipitriformes" -> "Cathartidés"
+	"Accipitriformes" -> "Pandionidés"
+	"Ansériformes" -> "Anatidés"
+	"Apodiformes" -> "Apodidés"
+	"Apodiformes" -> "Trochilidés"
+	"Bucérotiformes" -> "Upupidés"
+	"Caprimulgiformes" -> "Caprimulgidés"
+	"Caprimulgiformes" -> "Stéatornithidés"
+	"Charadriiformes" -> "Alcidés"
+	"Charadriiformes" -> "Burhinidés"
+	"Charadriiformes" -> "Charadriidés"
+	"Charadriiformes" -> "Glaréolidés"
+	"Charadriiformes" -> "Haematopodidés"
+	"Charadriiformes" -> "Jacanidés"
+	"Charadriiformes" -> "Laridés"
+	"Charadriiformes" -> "Pluvianidés"
+	"Charadriiformes" -> "Récurvirostridés"
+	"Charadriiformes" -> "Scolopacidés"
+	"Charadriiformes" -> "Stercorariidés"
+	"Charadriiformes" -> "Turnicidés"
+	"Ciconiiformes" -> "Ciconiidés"
+	"Columbiformes" -> "Columbidés"
+	"Coraciiformes" -> "Alcédinidés"
+	"Coraciiformes" -> "Coraciidés"
+	"Coraciiformes" -> "Méropidés"
+	"Cuculiformes" -> "Cuculidés"
+	"Falconiformes" -> "Falconidés"
+	"Galliformes" -> "Numididés"
+	"Galliformes" -> "Odontophoridés"
+	"Galliformes" -> "Phasianidés"
+	"Gaviiformes" -> "Gaviidés"
+	"Gruiformes" -> "Gruidés"
+	"Gruiformes" -> "Rallidés"
+	"Otidiformes" -> "Otididés"
+	"Passériformes" -> "Acrocephalidés"
+	"Passériformes" -> "Aegithalidés"
+	"Passériformes" -> "Alaudidés"
+	"Passériformes" -> "Bombycillidés"
+	"Passériformes" -> "Calcariidés"
+	"Passériformes" -> "Cardinalidés"
+	"Passériformes" -> "Certhiidés"
+	"Passériformes" -> "Cettidés"
+	"Passériformes" -> "Cinclidés"
+	"Passériformes" -> "Cisticolidés"
+	"Passériformes" -> "Coerébidés"
+	"Passériformes" -> "Corvidés"
+	"Passériformes" -> "Emberizidés"
+	"Passériformes" -> "Estrildidés"
+	"Passériformes" -> "Fringillidés"
+	"Passériformes" -> "Hirundinidés"
+	"Passériformes" -> "Hypocoliidés"
+	"Passériformes" -> "Ictéridés"
+	"Passériformes" -> "Incertain"
+	"Passériformes" -> "Laniidés"
+	"Passériformes" -> "Mégaluridés"
+	"Passériformes" -> "Mimidés"
+	"Passériformes" -> "Motacillidés"
+	"Passériformes" -> "Muscicapidés"
+	"Passériformes" -> "Oriolidés"
+	"Passériformes" -> "Panuridés"
+	"Passériformes" -> "Paridés"
+	"Passériformes" -> "Parulidés"
+	"Passériformes" -> "Passeridés"
+	"Passériformes" -> "Phylloscopidés"
+	"Passériformes" -> "Plocéidés"
+	"Passériformes" -> "Prunellidés"
+	"Passériformes" -> "Pycnonotidés"
+	"Passériformes" -> "Régulidés"
+	"Passériformes" -> "Rémizidés"
+	"Passériformes" -> "Sittidés"
+	"Passériformes" -> "Sturnidés"
+	"Passériformes" -> "Sylviidés"
+	"Passériformes" -> "Thraupidés"
+	"Passériformes" -> "Tichodromidés"
+	"Passériformes" -> "Timaliidés"
+	"Passériformes" -> "Troglodytidés"
+	"Passériformes" -> "Turdidés"
+	"Passériformes" -> "Tyrannidés"
+	"Passériformes" -> "Viduidés"
+	"Passériformes" -> "Viréonidés"
+	"Phaethontiformes" -> "Phaethontidés"
+	"Phoenicoptériformes" -> "Phoenicoptéridés"
+	"Piciformes" -> "Picidés"
+	"Podicipédiformes" -> "Podicipédidés"
+	"Procellariiformes" -> "Diomédéidés"
+	"Procellariiformes" -> "Hydrobatidés"
+	"Procellariiformes" -> "Procellariidés"
+	"Psittaciformes" -> "Psittacidés"
+	"Ptéroclidiformes" -> "Ptéroclididés"
+	"Pélécaniformes" -> "Anhingidés"
+	"Pélécaniformes" -> "Ardéidés"
+	"Pélécaniformes" -> "Frégatidés"
+	"Pélécaniformes" -> "Pélécanidés"
+	"Pélécaniformes" -> "Phalacrocoracidés"
+	"Pélécaniformes" -> "Sulidés"
+	"Pélécaniformes" -> "Threskiornithidés"
+	"Strigiformes" -> "Strigidés"
+	"Strigiformes" -> "Tytonidés"
+	"Accipitridés" -> "Aigle criard"
+	"Accipitridés" -> "Aigle de Bonelli"
+	"Accipitridés" -> "Aigle des steppes"
+	"Accipitridés" -> "Aigle ibérique"
+	"Accipitridés" -> "Aigle impérial"
+	"Accipitridés" -> "Aigle pomarin"
+	"Accipitridés" -> "Aigle ravisseur"
+	"Accipitridés" -> "Aigle royal"
+	"Accipitridés" -> "Autour des palombes"
+	"Accipitridés" -> "Autour sombre"
+	"Accipitridés" -> "Bondrée apivore"
+	"Accipitridés" -> "Busard cendré"
+	"Accipitridés" -> "Busard des roseaux"
+	"Accipitridés" -> "Busard pâle"
+	"Accipitridés" -> "Busard Saint-Martin"
+	"Accipitridés" -> "Buse à queue blanche"
+	"Accipitridés" -> "Buse à queue rousse"
+	"Accipitridés" -> "Buse de Swainson"
+	"Accipitridés" -> "Buse féroce"
+	"Accipitridés" -> "Buse noire"
+	"Accipitridés" -> "Buse pattue"
+	"Accipitridés" -> "Buse variable"
+	"Accipitridés" -> "Circaète Jean-le-Blanc"
+	"Accipitridés" -> "Élanion blanc"
+	"Accipitridés" -> "Épervier à pieds courts"
+	"Accipitridés" -> "Épervier d'Europe"
+	"Accipitridés" -> "Gypaète barbu"
+	"Accipitridés" -> "Milan à queue fourchue"
+	"Accipitridés" -> "Milan bec-en-croc"
+	"Accipitridés" -> "Milan noir"
+	"Accipitridés" -> "Milan royal"
+	"Accipitridés" -> "Petite Buse"
+	"Accipitridés" -> "Pygargue à queue blanche"
+	"Accipitridés" -> "Pygargue à tête blanche"
+	"Accipitridés" -> "Pygargue de Pallas"
+	"Accipitridés" -> "Vautour de Rüppell"
+	"Accipitridés" -> "Vautour fauve"
+	"Accipitridés" -> "Vautour moine"
+	"Accipitridés" -> "Vautour oricou"
+	"Accipitridés" -> "Vautour percnoptère"
+	"Cathartidés" -> "Urubu noir"
+	"Pandionidés" -> "Balbuzard pêcheur"
+	"Anatidés" -> "Arlequin plongeur"
+	"Anatidés" -> "Bernache à cou roux"
+	"Anatidés" -> "Bernache cravant"
+	"Anatidés" -> "Bernache de Hutchins"
+	"Anatidés" -> "Bernache du Canada"
+	"Anatidés" -> "Bernache du Pacifique"
+	"Anatidés" -> "Bernache nonnette"
+	"Anatidés" -> "Canard à bosse"
+	"Anatidés" -> "Canard à faucilles"
+	"Anatidés" -> "Canard à front blanc"
+	"Anatidés" -> "Canard carolin"
+	"Anatidés" -> "Canard chipeau"
+	"Anatidés" -> "Canard colvert"
+	"Anatidés" -> "Canard des Bahamas"
+	"Anatidés" -> "Canard mandarin"
+	"Anatidés" -> "Canard noir"
+	"Anatidés" -> "Canard pilet"
+	"Anatidés" -> "Canard siffleur"
+	"Anatidés" -> "Canard souchet"
+	"Anatidés" -> "Cygne chanteur"
+	"Anatidés" -> "Cygne de Bewick"
+	"Anatidés" -> "Cygne noir"
+	"Anatidés" -> "Cygne tuberculé"
+	"Anatidés" -> "Dendrocygne à ventre noir"
+	"Anatidés" -> "Dendrocygne des Antilles"
+	"Anatidés" -> "Dendrocygne fauve"
+	"Anatidés" -> "Dendrocygne veuf"
+	"Anatidés" -> "Eider à duvet"
+	"Anatidés" -> "Eider à lunettes"
+	"Anatidés" -> "Eider à tête grise"
+	"Anatidés" -> "Eider de Steller"
+	"Anatidés" -> "Érismature à tête blanche"
+	"Anatidés" -> "Érismature rousse"
+	"Anatidés" -> "Érismature routoutou"
+	"Anatidés" -> "Fuligule à bec cerclé"
+	"Anatidés" -> "Fuligule à dos blanc"
+	"Anatidés" -> "Fuligule à tête noire"
+	"Anatidés" -> "Fuligule à tête rouge"
+	"Anatidés" -> "Fuligule milouin"
+	"Anatidés" -> "Fuligule milouinan"
+	"Anatidés" -> "Fuligule morillon"
+	"Anatidés" -> "Fuligule nyroca"
+	"Anatidés" -> "Garrot à oeil d'or"
+	"Anatidés" -> "Garrot albéole"
+	"Anatidés" -> "Garrot d'Islande"
+	"Anatidés" -> "Harelde boréale"
+	"Anatidés" -> "Harle bièvre"
+	"Anatidés" -> "Harle couronné"
+	"Anatidés" -> "Harle huppé"
+	"Anatidés" -> "Harle piette"
+	"Anatidés" -> "Macreuse à ailes blanches"
+	"Anatidés" -> "Macreuse à bec jaune"
+	"Anatidés" -> "Macreuse à front blanc"
+	"Anatidés" -> "Macreuse brune"
+	"Anatidés" -> "Macreuse noire"
+	"Anatidés" -> "Nette rousse"
+	"Anatidés" -> "Oie à bec court"
+	"Anatidés" -> "Oie à tête barrée"
+	"Anatidés" -> "Oie cendrée"
+	"Anatidés" -> "Oie de la toundra"
+	"Anatidés" -> "Oie de Ross"
+	"Anatidés" -> "Oie des moissons"
+	"Anatidés" -> "Oie des neiges"
+	"Anatidés" -> "Oie empereur"
+	"Anatidés" -> "Oie naine"
+	"Anatidés" -> "Oie rieuse"
+	"Anatidés" -> "Ouette d'Egypte"
+	"Anatidés" -> "Sarcelle à ailes bleues"
+	"Anatidés" -> "Sarcelle à ailes vertes"
+	"Anatidés" -> "Sarcelle cannelle"
+	"Anatidés" -> "Sarcelle d'été"
+	"Anatidés" -> "Sarcelle d'hiver"
+	"Anatidés" -> "Sarcelle élégante"
+	"Anatidés" -> "Sarcelle marbrée"
+	"Anatidés" -> "Tadorne casarca"
+	"Anatidés" -> "Tadorne de Belon"
+	"Apodidés" -> "Martinet à collier blanc"
+	"Apodidés" -> "Martinet à croupion gris"
+	"Apodidés" -> "Martinet à ventre blanc"
+	"Apodidés" -> "Martinet cafre"
+	"Apodidés" -> "Martinet chiquesol"
+	"Apodidés" -> "Martinet de Sibérie"
+	"Apodidés" -> "Martinet des maisons"
+	"Apodidés" -> "Martinet épineux"
+	"Apodidés" -> "Martinet noir"
+	"Apodidés" -> "Martinet pâle"
+	"Apodidés" -> "Martinet polioure"
+	"Apodidés" -> "Martinet ramoneur"
+	"Apodidés" -> "Martinet sombre"
+	"Apodidés" -> "Martinet unicolore"
+	"Trochilidés" -> "Colibri à tête bleue"
+	"Trochilidés" -> "Colibri falle-vert"
+	"Trochilidés" -> "Colibri huppé"
+	"Trochilidés" -> "Colibri jacobin"
+	"Trochilidés" -> "Colibri madère"
+	"Trochilidés" -> "Colibri rubis-topaze"
+	"Trochilidés" -> "Émeraude orvert"
+	"Trochilidés" -> "Ermite à gorge rayée"
+	"Trochilidés" -> "Ermite hirsute"
+	"Trochilidés" -> "Mango à cravate verte"
+	"Upupidés" -> "Huppe fasciée"
+	"Caprimulgidés" -> "Engoulevent à collier roux"
+	"Caprimulgidés" -> "Engoulevent coré"
+	"Caprimulgidés" -> "Engoulevent d'Amérique"
+	"Caprimulgidés" -> "Engoulevent de Caroline"
+	"Caprimulgidés" -> "Engoulevent d'Europe"
+	"Caprimulgidés" -> "Engoulevent du désert"
+	"Caprimulgidés" -> "Engoulevent piramidig"
+	"Stéatornithidés" -> "Guacharo des cavernes"
+	"Alcidés" -> "Guillemot à cou blanc"
+	"Alcidés" -> "Guillemot à long bec"
+	"Alcidés" -> "Guillemot à miroir"
+	"Alcidés" -> "Guillemot de Brünnich"
+	"Alcidés" -> "Guillemot de Troïl"
+	"Alcidés" -> "Macareux huppé"
+	"Alcidés" -> "Macareux moine"
+	"Alcidés" -> "Mergule nain"
+	"Alcidés" -> "Pingouin torda"
+	"Alcidés" -> "Starique cristatelle"
+	"Alcidés" -> "Starique perroquet"
+	"Burhinidés" -> "Oedicnème criard"
+	"Burhinidés" -> "Oedicnème du Sénégal"
+	"Charadriidés" -> "Grand Gravelot"
+	"Charadriidés" -> "Gravelot à collier interrompu"
+	"Charadriidés" -> "Gravelot asiatique"
+	"Charadriidés" -> "Gravelot d'Azara"
+	"Charadriidés" -> "Gravelot de Leschenault"
+	"Charadriidés" -> "Gravelot de Wilson"
+	"Charadriidés" -> "Gravelot guignard"
+	"Charadriidés" -> "Gravelot kildir"
+	"Charadriidés" -> "Gravelot mongol"
+	"Charadriidés" -> "Gravelot oriental"
+	"Charadriidés" -> "Gravelot pâtre"
+	"Charadriidés" -> "Gravelot semipalmé"
+	"Charadriidés" -> "Gravelot siffleur"
+	"Charadriidés" -> "Petit Gravelot"
+	"Charadriidés" -> "Pluvier argenté"
+	"Charadriidés" -> "Pluvier bronzé"
+	"Charadriidés" -> "Pluvier doré"
+	"Charadriidés" -> "Pluvier fauve"
+	"Charadriidés" -> "Vanneau à queue blanche"
+	"Charadriidés" -> "Vanneau à tête noire"
+	"Charadriidés" -> "Vanneau éperonné"
+	"Charadriidés" -> "Vanneau huppé"
+	"Charadriidés" -> "Vanneau indien"
+	"Charadriidés" -> "Vanneau sociable"
+	"Charadriidés" -> "Vanneau téro"
+	"Glaréolidés" -> "Courvite isabelle"
+	"Glaréolidés" -> "Glaréole à ailes noires"
+	"Glaréolidés" -> "Glaréole à collier"
+	"Glaréolidés" -> "Glaréole orientale"
+	"Haematopodidés" -> "Huîtrier d'Amérique"
+	"Haematopodidés" -> "Huîtrier pie"
+	"Jacanidés" -> "Jacana noir"
+	"Laridés" -> "Bec-en-ciseaux d'Afrique"
+	"Laridés" -> "Bec-en-ciseaux noir"
+	"Laridés" -> "Goéland à ailes blanches"
+	"Laridés" -> "Goéland à ailes grises"
+	"Laridés" -> "Goéland à bec cerclé"
+	"Laridés" -> "Goéland à iris blanc"
+	"Laridés" -> "Goéland argenté"
+	"Laridés" -> "Goéland bourgmestre"
+	"Laridés" -> "Goéland brun"
+	"Laridés" -> "Goéland cendré"
+	"Laridés" -> "Goéland d'Amérique"
+	"Laridés" -> "Goéland d'Arménie"
+	"Laridés" -> "Goéland d'Audouin"
+	"Laridés" -> "Goéland de Thayer"
+	"Laridés" -> "Goéland ichthyaète"
+	"Laridés" -> "Goéland leucophée"
+	"Laridés" -> "Goéland marin"
+	"Laridés" -> "Goéland pontique"
+	"Laridés" -> "Goéland railleur"
+	"Laridés" -> "Guifette leucoptère"
+	"Laridés" -> "Guifette moustac"
+	"Laridés" -> "Guifette noire"
+	"Laridés" -> "Mouette à tête grise"
+	"Laridés" -> "Mouette atricille"
+	"Laridés" -> "Mouette blanche"
+	"Laridés" -> "Mouette de Bonaparte"
+	"Laridés" -> "Mouette de Franklin"
+	"Laridés" -> "Mouette de Ross"
+	"Laridés" -> "Mouette de Sabine"
+	"Laridés" -> "Mouette mélanocéphale"
+	"Laridés" -> "Mouette pygmée"
+	"Laridés" -> "Mouette rieuse"
+	"Laridés" -> "Mouette tridactyle"
+	"Laridés" -> "Noddi brun"
+	"Laridés" -> "Noddi noir"
+	"Laridés" -> "Petite Sterne"
+	"Laridés" -> "Sterne à gros bec"
+	"Laridés" -> "Sterne arctique"
+	"Laridés" -> "Sterne bridée"
+	"Laridés" -> "Sterne caspienne"
+	"Laridés" -> "Sterne caugek"
+	"Laridés" -> "Sterne de Dougall"
+	"Laridés" -> "Sterne de Forster"
+	"Laridés" -> "Sterne des Aléoutiennes"
+	"Laridés" -> "Sterne élégante"
+	"Laridés" -> "Sterne fuligineuse"
+	"Laridés" -> "Sterne hansel"
+	"Laridés" -> "Sterne naine"
+	"Laridés" -> "Sterne pierregarin"
+	"Laridés" -> "Sterne royale"
+	"Laridés" -> "Sterne voyageuse"
+	"Pluvianidés" -> "Pluvian fluviatile"
+	"Récurvirostridés" -> "Avocette d'Amérique"
+	"Récurvirostridés" -> "Avocette élégante"
+	"Récurvirostridés" -> "Échasse blanche"
+	"Récurvirostridés" -> "Échasse d'Amérique"
+	"Scolopacidés" -> "Barge à queue noire"
+	"Scolopacidés" -> "Barge hudsonienne"
+	"Scolopacidés" -> "Barge marbrée"
+	"Scolopacidés" -> "Barge rousse"
+	"Scolopacidés" -> "Bartramie des champs"
+	"Scolopacidés" -> "Bécasse d'Amérique"
+	"Scolopacidés" -> "Bécasse des bois"
+	"Scolopacidés" -> "Bécasseau à cou roux"
+	"Scolopacidés" -> "Bécasseau à échasses"
+	"Scolopacidés" -> "Bécasseau à longs doigts"
+	"Scolopacidés" -> "Bécasseau à queue pointue"
+	"Scolopacidés" -> "Bécasseau cocorli"
+	"Scolopacidés" -> "Bécasseau d'Alaska"
+	"Scolopacidés" -> "Bécasseau de Baird"
+	"Scolopacidés" -> "Bécasseau de Bonaparte"
+	"Scolopacidés" -> "Bécasseau de l'Anadyr"
+	"Scolopacidés" -> "Bécasseau de Temminck"
+	"Scolopacidés" -> "Bécasseau falcinelle"
+	"Scolopacidés" -> "Bécasseau maubèche"
+	"Scolopacidés" -> "Bécasseau minuscule"
+	"Scolopacidés" -> "Bécasseau minute"
+	"Scolopacidés" -> "Bécasseau rousset"
+	"Scolopacidés" -> "Bécasseau sanderling"
+	"Scolopacidés" -> "Bécasseau semipalmé"
+	"Scolopacidés" -> "Bécasseau spatule"
+	"Scolopacidés" -> "Bécasseau tacheté"
+	"Scolopacidés" -> "Bécasseau variable"
+	"Scolopacidés" -> "Bécasseau violet"
+	"Scolopacidés" -> "Bécassin à bec court"
+	"Scolopacidés" -> "Bécassin à long bec"
+	"Scolopacidés" -> "Bécassine à queue pointue"
+	"Scolopacidés" -> "Bécassine de Swinhoe"
+	"Scolopacidés" -> "Bécassine de Wilson"
+	"Scolopacidés" -> "Bécassine des marais"
+	"Scolopacidés" -> "Bécassine double"
+	"Scolopacidés" -> "Bécassine sourde"
+	"Scolopacidés" -> "Chevalier à pattes jaunes"
+	"Scolopacidés" -> "Chevalier aboyeur"
+	"Scolopacidés" -> "Chevalier arlequin"
+	"Scolopacidés" -> "Chevalier bargette"
+	"Scolopacidés" -> "Chevalier criard"
+	"Scolopacidés" -> "Chevalier culblanc"
+	"Scolopacidés" -> "Chevalier de Sibérie"
+	"Scolopacidés" -> "Chevalier gambette"
+	"Scolopacidés" -> "Chevalier grivelé"
+	"Scolopacidés" -> "Chevalier guignette"
+	"Scolopacidés" -> "Chevalier semipalmé"
+	"Scolopacidés" -> "Chevalier solitaire"
+	"Scolopacidés" -> "Chevalier stagnatile"
+	"Scolopacidés" -> "Chevalier sylvain"
+	"Scolopacidés" -> "Combattant varié"
+	"Scolopacidés" -> "Courlis à bec grêle"
+	"Scolopacidés" -> "Courlis cendré"
+	"Scolopacidés" -> "Courlis corlieu"
+	"Scolopacidés" -> "Courlis esquimau"
+	"Scolopacidés" -> "Courlis nain"
+	"Scolopacidés" -> "Phalarope à bec étroit"
+	"Scolopacidés" -> "Phalarope à bec large"
+	"Scolopacidés" -> "Phalarope de Wilson"
+	"Scolopacidés" -> "Tournepierre à collier"
+	"Stercorariidés" -> "Grand Labbe"
+	"Stercorariidés" -> "Labbe à longue queue"
+	"Stercorariidés" -> "Labbe de McCormick"
+	"Stercorariidés" -> "Labbe parasite"
+	"Stercorariidés" -> "Labbe pomarin"
+	"Turnicidés" -> "Turnix mugissant"
+	"Ciconiidés" -> "Cigogne blanche"
+	"Ciconiidés" -> "Cigogne épiscopale"
+	"Ciconiidés" -> "Cigogne noire"
+	"Ciconiidés" -> "Marabout d'Afrique"
+	"Ciconiidés" -> "Tantale ibis"
+	"Columbidés" -> "Colombe à croissants"
+	"Columbidés" -> "Colombe à queue noire"
+	"Columbidés" -> "Colombe rouviolette"
+	"Columbidés" -> "Pigeon à cou rouge"
+	"Columbidés" -> "Pigeon biset"
+	"Columbidés" -> "Pigeon colombin"
+	"Columbidés" -> "Pigeon de Bolle"
+	"Columbidés" -> "Pigeon des lauriers"
+	"Columbidés" -> "Pigeon d'Eversmann"
+	"Columbidés" -> "Pigeon jounud"
+	"Columbidés" -> "Pigeon ramier"
+	"Columbidés" -> "Pigeon trocaz"
+	"Columbidés" -> "Tourterelle à queue carrée"
+	"Columbidés" -> "Tourterelle des bois"
+	"Columbidés" -> "Tourterelle maillée"
+	"Columbidés" -> "Tourterelle oreillarde"
+	"Columbidés" -> "Tourterelle orientale"
+	"Columbidés" -> "Tourterelle rieuse"
+	"Columbidés" -> "Tourterelle triste"
+	"Columbidés" -> "Tourterelle turque"
+	"Alcédinidés" -> "Martin-chasseur de Smyrne"
+	"Alcédinidés" -> "Martin-pêcheur à ventre roux"
+	"Alcédinidés" -> "Martin-pêcheur d'Amérique"
+	"Alcédinidés" -> "Martin-pêcheur d'Europe"
+	"Alcédinidés" -> "Martin-pêcheur pie"
+	"Coraciidés" -> "Rollier d'Europe"
+	"Coraciidés" -> "Rollier indien"
+	"Méropidés" -> "Guêpier de Madagascar"
+	"Méropidés" -> "Guêpier de Perse"
+	"Méropidés" -> "Guêpier d'Europe"
+	"Cuculidés" -> "Ani à bec lisse"
+	"Cuculidés" -> "Coucou de l'Himalaya"
+	"Cuculidés" -> "Coucou didric"
+	"Cuculidés" -> "Coucou geai"
+	"Cuculidés" -> "Coucou gris"
+	"Cuculidés" -> "Coulicou à bec jaune"
+	"Cuculidés" -> "Coulicou à bec noir"
+	"Cuculidés" -> "Coulicou à tête grise"
+	"Cuculidés" -> "Coulicou de Vieillot"
+	"Cuculidés" -> "Coulicou manioc"
+	"Cuculidés" -> "Guira cantara"
+	"Falconidés" -> "Caracara à tête jaune"
+	"Falconidés" -> "Crécerelle d'Amérique"
+	"Falconidés" -> "Faucon concolore"
+	"Falconidés" -> "Faucon crécerelle"
+	"Falconidés" -> "Faucon crécerellette"
+	"Falconidés" -> "Faucon de Barbarie"
+	"Falconidés" -> "Faucon de l'Amour"
+	"Falconidés" -> "Faucon d'Éléonore"
+	"Falconidés" -> "Faucon émerillon"
+	"Falconidés" -> "Faucon gerfaut"
+	"Falconidés" -> "Faucon hobereau"
+	"Falconidés" -> "Faucon kobez"
+	"Falconidés" -> "Faucon lanier"
+	"Falconidés" -> "Faucon pèlerin"
+	"Falconidés" -> "Faucon sacre"
+	"Numididés" -> "Pintade de Numidie"
+	"Odontophoridés" -> "Colin de Californie"
+	"Odontophoridés" -> "Colin de Virginie"
+	"Phasianidés" -> "Caille des blés"
+	"Phasianidés" -> "Dindon sauvage"
+	"Phasianidés" -> "Faisan argenté"
+	"Phasianidés" -> "Faisan de Colchide"
+	"Phasianidés" -> "Faisan de Lady Amherst"
+	"Phasianidés" -> "Faisan doré"
+	"Phasianidés" -> "Faisan vénéré"
+	"Phasianidés" -> "Francolin d'Erckel"
+	"Phasianidés" -> "Francolin noir"
+	"Phasianidés" -> "Gélinotte des bois"
+	"Phasianidés" -> "Grand Tétras"
+	"Phasianidés" -> "Lagopède alpin"
+	"Phasianidés" -> "Lagopède des saules"
+	"Phasianidés" -> "Perdrix bartavelle"
+	"Phasianidés" -> "Perdrix choukar"
+	"Phasianidés" -> "Perdrix de Daourie"
+	"Phasianidés" -> "Perdrix gambra"
+	"Phasianidés" -> "Perdrix grise"
+	"Phasianidés" -> "Perdrix rouge"
+	"Phasianidés" -> "Perdrix si-si"
+	"Phasianidés" -> "Tétraogalle de Perse"
+	"Phasianidés" -> "Tétraogalle du Caucase"
+	"Phasianidés" -> "Tétras du Caucase"
+	"Phasianidés" -> "Tétras lyre"
+	"Gaviidés" -> "Plongeon à bec blanc"
+	"Gaviidés" -> "Plongeon arctique"
+	"Gaviidés" -> "Plongeon catmarin"
+	"Gaviidés" -> "Plongeon du Pacifique"
+	"Gaviidés" -> "Plongeon imbrin"
+	"Gruidés" -> "Grue cendrée"
+	"Gruidés" -> "Grue de Sibérie"
+	"Gruidés" -> "Grue demoiselle"
+	"Gruidés" -> "Grue du Canada"
+	"Rallidés" -> "Foulque à cachet blanc"
+	"Rallidés" -> "Foulque caronculée"
+	"Rallidés" -> "Foulque d'Amérique"
+	"Rallidés" -> "Foulque macroule"
+	"Rallidés" -> "Gallinule poule-d'eau"
+	"Rallidés" -> "Marouette de Baillon"
+	"Rallidés" -> "Marouette de Caroline"
+	"Rallidés" -> "Marouette ponctuée"
+	"Rallidés" -> "Marouette poussin"
+	"Rallidés" -> "Marouette rayée"
+	"Rallidés" -> "Râle à bec jaune"
+	"Rallidés" -> "Râle de Virginie"
+	"Rallidés" -> "Râle d'eau"
+	"Rallidés" -> "Râle des genêts"
+	"Rallidés" -> "Râle des prés"
+	"Rallidés" -> "Râle gris"
+	"Rallidés" -> "Talève d'Allen"
+	"Rallidés" -> "Talève sultane"
+	"Rallidés" -> "Talève violacée"
+	"Otididés" -> "Outarde barbue"
+	"Otididés" -> "Outarde canepetière"
+	"Otididés" -> "Outarde de Macqueen"
+	"Otididés" -> "Outarde houbara"
+	"Acrocephalidés" -> "Hypolaïs bottée"
+	"Acrocephalidés" -> "Hypolaïs des oliviers"
+	"Acrocephalidés" -> "Hypolaïs d'Upcher"
+	"Acrocephalidés" -> "Hypolaïs ictérine"
+	"Acrocephalidés" -> "Hypolaïs obscure"
+	"Acrocephalidés" -> "Hypolaïs pâle"
+	"Acrocephalidés" -> "Hypolaïs polyglotte"
+	"Acrocephalidés" -> "Hypolaïs rama"
+	"Acrocephalidés" -> "Lusciniole à moustaches"
+	"Acrocephalidés" -> "Phragmite aquatique"
+	"Acrocephalidés" -> "Phragmite des joncs"
+	"Acrocephalidés" -> "Rousserolle à gros bec"
+	"Acrocephalidés" -> "Rousserolle des buissons"
+	"Acrocephalidés" -> "Rousserolle d'Irak"
+	"Acrocephalidés" -> "Rousserolle effarvatte"
+	"Acrocephalidés" -> "Rousserolle isabelle"
+	"Acrocephalidés" -> "Rousserolle turdoïde"
+	"Acrocephalidés" -> "Rousserolle verderolle"
+	"Aegithalidés" -> "Mésange à longue queue"
+	"Alaudidés" -> "Alouette bilophe"
+	"Alaudidés" -> "Alouette calandre"
+	"Alaudidés" -> "Alouette calandrelle"
+	"Alaudidés" -> "Alouette des champs"
+	"Alaudidés" -> "Alouette haussecol"
+	"Alaudidés" -> "Alouette leucoptère"
+	"Alaudidés" -> "Alouette lulu"
+	"Alaudidés" -> "Alouette monticole"
+	"Alaudidés" -> "Alouette nègre"
+	"Alaudidés" -> "Alouette pispolette"
+	"Alaudidés" -> "Alouette raytal"
+	"Alaudidés" -> "Ammomane élégante"
+	"Alaudidés" -> "Ammomane isabelline"
+	"Alaudidés" -> "Cochevis de Thékla"
+	"Alaudidés" -> "Cochevis huppé"
+	"Alaudidés" -> "Sirli de Dupont"
+	"Alaudidés" -> "Sirli du désert"
+	"Bombycillidés" -> "Jaseur boréal"
+	"Bombycillidés" -> "Jaseur d'Amérique"
+	"Calcariidés" -> "Bruant des neiges"
+	"Calcariidés" -> "Bruant lapon"
+	"Cardinalidés" -> "Cardinal à poitrine rose"
+	"Cardinalidés" -> "Cardinal à tête noire"
+	"Cardinalidés" -> "Dickcissel d'Amérique"
+	"Cardinalidés" -> "Guiraca bleu"
+	"Cardinalidés" -> "Passerin azuré"
+	"Cardinalidés" -> "Passerin indigo"
+	"Cardinalidés" -> "Passerin nonpareil"
+	"Cardinalidés" -> "Passerin varié"
+	"Certhiidés" -> "Grimpereau des bois"
+	"Certhiidés" -> "Grimpereau des jardins"
+	"Cettidés" -> "Bouscarle de Cetti"
+	"Cinclidés" -> "Cincle plongeur"
+	"Cisticolidés" -> "Cisticole des joncs"
+	"Cisticolidés" -> "Prinia gracile"
+	"Coerébidés" -> "Sucrier à ventre jaune"
+	"Corvidés" -> "Cassenoix moucheté"
+	"Corvidés" -> "Chocard à bec jaune"
+	"Corvidés" -> "Choucas de Daourie"
+	"Corvidés" -> "Corbeau brun"
+	"Corvidés" -> "Corbeau familier"
+	"Corvidés" -> "Corbeau freux"
+	"Corvidés" -> "Corbeau pie"
+	"Corvidés" -> "Corneille mantelée"
+	"Corvidés" -> "Corneille noire"
+	"Corvidés" -> "Crave à bec rouge"
+	"Corvidés" -> "Geai des chênes"
+	"Corvidés" -> "Grand Corbeau"
+	"Corvidés" -> "Mésangeai imitateur"
+	"Corvidés" -> "Pie bavarde"
+	"Corvidés" -> "Pie bleue"
+	"Emberizidés" -> "Bruant à calotte blanche"
+	"Emberizidés" -> "Bruant à cou gris"
+	"Emberizidés" -> "Bruant à couronne blanche"
+	"Emberizidés" -> "Bruant à gorge blanche"
+	"Emberizidés" -> "Bruant à joues marron"
+	"Emberizidés" -> "Bruant à longue queue"
+	"Emberizidés" -> "Bruant à sourcils jaunes"
+	"Emberizidés" -> "Bruant à tête rousse"
+	"Emberizidés" -> "Bruant auréole"
+	"Emberizidés" -> "Bruant cendré"
+	"Emberizidés" -> "Bruant cendrillard"
+	"Emberizidés" -> "Bruant chanteur"
+	"Emberizidés" -> "Bruant chingolo"
+	"Emberizidés" -> "Bruant de Lincoln"
+	"Emberizidés" -> "Bruant de Pallas"
+	"Emberizidés" -> "Bruant de Stewart"
+	"Emberizidés" -> "Bruant des prés"
+	"Emberizidés" -> "Bruant des roseaux"
+	"Emberizidés" -> "Bruant fauve"
+	"Emberizidés" -> "Bruant fou"
+	"Emberizidés" -> "Bruant jaune"
+	"Emberizidés" -> "Bruant masqué"
+	"Emberizidés" -> "Bruant mélanocéphale"
+	"Emberizidés" -> "Bruant nain"
+	"Emberizidés" -> "Bruant ortolan"
+	"Emberizidés" -> "Bruant proyer"
+	"Emberizidés" -> "Bruant roux"
+	"Emberizidés" -> "Bruant rustique"
+	"Emberizidés" -> "Bruant striolé"
+	"Emberizidés" -> "Bruant zizi"
+	"Emberizidés" -> "Junco ardoisé"
+	"Emberizidés" -> "Tohi à flancs roux"
+	"Estrildidés" -> "Amadine cou-coupé"
+	"Estrildidés" -> "Astrild à joues orange"
+	"Estrildidés" -> "Astrild à tête noire"
+	"Estrildidés" -> "Astrild cendré"
+	"Estrildidés" -> "Astrild ondulé"
+	"Estrildidés" -> "Bengali rouge"
+	"Estrildidés" -> "Capucin à dos marron"
+	"Estrildidés" -> "Capucin à tête blanche"
+	"Estrildidés" -> "Capucin bec-d'argent"
+	"Estrildidés" -> "Capucin bec-de-plomb"
+	"Estrildidés" -> "Diamant mandarin"
+	"Fringillidés" -> "Bec-croisé bifascié"
+	"Fringillidés" -> "Bec-croisé des sapins"
+	"Fringillidés" -> "Bec-croisé perroquet"
+	"Fringillidés" -> "Bouvreuil des Açores"
+	"Fringillidés" -> "Bouvreuil pivoine"
+	"Fringillidés" -> "Chardonneret élégant"
+	"Fringillidés" -> "Durbec des sapins"
+	"Fringillidés" -> "Grosbec casse-noyaux"
+	"Fringillidés" -> "Grosbec errant"
+	"Fringillidés" -> "Gros-bec migrateur"
+	"Fringillidés" -> "Linotte à bec jaune"
+	"Fringillidés" -> "Linotte mélodieuse"
+	"Fringillidés" -> "Organiste louis-d'or"
+	"Fringillidés" -> "Pinson bleu"
+	"Fringillidés" -> "Pinson des arbres"
+	"Fringillidés" -> "Pinson du Nord"
+	"Fringillidés" -> "Roselin à longue queue"
+	"Fringillidés" -> "Roselin cramoisi"
+	"Fringillidés" -> "Roselin de l'Atlas"
+	"Fringillidés" -> "Roselin de Lichtenstein"
+	"Fringillidés" -> "Roselin de Mongolie"
+	"Fringillidés" -> "Roselin githagine"
+	"Fringillidés" -> "Roselin rose"
+	"Fringillidés" -> "Roselin tacheté"
+	"Fringillidés" -> "Serin à front rouge"
+	"Fringillidés" -> "Serin cini"
+	"Fringillidés" -> "Serin des Canaries"
+	"Fringillidés" -> "Serin du Mozambique"
+	"Fringillidés" -> "Sizerin blanchâtre"
+	"Fringillidés" -> "Sizerin cabaret"
+	"Fringillidés" -> "Sizerin flammé"
+	"Fringillidés" -> "Tarin des aulnes"
+	"Fringillidés" -> "Venturon corse"
+	"Fringillidés" -> "Venturon montagnard"
+	"Fringillidés" -> "Verdier de Chine"
+	"Fringillidés" -> "Verdier d'Europe"
+	"Hirundinidés" -> "Hirondelle à ailes blanches"
+	"Hirundinidés" -> "Hirondelle à front blanc"
+	"Hirundinidés" -> "Hirondelle à front brun"
+	"Hirundinidés" -> "Hirondelle à ventre blanc"
+	"Hirundinidés" -> "Hirondelle bicolore"
+	"Hirundinidés" -> "Hirondelle de Cuba"
+	"Hirundinidés" -> "Hirondelle de fenêtre"
+	"Hirundinidés" -> "Hirondelle de rivage"
+	"Hirundinidés" -> "Hirondelle de rochers"
+	"Hirundinidés" -> "Hirondelle paludicole"
+	"Hirundinidés" -> "Hirondelle rousseline"
+	"Hirundinidés" -> "Hirondelle rustique"
+	"Hypocoliidés" -> "Hypocolius gris"
+	"Ictéridés" -> "Carouge à capuchon"
+	"Ictéridés" -> "Carouge à tête jaune"
+	"Ictéridés" -> "Goglu des prés"
+	"Ictéridés" -> "Oriole cul-noir"
+	"Ictéridés" -> "Oriole du Nord"
+	"Ictéridés" -> "Oriole jaune"
+	"Ictéridés" -> "Oriole troupiale"
+	"Ictéridés" -> "Quiscale bronzé"
+	"Ictéridés" -> "Quiscale merle"
+	"Ictéridés" -> "Quiscale rouilleux"
+	"Ictéridés" -> "Sturnelle des prés"
+	"Ictéridés" -> "Vacher à tête brune"
+	"Ictéridés" -> "Vacher luisant"
+	"Incertain" -> "Paruline polyglotte"
+	"Laniidés" -> "Pie-grièche à poitrine rose"
+	"Laniidés" -> "Pie-grièche à tête rousse"
+	"Laniidés" -> "Pie-grièche brune"
+	"Laniidés" -> "Pie-grièche écorcheur"
+	"Laniidés" -> "Pie-grièche grise"
+	"Laniidés" -> "Pie-grièche isabelle"
+	"Laniidés" -> "Pie-grièche masquée"
+	"Laniidés" -> "Pie-grièche méridionale"
+	"Laniidés" -> "Pie-grièche schach"
+	"Mimidés" -> "Moqueur chat"
+	"Mimidés" -> "Moqueur corossol"
+	"Mimidés" -> "Moqueur des savanes"
+	"Mimidés" -> "Moqueur grivotte"
+	"Mimidés" -> "Moqueur polyglotte"
+	"Mimidés" -> "Moqueur roux"
+	"Mimidés" -> "Trembleur brun"
+	"Mimidés" -> "Trembleur gris"
+	"Motacillidés" -> "Bergeronnette citrine"
+	"Motacillidés" -> "Bergeronnette de Yarrell"
+	"Motacillidés" -> "Bergeronnette des Balkans"
+	"Motacillidés" -> "Bergeronnette des ruisseaux"
+	"Motacillidés" -> "Bergeronnette grise"
+	"Motacillidés" -> "Bergeronnette printanière"
+	"Motacillidés" -> "Pipit à dos olive"
+	"Motacillidés" -> "Pipit à gorge rousse"
+	"Motacillidés" -> "Pipit à long bec"
+	"Motacillidés" -> "Pipit de Berthelot"
+	"Motacillidés" -> "Pipit de Godlewski"
+	"Motacillidés" -> "Pipit de la Petchora"
+	"Motacillidés" -> "Pipit de Richard"
+	"Motacillidés" -> "Pipit des arbres"
+	"Motacillidés" -> "Pipit farlousane"
+	"Motacillidés" -> "Pipit farlouse"
+	"Motacillidés" -> "Pipit maritime"
+	"Motacillidés" -> "Pipit rousseline"
+	"Motacillidés" -> "Pipit spioncelle"
+	"Muscicapidés" -> "Agrobate roux"
+	"Muscicapidés" -> "Calliope sibérienne"
+	"Muscicapidés" -> "Gobemouche à collier"
+	"Muscicapidés" -> "Gobemouche à demi-collier"
+	"Muscicapidés" -> "Gobemouche brun"
+	"Muscicapidés" -> "Gobemouche de la taïga"
+	"Muscicapidés" -> "Gobemouche gris"
+	"Muscicapidés" -> "Gobemouche mugimaki"
+	"Muscicapidés" -> "Gobemouche nain"
+	"Muscicapidés" -> "Gobemouche noir"
+	"Muscicapidés" -> "Gorgebleue à miroir"
+	"Muscicapidés" -> "Iranie à gorge blanche"
+	"Muscicapidés" -> "Monticole bleu"
+	"Muscicapidés" -> "Monticole de roche"
+	"Muscicapidés" -> "Robin à flancs roux"
+	"Muscicapidés" -> "Rossignol bleu"
+	"Muscicapidés" -> "Rossignol philomèle"
+	"Muscicapidés" -> "Rossignol progné"
+	"Muscicapidés" -> "Rougegorge familier"
+	"Muscicapidés" -> "Rougequeue à front blanc"
+	"Muscicapidés" -> "Rougequeue aurore"
+	"Muscicapidés" -> "Rougequeue de Güldenstädt"
+	"Muscicapidés" -> "Rougequeue de Moussier"
+	"Muscicapidés" -> "Rougequeue noir"
+	"Muscicapidés" -> "Tarier de Sibérie"
+	"Muscicapidés" -> "Tarier des Canaries"
+	"Muscicapidés" -> "Tarier des prés"
+	"Muscicapidés" -> "Tarier pâtre"
+	"Muscicapidés" -> "Tarier pie"
+	"Muscicapidés" -> "Traquet à capuchon"
+	"Muscicapidés" -> "Traquet à tête blanche"
+	"Muscicapidés" -> "Traquet à tête grise"
+	"Muscicapidés" -> "Traquet de Chypre"
+	"Muscicapidés" -> "Traquet de Finsch"
+	"Muscicapidés" -> "Traquet de Perse"
+	"Muscicapidés" -> "Traquet deuil"
+	"Muscicapidés" -> "Traquet du désert"
+	"Muscicapidés" -> "Traquet isabelle"
+	"Muscicapidés" -> "Traquet motteux"
+	"Muscicapidés" -> "Traquet oreillard"
+	"Muscicapidés" -> "Traquet pie"
+	"Muscicapidés" -> "Traquet rieur"
+	"Mégaluridés" -> "Locustelle de Pallas"
+	"Mégaluridés" -> "Locustelle fasciée"
+	"Mégaluridés" -> "Locustelle fluviatile"
+	"Mégaluridés" -> "Locustelle lancéolée"
+	"Mégaluridés" -> "Locustelle luscinioïde"
+	"Mégaluridés" -> "Locustelle tachetée"
+	"Oriolidés" -> "Loriot d'Europe"
+	"Panuridés" -> "Panure à moustaches"
+	"Paridés" -> "Mésange azurée"
+	"Paridés" -> "Mésange bleue"
+	"Paridés" -> "Mésange boréale"
+	"Paridés" -> "Mésange charbonnière"
+	"Paridés" -> "Mésange huppée"
+	"Paridés" -> "Mésange lapone"
+	"Paridés" -> "Mésange lugubre"
+	"Paridés" -> "Mésange noire"
+	"Paridés" -> "Mésange nonnette"
+	"Parulidés" -> "Paruline à ailes bleues"
+	"Parulidés" -> "Paruline à ailes dorées"
+	"Parulidés" -> "Paruline à calotte noire"
+	"Parulidés" -> "Paruline à capuchon"
+	"Parulidés" -> "Paruline à collier"
+	"Parulidés" -> "Paruline à couronne rousse"
+	"Parulidés" -> "Paruline à croupion jaune"
+	"Parulidés" -> "Paruline à flancs marron"
+	"Parulidés" -> "Paruline à gorge grise"
+	"Parulidés" -> "Paruline à gorge jaune"
+	"Parulidés" -> "Paruline à gorge noire"
+	"Parulidés" -> "Paruline à gorge orangée"
+	"Parulidés" -> "Paruline à joues grises"
+	"Parulidés" -> "Paruline à poitrine baie"
+	"Parulidés" -> "Paruline à tête cendrée"
+	"Parulidés" -> "Paruline azurée"
+	"Parulidés" -> "Paruline bleue"
+	"Parulidés" -> "Paruline caféiette"
+	"Parulidés" -> "Paruline couronnée"
+	"Parulidés" -> "Paruline d'Adélaïde"
+	"Parulidés" -> "Paruline des pins"
+	"Parulidés" -> "Paruline des prés"
+	"Parulidés" -> "Paruline des rochers"
+	"Parulidés" -> "Paruline des ruisseaux"
+	"Parulidés" -> "Paruline du Canada"
+	"Parulidés" -> "Paruline du Kentucky"
+	"Parulidés" -> "Paruline flamboyante"
+	"Parulidés" -> "Paruline hochequeue"
+	"Parulidés" -> "Paruline jaune"
+	"Parulidés" -> "Paruline masquée"
+	"Parulidés" -> "Paruline noir et blanc"
+	"Parulidés" -> "Paruline obscure"
+	"Parulidés" -> "Paruline orangée"
+	"Parulidés" -> "Paruline rayée"
+	"Parulidés" -> "Paruline tigrée"
+	"Parulidés" -> "Paruline triste"
+	"Parulidés" -> "Paruline verdâtre"
+	"Passeridés" -> "Moineau à gorge jaune"
+	"Passeridés" -> "Moineau cisalpin"
+	"Passeridés" -> "Moineau de la mer Morte"
+	"Passeridés" -> "Moineau domestique"
+	"Passeridés" -> "Moineau espagnol"
+	"Passeridés" -> "Moineau friquet"
+	"Passeridés" -> "Moineau pâle"
+	"Passeridés" -> "Moineau soulcie"
+	"Passeridés" -> "Niverolle alpine"
+	"Phylloscopidés" -> "Pouillot à grands sourcils"
+	"Phylloscopidés" -> "Pouillot boréal"
+	"Phylloscopidés" -> "Pouillot brun"
+	"Phylloscopidés" -> "Pouillot de Bonelli"
+	"Phylloscopidés" -> "Pouillot de Hume"
+	"Phylloscopidés" -> "Pouillot de Pallas"
+	"Phylloscopidés" -> "Pouillot de Schwarz"
+	"Phylloscopidés" -> "Pouillot de Temminck"
+	"Phylloscopidés" -> "Pouillot des Canaries"
+	"Phylloscopidés" -> "Pouillot du Caucase"
+	"Phylloscopidés" -> "Pouillot fitis"
+	"Phylloscopidés" -> "Pouillot ibérique"
+	"Phylloscopidés" -> "Pouillot modeste"
+	"Phylloscopidés" -> "Pouillot montagnard"
+	"Phylloscopidés" -> "Pouillot oriental"
+	"Phylloscopidés" -> "Pouillot siffleur"
+	"Phylloscopidés" -> "Pouillot véloce"
+	"Phylloscopidés" -> "Pouillot verdâtre"
+	"Plocéidés" -> "Euplecte franciscain"
+	"Plocéidés" -> "Euplecte vorabé"
+	"Plocéidés" -> "Tisserin gendarme"
+	"Plocéidés" -> "Tisserin jaune"
+	"Plocéidés" -> "Travailleur à bec rouge"
+	"Prunellidés" -> "Accenteur à gorge noire"
+	"Prunellidés" -> "Accenteur alpin"
+	"Prunellidés" -> "Accenteur de Radde"
+	"Prunellidés" -> "Accenteur montanelle"
+	"Prunellidés" -> "Accenteur mouchet"
+	"Pycnonotidés" -> "Bulbul d'Arabie"
+	"Pycnonotidés" -> "Bulbul des jardins"
+	"Pycnonotidés" -> "Bulbul orphée"
+	"Régulidés" -> "Roitelet à couronne rubis"
+	"Régulidés" -> "Roitelet de Madère"
+	"Régulidés" -> "Roitelet huppé"
+	"Régulidés" -> "Roitelet triple-bandeau"
+	"Rémizidés" -> "Rémiz couronnée"
+	"Rémizidés" -> "Rémiz penduline"
+	"Sittidés" -> "Sittelle à poitrine rousse"
+	"Sittidés" -> "Sittelle corse"
+	"Sittidés" -> "Sittelle de Krüper"
+	"Sittidés" -> "Sittelle de Neumayer"
+	"Sittidés" -> "Sittelle torchepot"
+	"Sturnidés" -> "Choucador pourpré"
+	"Sturnidés" -> "Étourneau de Daourie"
+	"Sturnidés" -> "Étourneau roselin"
+	"Sturnidés" -> "Étourneau sansonnet"
+	"Sturnidés" -> "Étourneau unicolore"
+	"Sturnidés" -> "Mainate religieux"
+	"Sturnidés" -> "Martin triste"
+	"Sylviidés" -> "Fauvelle de Moltoni"
+	"Sylviidés" -> "Fauvette à lunettes"
+	"Sylviidés" -> "Fauvette à tête noire"
+	"Sylviidés" -> "Fauvette babillarde"
+	"Sylviidés" -> "Fauvette de Chypre"
+	"Sylviidés" -> "Fauvette de l'Atlas"
+	"Sylviidés" -> "Fauvette de Ménétries"
+	"Sylviidés" -> "Fauvette de Rüppell"
+	"Sylviidés" -> "Fauvette des jardins"
+	"Sylviidés" -> "Fauvette épervière"
+	"Sylviidés" -> "Fauvette grisette"
+	"Sylviidés" -> "Fauvette mélanocéphale"
+	"Sylviidés" -> "Fauvette naine"
+	"Sylviidés" -> "Fauvette orphée"
+	"Sylviidés" -> "Fauvette passerinette"
+	"Sylviidés" -> "Fauvette pitchou"
+	"Sylviidés" -> "Fauvette sarde"
+	"Thraupidés" -> "Calliste dos-bleu"
+	"Thraupidés" -> "Jacarini noir"
+	"Thraupidés" -> "Sicale bouton-d'or"
+	"Thraupidés" -> "Sicale des savanes"
+	"Thraupidés" -> "Sporophile à ventre jaune"
+	"Thraupidés" -> "Sporophile cici"
+	"Thraupidés" -> "Sporophile rougegorge"
+	"Thraupidés" -> "Tangara écarlate"
+	"Thraupidés" -> "Tangara orangé"
+	"Thraupidés" -> "Tangara vermillon"
+	"Tichodromidés" -> "Tichodrome échelette"
+	"Timaliidés" -> "Léiothrix jaune"
+	"Timaliidés" -> "Paradoxornis à gorge cendrée"
+	"Troglodytidés" -> "Troglodyte des marais"
+	"Troglodytidés" -> "Troglodyte familier"
+	"Troglodytidés" -> "Troglodyte mignon"
+	"Turdidés" -> "Grive à ailes rousses"
+	"Turdidés" -> "Grive à collier"
+	"Turdidés" -> "Grive à dos olive"
+	"Turdidés" -> "Grive à gorge noire"
+	"Turdidés" -> "Grive à gorge rousse"
+	"Turdidés" -> "Grive à joues grises"
+	"Turdidés" -> "Grive dama"
+	"Turdidés" -> "Grive de Bicknell"
+	"Turdidés" -> "Grive de Naumann"
+	"Turdidés" -> "Grive de Sibérie"
+	"Turdidés" -> "Grive des bois"
+	"Turdidés" -> "Grive dorée"
+	"Turdidés" -> "Grive draine"
+	"Turdidés" -> "Grive fauve"
+	"Turdidés" -> "Grive litorne"
+	"Turdidés" -> "Grive mauvis"
+	"Turdidés" -> "Grive musicienne"
+	"Turdidés" -> "Grive obscure"
+	"Turdidés" -> "Grive solitaire"
+	"Turdidés" -> "Merle à plastron"
+	"Turdidés" -> "Merle cacao"
+	"Turdidés" -> "Merle d'Amérique"
+	"Turdidés" -> "Merle noir"
+	"Turdidés" -> "Merle pâle"
+	"Turdidés" -> "Merle unicolore"
+	"Turdidés" -> "Merle vantard"
+	"Turdidés" -> "Solitaire siffleur"
+	"Tyrannidés" -> "Élénie à bec court"
+	"Tyrannidés" -> "Élénie à ventre jaune"
+	"Tyrannidés" -> "Élénie menue"
+	"Tyrannidés" -> "Élénie siffleuse"
+	"Tyrannidés" -> "Moucherolle à côtés olive"
+	"Tyrannidés" -> "Moucherolle à ventre jaune"
+	"Tyrannidés" -> "Moucherolle d'Euler"
+	"Tyrannidés" -> "Moucherolle gobemouche"
+	"Tyrannidés" -> "Moucherolle phébi"
+	"Tyrannidés" -> "Moucherolle vert"
+	"Tyrannidés" -> "Tyran bavard"
+	"Tyrannidés" -> "Tyran de Wied"
+	"Tyrannidés" -> "Tyran des savanes"
+	"Tyrannidés" -> "Tyran gris"
+	"Tyrannidés" -> "Tyran janeau"
+	"Tyrannidés" -> "Tyran mélancolique"
+	"Tyrannidés" -> "Tyran tritri"
+	"Tyrannidés" -> "Tyranneau des palétuviers"
+	"Viduidés" -> "Veuve de paradis"
+	"Viduidés" -> "Veuve dominicaine"
+	"Viréonidés" -> "Viréo à gorge jaune"
+	"Viréonidés" -> "Viréo à moustaches"
+	"Viréonidés" -> "Viréo à oeil rouge"
+	"Viréonidés" -> "Viréo de Philadelphie"
+	"Phaethontidés" -> "Phaéton à bec jaune"
+	"Phaethontidés" -> "Phaéton à bec rouge"
+	"Phoenicoptéridés" -> "Flamant des Caraïbes"
+	"Phoenicoptéridés" -> "Flamant du Chili"
+	"Phoenicoptéridés" -> "Flamant nain"
+	"Phoenicoptéridés" -> "Flamant rose"
+	"Picidés" -> "Pic à dos blanc"
+	"Picidés" -> "Pic cendré"
+	"Picidés" -> "Pic épeiche"
+	"Picidés" -> "Pic épeichette"
+	"Picidés" -> "Pic flamboyant"
+	"Picidés" -> "Pic maculé"
+	"Picidés" -> "Pic mar"
+	"Picidés" -> "Pic noir"
+	"Picidés" -> "Pic syriaque"
+	"Picidés" -> "Pic tridactyle"
+	"Picidés" -> "Pic vert"
+	"Picidés" -> "Torcol fourmilier"
+	"Podicipédidés" -> "Grand Grèbe"
+	"Podicipédidés" -> "Grèbe à bec bigarré"
+	"Podicipédidés" -> "Grèbe à cou noir"
+	"Podicipédidés" -> "Grèbe castagneux"
+	"Podicipédidés" -> "Grèbe esclavon"
+	"Podicipédidés" -> "Grèbe huppé"
+	"Podicipédidés" -> "Grèbe jougris"
+	"Diomédéidés" -> "Albatros à nez jaune"
+	"Diomédéidés" -> "Albatros à pieds noirs"
+	"Diomédéidés" -> "Albatros à sourcils noirs"
+	"Diomédéidés" -> "Albatros hurleur"
+	"Hydrobatidés" -> "Océanite culblanc"
+	"Hydrobatidés" -> "Océanite de Castro"
+	"Hydrobatidés" -> "Océanite de Swinhoe"
+	"Hydrobatidés" -> "Océanite de Wilson"
+	"Hydrobatidés" -> "Océanite frégate"
+	"Hydrobatidés" -> "Océanite tempête"
+	"Procellariidés" -> "Damier du Cap"
+	"Procellariidés" -> "Fulmar boréal"
+	"Procellariidés" -> "Petit Puffin"
+	"Procellariidés" -> "Pétrel de Bulwer"
+	"Procellariidés" -> "Pétrel de Jouanin"
+	"Procellariidés" -> "Pétrel de la Trinité"
+	"Procellariidés" -> "Pétrel de Madère"
+	"Procellariidés" -> "Pétrel de Schlegel"
+	"Procellariidés" -> "Pétrel diablotin"
+	"Procellariidés" -> "Pétrel gongon"
+	"Procellariidés" -> "Pétrel hérault"
+	"Procellariidés" -> "Pétrel soyeux"
+	"Procellariidés" -> "Puffin cendré"
+	"Procellariidés" -> "Puffin d'Audubon"
+	"Procellariidés" -> "Puffin de Buller"
+	"Procellariidés" -> "Puffin de Macaronésie"
+	"Procellariidés" -> "Puffin des Anglais"
+	"Procellariidés" -> "Puffin des Baléares"
+	"Procellariidés" -> "Puffin fuligineux"
+	"Procellariidés" -> "Puffin majeur"
+	"Procellariidés" -> "Puffin yelkouan"
+	"Psittacidés" -> "Amazone à épaulettes jaunes"
+	"Psittacidés" -> "Amazone à front bleu"
+	"Psittacidés" -> "Conure à tête bleue"
+	"Psittacidés" -> "Conure à tête rouge"
+	"Psittacidés" -> "Conure cuivrée"
+	"Psittacidés" -> "Conure de Patagonie"
+	"Psittacidés" -> "Conure nanday"
+	"Psittacidés" -> "Conure veuve"
+	"Psittacidés" -> "Inséparable de Fischer"
+	"Psittacidés" -> "Inséparable masqué"
+	"Psittacidés" -> "Perroquet youyou"
+	"Psittacidés" -> "Perruche à collier"
+	"Psittacidés" -> "Perruche alexandre"
+	"Psittacidés" -> "Perruche ondulée"
+	"Psittacidés" -> "Toui été"
+	"Ptéroclididés" -> "Ganga à ventre brun"
+	"Ptéroclididés" -> "Ganga cata"
+	"Ptéroclididés" -> "Ganga quadribande"
+	"Ptéroclididés" -> "Ganga tacheté"
+	"Ptéroclididés" -> "Ganga unibande"
+	"Ptéroclididés" -> "Syrrhapte paradoxal"
+	"Anhingidés" -> "Anhinga d'Afrique"
+	"Anhingidés" -> "Anhinga d'Amérique"
+	"Ardéidés" -> "Aigrette bleue"
+	"Ardéidés" -> "Aigrette des récifs"
+	"Ardéidés" -> "Aigrette garzette"
+	"Ardéidés" -> "Aigrette neigeuse"
+	"Ardéidés" -> "Aigrette roussâtre"
+	"Ardéidés" -> "Aigrette tricolore"
+	"Ardéidés" -> "Bihoreau gris"
+	"Ardéidés" -> "Bihoreau violacé"
+	"Ardéidés" -> "Blongios de Sturm"
+	"Ardéidés" -> "Blongios mandchou"
+	"Ardéidés" -> "Blongios nain"
+	"Ardéidés" -> "Butor d'Amérique"
+	"Ardéidés" -> "Butor étoilé"
+	"Ardéidés" -> "Butor mirasol"
+	"Ardéidés" -> "Crabier chevelu"
+	"Ardéidés" -> "Crabier chinois"
+	"Ardéidés" -> "Grand Héron"
+	"Ardéidés" -> "Grande Aigrette"
+	"Ardéidés" -> "Héron cendré"
+	"Ardéidés" -> "Héron garde-boeufs"
+	"Ardéidés" -> "Héron mélanocéphale"
+	"Ardéidés" -> "Héron pourpré"
+	"Ardéidés" -> "Héron strié"
+	"Ardéidés" -> "Héron vert"
+	"Ardéidés" -> "Petit Blongios"
+	"Frégatidés" -> "Frégate aigle-de-mer"
+	"Frégatidés" -> "Frégate superbe"
+	"Phalacrocoracidés" -> "Cormoran à aigrettes"
+	"Phalacrocoracidés" -> "Cormoran huppé"
+	"Phalacrocoracidés" -> "Cormoran pygmée"
+	"Phalacrocoracidés" -> "Cormoran vigua"
+	"Phalacrocoracidés" -> "Grand Cormoran"
+	"Pélécanidés" -> "Pélican blanc"
+	"Pélécanidés" -> "Pélican frisé"
+	"Pélécanidés" -> "Pélican gris"
+	"Sulidés" -> "Fou à pieds rouges"
+	"Sulidés" -> "Fou brun"
+	"Sulidés" -> "Fou de Bassan"
+	"Sulidés" -> "Fou du Cap"
+	"Sulidés" -> "Fou masqué"
+	"Threskiornithidés" -> "Ibis chauve"
+	"Threskiornithidés" -> "Ibis falcinelle"
+	"Threskiornithidés" -> "Ibis rouge"
+	"Threskiornithidés" -> "Ibis sacré"
+	"Threskiornithidés" -> "Spatule blanche"
+	"Threskiornithidés" -> "Spatule d'Afrique"
+	"Threskiornithidés" -> "Spatule rosée"
+	"Strigidés" -> "Chevêche d'Athéna"
+	"Strigidés" -> "Chevêche des terriers"
+	"Strigidés" -> "Chevêchette d'Europe"
+	"Strigidés" -> "Chouette de l'Oural"
+	"Strigidés" -> "Chouette de Tengmalm"
+	"Strigidés" -> "Chouette épervière"
+	"Strigidés" -> "Chouette hulotte"
+	"Strigidés" -> "Chouette lapone"
+	"Strigidés" -> "Grand-duc d'Europe"
+	"Strigidés" -> "Harfang des neiges"
+	"Strigidés" -> "Hibou des marais"
+	"Strigidés" -> "Hibou du Cap"
+	"Strigidés" -> "Hibou moyen-duc"
+	"Strigidés" -> "Kétoupa brun"
+	"Strigidés" -> "Petit-duc de Bruce"
+	"Strigidés" -> "Petit-duc scops"
+	"Tytonidés" -> "Effraie des clochers"
+}

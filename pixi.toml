@@ -1,0 +1,14 @@
+[workspace]
+channels = ["conda-forge"]
+name = "photos"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+exiv2 = ">=0.28.9,<0.29"
+python = ">=3.11,<3.13"
+pip = ">=26.2.1,<27"
+pandas = ">=3.0.6,<4"
+
