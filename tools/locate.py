@@ -1,6 +1,5 @@
 from geopy.geocoders import Nominatim
 from geopy.point import Point
-import exiv2
 
 class Locate (object):
     def __init__(self, place=None, gps=None) -> None:

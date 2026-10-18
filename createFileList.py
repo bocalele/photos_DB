@@ -21,9 +21,5 @@ for file in tqdm(lFiles, desc="Lecture des métadonnées", unit="fichier"):
 
 df = pd.concat(rows, ignore_index=True)
 
-df.to_csv(
-    "photos.csv",
-    index=False,
-    encoding="utf-8-sig"
-)
+df.to_csv("photos.csv", index=False,encoding="utf-8-sig")
 

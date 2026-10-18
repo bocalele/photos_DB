@@ -1,0 +1,14 @@
+[workspace]
+channels = ["conda-forge"]
+name = "faune"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+exiftool = ">=13.59,<14"
+python = "3.12.*"
+
+[pypi-dependencies]
+pybioclip = ">=2.1.6, <3"

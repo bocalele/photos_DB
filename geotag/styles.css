@@ -1,0 +1,176 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --background: #171a27;
+  --panel: #23283b;
+  --surface: #2c3249;
+  --text: #edf0f7;
+  --muted: #a3aac0;
+  --accent: #f1be4c;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--background); color: var(--text); }
+button, input, textarea { font: inherit; }
+button {
+  border: 1px solid #ffffff20;
+  border-radius: 7px;
+  padding: 9px 12px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+button:hover { background: #3a415e; }
+button:disabled { opacity: .6; cursor: default; }
+input:not([type="range"]) {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #ffffff24;
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(380px, 1.15fr);
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+.gallery, .map-panel { position: relative; min-width: 0; min-height: 0; }
+.gallery { display: flex; flex-direction: column; border-right: 1px solid #0008; }
+.gallery-header, .gallery-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid #ffffff18;
+}
+.gallery-header h1 { margin: 0 0 5px; font-size: 18px; }
+#photo-count { margin: 0; color: var(--muted); font-size: 12px; }
+.thumbnail-size { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.thumbnail-size input { width: 100px; accent-color: var(--accent); }
+.gallery-tools { justify-content: flex-start; flex-wrap: wrap; }
+.metadata-progress {
+  color: var(--muted);
+  font-size: 12px;
+}
+.metadata-progress progress { display: block; width: 100%; height: 12px; margin-bottom: 6px; accent-color: var(--accent); }
+#save-errors { max-height: 120px; overflow: auto; margin: 6px 0 0; padding-left: 20px; color: #ff8787; }
+
+#photo-grid {
+  --tile-size: 160px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--tile-size)), var(--tile-size)));
+  grid-auto-rows: max-content;
+  justify-content: start;
+  align-content: start;
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+}
+.photo-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--panel);
+  cursor: pointer;
+}
+.photo-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px #f1be4c40; }
+.photo-card img {
+  display: block;
+  width: 100%;
+  height: var(--tile-size);
+  object-fit: contain;
+  background: #11131c;
+}
+.photo-card figcaption { padding: 7px 8px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.photo-checkbox { position: absolute; z-index: 1; top: 7px; left: 7px; width: 19px; height: 19px; accent-color: var(--accent); }
+.metadata-badges {
+  position: absolute;
+  z-index: 1;
+  top: 7px;
+  right: 7px;
+  display: flex;
+  gap: 4px;
+}
+.metadata-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 5px;
+  border: 1px solid #ffffff24;
+  border-radius: 5px;
+  background: #171a27e8;
+  font-size: 10px;
+  line-height: 1.2;
+}
+.metadata-badge.present { color: #71d3a4; }
+.metadata-badge.missing { color: #a3aac0; }
+.metadata-badge.unknown { color: #f1be4c; }
+.message { grid-column: 1 / -1; padding: 30px 10px; color: var(--muted); text-align: center; }
+
+.map-panel { background: #11131c; }
+#map { width: 100%; height: 100%; }
+.place-search { position: absolute; z-index: 1000; top: 14px; left: 56px; width: min(430px, calc(100% - 72px)); }
+.place-search input { width: 100%; background: var(--panel); box-shadow: 0 2px 10px #0008; }
+#place-suggestions {
+  display: none;
+  max-height: 240px;
+  overflow: auto;
+  margin-top: 4px;
+  border: 1px solid #ffffff24;
+  border-radius: 7px;
+  background: var(--panel);
+  box-shadow: 0 4px 16px #0008;
+}
+#place-suggestions:not(:empty) { display: block; }
+.suggestion { display: block; width: 100%; border: 0; border-radius: 0; text-align: left; white-space: normal; }
+.map-hint {
+  position: absolute;
+  z-index: 500;
+  bottom: 16px;
+  left: 16px;
+  max-width: calc(100% - 32px);
+  padding: 9px 12px;
+  border: 1px solid #ffffff24;
+  border-radius: 7px;
+  background: #141626ed;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.overlay { position: fixed; z-index: 2000; inset: 0; display: none; align-items: center; justify-content: center; padding: 16px; background: #080a12bb; }
+.overlay.open { display: flex; }
+.editor { display: flex; flex-direction: column; gap: 13px; width: min(540px, 100%); padding: 22px; border: 1px solid #ffffff24; border-radius: 12px; background: var(--panel); box-shadow: 0 18px 48px #0009; }
+.editor h2 { margin: 0; font-size: 18px; }
+.editor > p { margin: -8px 0 0; color: var(--muted); font-size: 13px; }
+.editor > label, .coordinates label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12px; }
+.coordinates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#save-status { min-height: 18px; color: var(--muted); font-size: 12px; }
+#save-status.error { color: #ff8787; }
+#save-status.success { color: #71d3a4; }
+#save-progress { padding: 0; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.primary { border: 0; background: var(--accent); color: #171a27; font-weight: 650; }
+.primary:hover { background: #ffd061; }
+
+@media (max-width: 760px) {
+  .workspace { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(250px, .85fr); }
+  .gallery { border-right: 0; border-bottom: 1px solid #0008; }
+  .gallery-header, .gallery-tools { padding: 10px; }
+  .gallery-tools { flex-wrap: wrap; }
+  .thumbnail-size { gap: 5px; font-size: 10px; }
+  .thumbnail-size input { width: 72px; }
+  #photo-grid { gap: 7px; padding: 8px; }
+}

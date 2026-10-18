@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Faune</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="workspace">
+    <header class="gallery-header">
+      <div>
+        <h1>Faune</h1>
+        <p id="photo-count">Chargement des photos…</p>
+        <p id="directory-path"></p>
+      </div>
+      <label class="thumbnail-size" for="thumbnail-size">
+        Taille des vignettes
+        <input id="thumbnail-size" type="range" min="90" max="280" value="170">
+      </label>
+    </header>
+    <nav class="gallery-tools" aria-label="Actions sur les photos">
+      <button id="select-all" type="button">Tout sélectionner</button>
+      <button id="deselect-photos" type="button" disabled>Désélectionner</button>
+      <button id="classify-photos" class="primary" type="button" disabled>
+        Classer les photos sélectionnées
+      </button>
+    </nav>
+    <section id="classification-progress" class="classification-progress" hidden>
+      <progress id="progress-bar" max="100" value="0"></progress>
+      <span id="progress-status" role="status"></span>
+      <ul id="classification-errors"></ul>
+    </section>
+    <section id="photo-grid" aria-live="polite"></section>
+  </main>
+</body>
+</html>

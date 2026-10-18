@@ -1,36 +1,46 @@
-import exiftool
+import shutil
+import subprocess
+from os import PathLike
 
-def set_metadata(filepath, categories, dry_run=False):
 
-    args = []
-    writable_categories = { "EXIF", "IPTC","XMP"}
+WRITABLE_CATEGORIES = {"EXIF", "IPTC", "XMP"}
 
+
+def set_metadata(filepath: str | PathLike, categories: dict, dry_run=False):
+    arguments = ["-overwrite_original"]
     for category, metadata in categories.items():
-        if category not in writable_categories:
+        if category not in WRITABLE_CATEGORIES:
             continue
-
+        if not isinstance(metadata, dict):
+            raise TypeError(f"La catégorie {category} doit être un dictionnaire.")
         for tag, value in metadata.items():
             if value is None:
                 continue
+            values = value if isinstance(value, list) else [value]
+            arguments.extend(
+                f"-{category}:{tag}={item}" for item in values
+            )
 
-            if isinstance(value, list):
-                for item in value:
-                    args.append(
-                        f"-{category}:{tag}={item}".encode("utf-8")
-                    )
-            else:
-                args.append(
-                    f"-{category}:{tag}={value}".encode("utf-8")
-                )
-
+    if len(arguments) == 1:
+        return None
+    arguments.append(str(filepath))
     if dry_run:
         print(f"Dry run: Metadata to be set for {filepath}:")
-        for arg in args:
-            print(arg.decode("utf-8"))
-    else:
-        with exiftool.ExifTool() as et:
-            et.execute(
-                 b"-overwrite_original",
-                *args,
-                filepath.encode("utf-8")
-            )
+        for argument in arguments[1:-1]:
+            print(argument)
+        return arguments
+
+    executable = shutil.which("exiftool")
+    if executable is None:
+        raise FileNotFoundError("ExifTool est introuvable dans le PATH.")
+    result = subprocess.run(
+        [executable, *arguments],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    if result.returncode:
+        message = result.stderr.strip() or result.stdout.strip() or "Erreur ExifTool."
+        raise RuntimeError(f"Échec d’écriture des métadonnées pour {filepath}: {message}")
+    return result

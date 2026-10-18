@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Géolocaliser des photos</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="workspace">
+    <section class="gallery">
+      <header class="gallery-header">
+        <div>
+          <h1>Géolocaliser des photos</h1>
+          <p id="photo-count">Chargement des photos…</p>
+        </div>
+        <label class="thumbnail-size" for="thumbnail-size">
+          Taille des vignettes
+          <input id="thumbnail-size" type="range" min="90" max="260" value="160">
+        </label>
+      </header>
+      <div class="gallery-tools">
+        <button id="deselect-photos" type="button" disabled>Désélectionner</button>
+      </div>
+      <div id="photo-grid" aria-live="polite"></div>
+    </section>
+    <section class="map-panel" aria-label="Carte">
+      <div class="place-search">
+        <input id="place-search" type="search" placeholder="Rechercher une ville ou une adresse…">
+        <div id="place-suggestions" role="listbox"></div>
+      </div>
+      <div id="map" aria-label="Carte interactive"></div>
+      <p class="map-hint">Sélectionnez des photos, puis faites un clic droit sur la carte pour leur proposer un lieu.</p>
+    </section>
+  </main>
+
+  <div id="editor-overlay" class="overlay" aria-hidden="true">
+    <form id="location-form" class="editor" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+      <h2 id="editor-title">Lieu associé aux photos</h2>
+      <p id="selected-count"></p>
+      <div class="coordinates">
+        <label>Latitude<input id="latitude" type="number" step="any" min="-90" max="90" required></label>
+        <label>Longitude<input id="longitude" type="number" step="any" min="-180" max="180" required></label>
+      </div>
+      <label>Sous-lieu<input id="sub-location" type="text"></label>
+      <label>Pays<input id="country" type="text"></label>
+      <div id="save-status" role="status"></div>
+      <div id="save-progress" class="metadata-progress" hidden>
+        <progress id="save-progress-bar" max="100" value="0"></progress>
+        <ul id="save-errors"></ul>
+      </div>
+      <div class="actions">
+        <button id="cancel" type="button">Annuler</button>
+        <button id="save-location" class="primary" type="button">Enregistrer dans les photos</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
