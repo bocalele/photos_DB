@@ -35,13 +35,24 @@ button:disabled { opacity: .55; cursor: default; }
   background: var(--panel);
   border-bottom: 1px solid #ffffff18;
 }
+.gallery-header {
+  flex-wrap: wrap;
+}
 .gallery-header h1 { margin: 0 0 5px; font-size: 19px; }
 #photo-count { margin: 0; color: var(--muted); font-size: 12px; }
 #photo-count.error, .error { color: #ff8787; }
-#directory-path { margin: 5px 0 0; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+#directory-path { margin: 5px 0 0; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gallery-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .thumbnail-size { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .thumbnail-size input { width: 110px; accent-color: var(--accent); }
 .gallery-tools { justify-content: flex-start; flex-wrap: wrap; }
+.secondary { background: var(--surface); }
+.secondary:hover { background: #3a415e; }
 .classification-progress {
   padding: 10px 18px;
   border-bottom: 1px solid #ffffff18;

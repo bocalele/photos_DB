@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>fr</string>
+	<key>CFBundleDisplayName</key>
+	<string>Mots-clés</string>
+	<key>CFBundleExecutable</key>
+	<string>MotsclesLauncher</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.photos.motscles</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Motscles</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Mots-clés ouvre le Terminal pour lancer le serveur local d’édition des métadonnées.</string>
+</dict>
+</plist>

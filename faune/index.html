@@ -13,12 +13,15 @@
       <div>
         <h1>Faune</h1>
         <p id="photo-count">Chargement des photos…</p>
-        <p id="directory-path"></p>
+        <p id="directory-path" class="directory-path"></p>
       </div>
-      <label class="thumbnail-size" for="thumbnail-size">
-        Taille des vignettes
-        <input id="thumbnail-size" type="range" min="90" max="280" value="170">
-      </label>
+      <div class="gallery-header-actions">
+        <label class="thumbnail-size" for="thumbnail-size">
+          Taille des vignettes
+          <input id="thumbnail-size" type="range" min="90" max="280" value="170">
+        </label>
+        <button id="change-directory" type="button" class="secondary">Changer de dossier</button>
+      </div>
     </header>
     <nav class="gallery-tools" aria-label="Actions sur les photos">
       <button id="select-all" type="button">Tout sélectionner</button>

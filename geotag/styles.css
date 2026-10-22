@@ -50,11 +50,23 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   background: var(--panel);
   border-bottom: 1px solid #ffffff18;
 }
+.gallery-header {
+  flex-wrap: wrap;
+}
 .gallery-header h1 { margin: 0 0 5px; font-size: 18px; }
 #photo-count { margin: 0; color: var(--muted); font-size: 12px; }
+.directory-path { margin: 0; color: var(--muted); font-size: 11px; font-family: ui-monospace, SFMono-Regular, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gallery-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .thumbnail-size { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .thumbnail-size input { width: 100px; accent-color: var(--accent); }
 .gallery-tools { justify-content: flex-start; flex-wrap: wrap; }
+button.secondary { background: var(--surface); }
+button.secondary:hover { background: #3a415e; }
 .metadata-progress {
   color: var(--muted);
   font-size: 12px;
@@ -118,6 +130,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .metadata-badge.present { color: #71d3a4; }
 .metadata-badge.missing { color: #a3aac0; }
 .metadata-badge.unknown { color: #f1be4c; }
+.metadata-badge.clickable:hover { filter: brightness(1.2); }
 .message { grid-column: 1 / -1; padding: 30px 10px; color: var(--muted); text-align: center; }
 
 .map-panel { background: #11131c; }

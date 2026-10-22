@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mots-clés</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="workspace">
+    <header class="gallery-header">
+      <div>
+        <h1>Mots-clés</h1>
+        <p id="photo-count">Chargement des photos…</p>
+        <p id="directory-path" class="directory-path"></p>
+      </div>
+      <div class="gallery-header-actions">
+        <label class="thumbnail-size" for="thumbnail-size">
+          Taille des vignettes
+          <input id="thumbnail-size" type="range" min="90" max="280" value="170">
+        </label>
+        <button id="change-directory" type="button" class="secondary">Changer de dossier</button>
+      </div>
+    </header>
+    <nav class="gallery-tools" aria-label="Actions sur les photos">
+      <button id="select-all" type="button">Tout sélectionner</button>
+      <button id="deselect-photos" type="button" disabled>Désélectionner</button>
+      <button id="edit-keywords" class="primary" type="button" disabled>
+        Éditer mots-clés / Auteur
+      </button>
+    </nav>
+    <section id="photo-grid" aria-live="polite"></section>
+  </main>
+
+  <div id="editor-overlay" class="overlay" aria-hidden="true">
+    <form id="keywords-form" class="editor" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+      <h2 id="editor-title">Mots-clés et Auteur</h2>
+      <p id="selected-count"></p>
+
+      <div class="keywords-section">
+        <span class="section-label">Mots-clés</span>
+        <div id="keyword-chips" class="keyword-chips" aria-label="Mots-clés sélectionnés"></div>
+        <div class="keyword-add">
+          <input id="keyword-input" type="text" placeholder="Ajouter un mot-clé puis Entrée…">
+          <button id="keyword-add-button" type="button" class="secondary">Ajouter</button>
+        </div>
+        <p class="keywords-hint">
+          Les mots-clés <span class="mixed-indicator">grisés</span> ne sont pas communs à toutes les photos sélectionnées.
+        </p>
+      </div>
+
+      <div class="author-section">
+        <label>Auteur
+          <input id="author-input" type="text" placeholder="Nom de l'auteur">
+        </label>
+        <p class="author-hint">
+          Auteurs différents : saisissez un nom pour l’appliquer à toutes les photos.
+        </p>
+      </div>
+
+      <div class="rating-section">
+        <span class="section-label">Note</span>
+        <div class="rating-row">
+          <div id="rating-stars" class="rating-stars" role="group" aria-label="Note sur 5 étoiles"></div>
+          <span id="rating-display" class="rating-display"></span>
+        </div>
+        <p class="rating-hint">
+          Étoiles estompées = notes différentes selon les photos.
+        </p>
+      </div>
+
+      <div id="save-status" role="status"></div>
+      <div id="save-progress" class="metadata-progress" hidden>
+        <progress id="save-progress-bar" max="100" value="0"></progress>
+        <ul id="save-errors"></ul>
+      </div>
+      <div class="actions">
+        <button id="cancel" type="button">Annuler</button>
+        <button id="save-keywords" class="primary" type="button">Enregistrer dans les photos</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

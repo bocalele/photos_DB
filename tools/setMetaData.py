@@ -1,12 +1,13 @@
 import shutil
 import subprocess
 from os import PathLike
+from typing import Union
 
 
 WRITABLE_CATEGORIES = {"EXIF", "IPTC", "XMP"}
 
 
-def set_metadata(filepath: str | PathLike, categories: dict, dry_run=False):
+def set_metadata(filepath: Union[str, PathLike], categories: dict, dry_run=False):
     arguments = ["-overwrite_original"]
     for category, metadata in categories.items():
         if category not in WRITABLE_CATEGORIES:

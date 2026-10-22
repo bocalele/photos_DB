@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Identifier les personnes</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="workspace">
+    <section class="gallery">
+      <header class="gallery-header">
+        <div class="gallery-title">
+          <h1>Identifier les personnes</h1>
+          <p id="photo-count">Chargement des photos…</p>
+          <p id="directory-path" class="directory-path"></p>
+        </div>
+        <div class="gallery-header-actions">
+          <label class="thumbnail-size" for="thumbnail-size">
+            Taille des vignettes
+            <input id="thumbnail-size" type="range" min="110" max="260" value="170">
+          </label>
+          <button id="change-directory" type="button" class="secondary">Changer de dossier</button>
+        </div>
+      </header>
+
+      <div class="gallery-tools">
+        <div class="modes" role="group" aria-label="Mode d’affichage">
+          <button type="button" class="mode active" data-mode="photos">Photos</button>
+          <button type="button" class="mode" data-mode="faces">
+            Visages à vérifier <span id="pending-count" class="count"></span>
+          </button>
+        </div>
+        <button id="analyze" type="button" class="primary">Analyser ce dossier</button>
+      </div>
+      <div id="photo-filters" class="gallery-filters">
+        <button type="button" class="filter active" data-filter="all">Toutes</button>
+        <button type="button" class="filter" data-filter="todo">À valider</button>
+        <button type="button" class="filter" data-filter="named">Nommées</button>
+        <button type="button" class="filter" data-filter="new">Non analysées</button>
+      </div>
+      <div id="analyze-status" class="analyze-status" hidden>
+        <progress id="analyze-bar" value="0" max="100"></progress>
+        <span id="analyze-text">Préparation…</span>
+      </div>
+
+      <div id="photo-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="viewer" aria-label="Photo">
+      <div id="viewer-empty" class="viewer-empty">
+        <p>Choisissez une photo à gauche.</p>
+        <p class="muted">
+          Les visages détectés sont encadrés. Cliquez sur l’un d’eux pour lui donner
+          un nom : le nom est écrit immédiatement dans les métadonnées de la photo.
+        </p>
+      </div>
+
+      <div id="viewer-body" class="viewer-body" hidden>
+        <header class="viewer-header">
+          <div class="viewer-title">
+            <h2 id="viewer-title"></h2>
+            <p id="viewer-subtitle" class="muted"></p>
+          </div>
+          <div class="viewer-actions">
+            <button id="validate-all" type="button" class="primary">Valider les propositions</button>
+            <button id="reload-photo" type="button" class="secondary" title="Relire la photo et ses métadonnées">↻</button>
+          </div>
+        </header>
+
+        <div class="stage-wrap">
+          <div id="stage" class="stage">
+            <img id="viewer-image" alt="">
+            <div id="face-layer" class="face-layer"></div>
+          </div>
+        </div>
+
+        <div class="face-editor">
+          <p id="editor-empty" class="muted" hidden>Aucun visage détecté sur cette photo.</p>
+          <div id="editor-body" hidden>
+            <div class="editor-head">
+              <span id="editor-position" class="position"></span>
+              <span id="editor-status" class="editor-status"></span>
+            </div>
+            <div id="editor-alternatives" class="alternatives"></div>
+            <div class="search">
+              <input id="person-search" type="search" placeholder="Chercher une personne…" autocomplete="off">
+              <div id="person-results" class="person-results"></div>
+            </div>
+            <div class="editor-actions">
+              <button id="ignore-face" type="button" class="secondary">Aucun nom</button>
+              <span id="save-status" class="save-status" role="status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -2,6 +2,7 @@ import json
 import shutil
 import subprocess
 from collections import defaultdict
+from typing import Optional
 
 import pandas as pd
 
@@ -57,7 +58,7 @@ def _categories_from_record(record: dict) -> dict[str, dict]:
 
 
 def get_metadata_many(
-    filepaths: list[str], tags: list[str] | None = None
+    filepaths: list[str], tags: Optional[list[str]] = None
 ) -> dict[str, dict[str, dict]]:
     """Read several files in one ExifTool process, keyed by input path."""
     executable = shutil.which("exiftool")

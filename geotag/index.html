@@ -16,11 +16,15 @@
         <div>
           <h1>Géolocaliser des photos</h1>
           <p id="photo-count">Chargement des photos…</p>
+          <p id="directory-path" class="directory-path"></p>
         </div>
-        <label class="thumbnail-size" for="thumbnail-size">
-          Taille des vignettes
-          <input id="thumbnail-size" type="range" min="90" max="260" value="160">
-        </label>
+        <div class="gallery-header-actions">
+          <label class="thumbnail-size" for="thumbnail-size">
+            Taille des vignettes
+            <input id="thumbnail-size" type="range" min="90" max="260" value="160">
+          </label>
+          <button id="change-directory" type="button" class="secondary">Changer de dossier</button>
+        </div>
       </header>
       <div class="gallery-tools">
         <button id="deselect-photos" type="button" disabled>Désélectionner</button>

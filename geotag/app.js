@@ -2,6 +2,7 @@
   const pageSize = 500;
   const photos = [];
   const selectedNames = new Set();
+  let lastClickedIndex = -1;
   let totalPhotos = 0;
   let map;
   let marker;
@@ -64,6 +65,9 @@
         totalPhotos = data.total;
         metadataError ||= data.metadataError || "";
         byId("photo-count").textContent = `${photos.length} / ${totalPhotos} photo(s) chargée(s)…`;
+        if (data.directory) {
+          byId("directory-path").textContent = data.directory;
+        }
       } while (photos.length < totalPhotos);
       loaded = true;
       if (metadataError) {
@@ -80,6 +84,23 @@
   function showMessage(message, isError = false) {
     byId("photo-count").textContent = message;
     if (isError) byId("photo-count").classList.add("error");
+  }
+
+  function handleCardClick(name, index, event) {
+    if (event.shiftKey && lastClickedIndex >= 0) {
+      // Shift-click: select range
+      const start = Math.min(lastClickedIndex, index);
+      const end = Math.max(lastClickedIndex, index);
+      for (let i = start; i <= end; i++) {
+        selectedNames.add(photos[i].name);
+      }
+    } else {
+      // Normal click: toggle
+      if (selectedNames.has(name)) selectedNames.delete(name);
+      else selectedNames.add(name);
+    }
+    lastClickedIndex = index;
+    renderPhotos();
   }
 
   function renderPhotos() {
@@ -108,11 +129,13 @@
       return;
     }
 
-    for (const photo of photos) {
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i];
       const card = document.createElement("figure");
       const selected = selectedNames.has(photo.name);
       card.className = `photo-card${selected ? " selected" : ""}`;
       card.title = photo.name;
+      card.dataset.index = i;
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.className = "photo-checkbox";
@@ -132,6 +155,16 @@
           ? `${label} : état inconnu, lecture des métadonnées en échec`
           : `${label} : ${present ? "présents" : "absents"} dans le fichier`;
         badge.setAttribute("aria-label", badge.title);
+        // Click sur le badge GPS pour centrer la carte sur les coordonnées
+        if (present && label === "GPS" && photo.latitude != null && photo.longitude != null) {
+          badge.classList.add("clickable");
+          badge.addEventListener("click", (event) => {
+            event.stopPropagation(); // Empêche la sélection de la photo
+            map.setView([photo.latitude, photo.longitude], 14);
+            showLocationMarker(photo.latitude, photo.longitude);
+            map.invalidateSize({ pan: false });
+          });
+        }
         badges.appendChild(badge);
       }
       const image = document.createElement("img");
@@ -149,10 +182,8 @@
       if (photo.subLocation || photo.country) {
         card.title += `\n${[photo.subLocation, photo.country].filter(Boolean).join(", ")}`;
       }
-      card.addEventListener("click", () => {
-        if (selected) selectedNames.delete(photo.name);
-        else selectedNames.add(photo.name);
-        renderPhotos();
+      card.addEventListener("click", (event) => {
+        handleCardClick(photo.name, i, event);
       });
       grid.appendChild(card);
       if (thumbnailObserver) thumbnailObserver.observe(image);
@@ -317,7 +348,29 @@
   });
   byId("deselect-photos").addEventListener("click", () => {
     selectedNames.clear();
+    lastClickedIndex = -1;
     renderPhotos();
+  });
+  byId("change-directory").addEventListener("click", async () => {
+    try {
+      byId("change-directory").disabled = true;
+      byId("change-directory").textContent = "Chargement…";
+      const data = await requestJson("/api/change-directory", { method: "POST" });
+      if (data.directory) {
+        byId("directory-path").textContent = data.directory;
+        photos.length = 0;
+        totalPhotos = 0;
+        loaded = false;
+        selectedNames.clear();
+        lastClickedIndex = -1;
+        loadPhotos();
+      }
+    } catch (error) {
+      showMessage(error.message, true);
+    } finally {
+      byId("change-directory").disabled = false;
+      byId("change-directory").textContent = "Changer de dossier";
+    }
   });
   byId("place-search").addEventListener("input", searchPlaces);
   byId("cancel").addEventListener("click", closeEditor);

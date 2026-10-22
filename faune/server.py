@@ -350,14 +350,18 @@ class ClassifierHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         route = urlparse(self.path).path
-        if route not in ("/api/classify", "/api/confirm"):
+        if route == "/api/classify":
+            self.handle_classify()
+        elif route == "/api/confirm":
+            self.handle_confirm()
+        elif route == "/api/change-directory":
+            self.handle_change_directory()
+        else:
             self.send_error(404)
-            return
+
+    def handle_classify(self):
         try:
             data = self.read_request_json()
-            if route == "/api/confirm":
-                self.confirm_taxon(data)
-                return
             names = data.get("photoNames") if isinstance(data, dict) else None
             if (
                 not isinstance(names, list)
@@ -399,6 +403,62 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             self.send_json({"error": str(error)}, 400)
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
             self.send_json({"error": str(error)}, 500)
+
+    def handle_confirm(self):
+        try:
+            data = self.read_request_json()
+            self.confirm_taxon(data)
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json({"error": str(error)}, 400)
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def handle_change_directory(self):
+        try:
+            new_dir = self.choose_new_directory()
+            if new_dir is None:
+                self.send_json({"error": "Aucun dossier sélectionné."}, 400)
+                return
+            self.update_preferences(new_dir)
+            ClassifierHandler.photos_dir = new_dir
+            cached_preview.cache_clear()
+            result_cache.clear()
+            self.send_json({"directory": str(new_dir)})
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def choose_new_directory(self):
+        initial = initial_directory_from_preferences()
+        if sys.platform == "darwin":
+            return choose_photos_directory(initial)
+        else:
+            try:
+                import tkinter as tk
+                from tkinter import filedialog
+            except ImportError as error:
+                raise RuntimeError(f"Tkinter n'est pas disponible : {error}")
+            try:
+                root = tk.Tk()
+                root.withdraw()
+                root.attributes("-topmost", True)
+                try:
+                    selected = filedialog.askdirectory(
+                        title="Choisir le dossier contenant les photos",
+                        initialdir=str(initial),
+                        mustexist=True,
+                    )
+                finally:
+                    root.destroy()
+            except tk.TclError as error:
+                raise RuntimeError(f"Impossible d'ouvrir le sélecteur : {error}")
+            if not selected:
+                return None
+            return Path(selected).expanduser().resolve()
+
+    def update_preferences(self, new_dir):
+        preferences_path = APP_DIR / "preferences.json"
+        preferences = {"initial_directory": str(new_dir)}
+        preferences_path.write_text(json.dumps(preferences, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def read_request_json(self) -> dict:
         content_length = int(self.headers.get("Content-Length", "0"))

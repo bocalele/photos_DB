@@ -145,9 +145,14 @@ class GeotagHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         route = urlparse(self.path).path
-        if route != "/api/save-location":
+        if route == "/api/save-location":
+            self.handle_save_location()
+        elif route == "/api/change-directory":
+            self.handle_change_directory()
+        else:
             self.send_error(404)
-            return
+
+    def handle_save_location(self):
         try:
             content_length = int(self.headers.get("Content-Length", "0"))
             if content_length <= 0 or content_length > 1_000_000:
@@ -162,6 +167,52 @@ class GeotagHandler(BaseHTTPRequestHandler):
             self.send_json({"error": str(error)}, 400)
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
             self.send_json({"error": str(error)}, 500)
+
+    def handle_change_directory(self):
+        try:
+            new_dir = self.choose_new_directory()
+            if new_dir is None:
+                self.send_json({"error": "Aucun dossier sélectionné."}, 400)
+                return
+            self.update_preferences(new_dir)
+            GeotagHandler.photos_dir = new_dir
+            _read_photo_metadata.cache_clear()
+            self.send_json({"directory": str(new_dir)})
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def choose_new_directory(self):
+        initial = initial_directory_from_preferences()
+        if sys.platform == "darwin":
+            return choose_photos_directory(initial)
+        else:
+            try:
+                import tkinter as tk
+                from tkinter import filedialog
+            except ImportError as error:
+                raise RuntimeError(f"Tkinter n'est pas disponible : {error}")
+            try:
+                root = tk.Tk()
+                root.withdraw()
+                root.attributes("-topmost", True)
+                try:
+                    selected = filedialog.askdirectory(
+                        title="Choisir le dossier contenant les photos",
+                        initialdir=str(initial),
+                        mustexist=True,
+                    )
+                finally:
+                    root.destroy()
+            except tk.TclError as error:
+                raise RuntimeError(f"Impossible d'ouvrir le sélecteur : {error}")
+            if not selected:
+                return None
+            return Path(selected).expanduser().resolve()
+
+    def update_preferences(self, new_dir):
+        preferences_path = APP_DIR / "preferences.json"
+        preferences = {"initial_directory": str(new_dir)}
+        preferences_path.write_text(json.dumps(preferences, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def start_location_job(self, names, latitude, longitude, sub_location, country):
         job_id = uuid.uuid4().hex
@@ -306,6 +357,7 @@ class GeotagHandler(BaseHTTPRequestHandler):
                 "total": len(files),
                 "offset": offset,
                 "limit": limit,
+                "directory": str(self.photos_dir),
             }
         )
 
@@ -318,6 +370,8 @@ class GeotagHandler(BaseHTTPRequestHandler):
                 "metadataRead": False,
                 "subLocation": "",
                 "country": "",
+                "latitude": None,
+                "longitude": None,
             }
         gps = getGPS(categories.get("EXIF", {}))
         iptc = categories.get("IPTC", {})
@@ -340,12 +394,21 @@ class GeotagHandler(BaseHTTPRequestHandler):
             and gps.get("GPSLatitudeRef") in ("N", "S")
             and gps.get("GPSLongitudeRef") in ("E", "W")
         )
+        latitude = None
+        longitude = None
+        if gps_present:
+            lat = float(gps["GPSLatitude"])
+            lon = float(gps["GPSLongitude"])
+            latitude = lat if gps["GPSLatitudeRef"] == "N" else -lat
+            longitude = lon if gps["GPSLongitudeRef"] == "E" else -lon
         return {
             "gpsPresent": gps_present,
             "locationPresent": bool(sub_location and country),
             "metadataRead": True,
             "subLocation": str(sub_location),
             "country": str(country),
+            "latitude": latitude,
+            "longitude": longitude,
         }
 
     def photo_path(self, name):

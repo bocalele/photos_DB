@@ -2,6 +2,7 @@
   const pageSize = 200;
   const photos = [];
   const selectedNames = new Set();
+  let lastClickedIndex = -1;
   const classifications = new Map();
   const cardsByName = new Map();
   const chosenTaxa = new Map();
@@ -74,6 +75,27 @@
     byId("photo-count").classList.toggle("error", isError);
   }
 
+  function handleCardClick(name, index, event) {
+    if (event.shiftKey && lastClickedIndex >= 0) {
+      // Shift-click: select range
+      const start = Math.min(lastClickedIndex, index);
+      const end = Math.max(lastClickedIndex, index);
+      for (let i = start; i <= end; i++) {
+        selectedNames.add(photos[i].name);
+      }
+      // Update all cards in range
+      for (let i = start; i <= end; i++) {
+        updateCardSelection(photos[i].name);
+        updateClassificationCard(photos[i].name);
+      }
+    } else {
+      // Normal click: toggle
+      toggleSelection(name);
+    }
+    lastClickedIndex = index;
+    updatePhotoCount();
+  }
+
   function renderPhotos() {
     const grid = byId("photo-grid");
     cardsByName.clear();
@@ -99,13 +121,15 @@
       return;
     }
 
-    for (const photo of photos) {
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i];
       const card = document.createElement("article");
       const selected = selectedNames.has(photo.name);
       const classification = classifications.get(photo.name);
       card.className =
         `photo-card${selected ? " selected" : ""}${isValidatedChoice(photo.name) ? " validated" : ""}`;
       card.title = photo.name;
+      card.dataset.index = i;
       const selectionControls = document.createElement("div");
       selectionControls.className = "photo-selection-controls";
       const checkbox = document.createElement("input");
@@ -156,7 +180,7 @@
         if (event.target.closest("details") || event.target === checkbox) return;
         if (event.target.closest(".photo-selection-controls")) return;
         if (event.target.closest(".classification-display")) return;
-        toggleSelection(photo.name);
+        handleCardClick(photo.name, i, event);
       });
       grid.appendChild(card);
       cardsByName.set(photo.name, card);
@@ -531,6 +555,7 @@
       updateCardSelection(photo.name);
       updateClassificationCard(photo.name);
     }
+    lastClickedIndex = photos.length - 1;
     updatePhotoCount();
   });
   byId("deselect-photos").addEventListener("click", () => {
@@ -539,7 +564,33 @@
       updateCardSelection(photo.name);
       updateClassificationCard(photo.name);
     }
+    lastClickedIndex = -1;
     updatePhotoCount();
+  });
+  byId("change-directory").addEventListener("click", async () => {
+    try {
+      byId("change-directory").disabled = true;
+      byId("change-directory").textContent = "Chargement…";
+      const data = await requestJson("/api/change-directory", { method: "POST" });
+      if (data.directory) {
+        byId("directory-path").textContent = data.directory;
+        photos.length = 0;
+        totalPhotos = 0;
+        loaded = false;
+        selectedNames.clear();
+        lastClickedIndex = -1;
+        savedTaxa.clear();
+        chosenTaxa.clear();
+        classifications.clear();
+        taxonSaveErrors.clear();
+        loadPhotos();
+      }
+    } catch (error) {
+      showMessage(`Impossible de changer de dossier : ${error.message}`, true);
+    } finally {
+      byId("change-directory").disabled = false;
+      byId("change-directory").textContent = "Changer de dossier";
+    }
   });
   byId("classify-photos").addEventListener("click", classifySelected);
   byId("thumbnail-size").addEventListener("input", event => {
