@@ -278,12 +278,12 @@
     menuContent.className = "taxon-menu-content";
     const searchLabel = document.createElement("label");
     searchLabel.className = "control-label";
-    searchLabel.textContent = "Rechercher par nom vernaculaire";
+    searchLabel.textContent = "Rechercher par nom vernaculaire ou scientifique";
     const manualInput = document.createElement("input");
     manualInput.type = "search";
     manualInput.className = "taxon-search";
-    manualInput.placeholder = "Nom français…";
-    manualInput.setAttribute("aria-label", `Rechercher par nom vernaculaire pour ${photoName}`);
+    manualInput.placeholder = "Nom français ou scientifique…";
+    manualInput.setAttribute("aria-label", `Rechercher par nom vernaculaire ou scientifique pour ${photoName}`);
     searchLabel.appendChild(manualInput);
     menuContent.appendChild(searchLabel);
 
@@ -380,7 +380,7 @@
         if (!data.taxa.length) {
           const empty = document.createElement("span");
           empty.className = "no-taxa";
-          empty.textContent = "Aucun nom vernaculaire correspondant dans TAXREF.";
+          empty.textContent = "Aucune espèce correspondante (nom vernaculaire ou scientifique) dans TAXREF.";
           suggestions.appendChild(empty);
         }
       } catch (error) {

@@ -53,9 +53,23 @@ class TaxrefIndexTests(unittest.TestCase):
         )
         self.assertIsNone(taxref.resolve_hierarchical_path("Animaux|Espèce inconnue"))
 
-    def test_species_search_does_not_match_scientific_names(self):
+    def test_species_search_matches_scientific_names(self):
         taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
-        self.assertEqual(taxref.search_species("Corvus monedula"), [])
+        results = taxref.search_species("Corvus monedula")
+        self.assertTrue(results)
+        self.assertEqual(results[0]["scientificName"], "Corvus monedula")
+
+    def test_species_search_matches_scientific_name_prefix(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        results = taxref.search_species("corvus")
+        self.assertTrue(results)
+        self.assertIn("Corvus monedula", [item["scientificName"] for item in results])
+
+    def test_species_search_matches_scientific_synonym(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        results = taxref.search_species("Corvus caryocatactes")
+        self.assertTrue(results)
+        self.assertEqual(results[0]["scientificName"], "Nucifraga caryocatactes")
 
     def test_builds_display_result_with_french_name_and_lineage(self):
         taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")

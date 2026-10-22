@@ -24,7 +24,8 @@ disponible, le sélecteur s’ouvre dans le dossier personnel.
 Les photos du dossier s’affichent sous forme de vignettes à taille réglable.
 Sélectionner les photos à traiter, puis cliquer sur **Classer les photos
 sélectionnées**. Choisir l’une des cinq propositions, ou chercher une autre
-espèce en saisissant son nom vernaculaire français dans le menu des choix.
+espèce en saisissant son nom vernaculaire français **ou son nom scientifique**
+dans le menu des choix.
 Les informations taxonomiques s’affichent pour les photos sélectionnées, déjà
 classées ou dont l’espèce est déjà présente dans les métadonnées. La coche à
 côté du nom écrit ou retire les mots-clés IPTC/XMP directement dans la photo.
@@ -69,7 +70,7 @@ Le calcul se fait sur le GPU Apple (`mps`) par défaut. Pour lancer sur le proce
 pixi run python classify_photo.py "/chemin/vers/une-photo.jpg" --device cpu
 ```
 
-Le script détecte automatiquement l’unique fichier `TAXREFv*.txt` dans `TAXREF/` et utilise le fichier `TAXVERNv*.txt` de même version situé à côté. Si plusieurs versions sont présentes, choisir explicitement le fichier :
+Le script détecte automatiquement l’unique fichier `TAXREFv*.txt` dans `TAXREF/` et utilise le fichier `TAXVERNv*.txt` de même version situé à côté. Le dossier peut être déplacé : renseigner `taxref_dir` dans la section `environment` de `annotations/preferences.json` (ou passer `--taxref`). Si plusieurs versions sont présentes, choisir explicitement le fichier :
 
 ```bash
 pixi run python classify_photo.py photo.jpg --taxref TAXREF/TAXREFv18.txt

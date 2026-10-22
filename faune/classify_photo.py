@@ -79,7 +79,15 @@ class TaxrefIndex:
             reference_id = row.get("CD_REF", "")
             accepted = accepted_species.get(reference_id)
             if accepted is not None:
-                self.species_by_name[normalize_name(row.get("LB_NOM", ""))] = accepted
+                scientific_name = row.get("LB_NOM", "").strip()
+                self.species_by_name[normalize_name(scientific_name)] = accepted
+                # La recherche accepte le nom scientifique (accepté ou synonyme)
+                # autant que le nom vernaculaire.
+                if scientific_name:
+                    self.search_terms[reference_id].add(scientific_name)
+        self.vernacular_terms: dict[str, set[str]] = {
+            reference_id: set() for reference_id in accepted_species
+        }
         for cd_nom, names in self.vernaculars.items():
             row = rows_by_id.get(cd_nom)
             if row is None or row.get("RANG") != "ES":
@@ -87,8 +95,12 @@ class TaxrefIndex:
             reference_id = row.get("CD_REF", "")
             if reference_id in self.search_terms:
                 self.search_terms[reference_id].update(names)
+                self.vernacular_terms[reference_id].update(names)
+        # Les noms vernaculaires restent seuls reconnus comme tels (drapeau
+        # « nom vernaculaire présent » dans les métadonnées) ; la recherche
+        # manuelle, elle, accepte aussi les noms scientifiques.
         self.species_by_vernacular: dict[str, dict[str, str]] = {}
-        for reference_id, names in self.search_terms.items():
+        for reference_id, names in self.vernacular_terms.items():
             accepted = accepted_species[reference_id]
             for name in names:
                 self.species_by_vernacular.setdefault(normalize_search_text(name), accepted)

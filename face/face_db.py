@@ -8,19 +8,27 @@ que des données reconstructibles : elle peut être supprimée et reconstruite p
 
 from __future__ import annotations
 
-import os
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 
 APP_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = APP_DIR.parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
 
-DEFAULT_PHOTO_ROOT = Path(os.environ.get("PHOTOS_ROOT", "/Volumes/WD/PHOTOS"))
-DATA_DIR = Path(os.environ.get("PHOTOS_DATA_DIR", DEFAULT_PHOTO_ROOT / "_DATA"))
-DEFAULT_DB_PATH = Path(os.environ.get("PHOTOS_FACE_DB", DATA_DIR / "face.db"))
-DEFAULT_PHOTOS_DB = Path(os.environ.get("PHOTOS_DB", DATA_DIR / "photos.db"))
+from tools import environment  # noqa: E402
+
+# Chemins décrits dans annotations/preferences.json (section « environment »),
+# avec surcharge possible par les variables PHOTOS_* / EXIFTOOL.
+DEFAULT_PHOTO_ROOT = environment.photos_root()
+DATA_DIR = environment.data_dir()
+DEFAULT_DB_PATH = environment.face_db()
+DEFAULT_PHOTOS_DB = environment.photos_db()
+PREVIEWS_DIR = environment.previews_dir()
 
 # Anciennes racines rencontrées dans `photos.db` (avant le disque externe).
 LEGACY_ROOTS = ("/Users/pc/PHOTOS",)

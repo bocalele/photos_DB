@@ -114,7 +114,8 @@ mieux les supprimer ou les exclure du fonds.
 ## Mettre à jour photos.db (le site)
 
 Les validations vont dans le XMP, pas dans `photos.db` : le site continue
-d'afficher l'état précédent. Ce script reporte les noms XMP vers `Photo_Peoples` :
+d'afficher l'état précédent. Le bouton **photos.db** de la barre d'Annotations
+(ou le script ci-dessous) reporte les noms XMP vers `Photo_Peoples` :
 
 ```sh
 pixi run python sync_photos_db.py                              # tout, en ajout seul
@@ -129,8 +130,10 @@ utiliser après une correction ou un « Aucun nom »).
 
 ## Base
 
-`face.db` est créé à côté de `photos.db`, dans `/Volumes/WD/PHOTOS/_DATA`, et
-peut être supprimé sans perte : tout est reconstructible.
+`face.db` est créé à côté de `photos.db`, dans `_DATA` du fonds photo, et
+peut être supprimé sans perte : tout est reconstructible. Ces chemins sont
+décrits dans la section `environment` de `annotations/preferences.json`
+(`photos_root`, `data_dir`, `photos_db`, `face_db`, `previews_dir`).
 
 | Table | Contenu |
 |---|---|
@@ -149,8 +152,9 @@ est disponible tout de suite, sans redémarrer.
 À chaque validation, `face.db` est mis à jour immédiatement : les étiquettes de
 la photo sont réécrites, ses exemplaires de référence sont remplacés (une
 correction ne laisse pas l'ancien nom) et la galerie en mémoire est rechargée.
-`reference.py` peut la reconstruire entièrement depuis les XMP. `PHOTOS_ROOT`, `PHOTOS_DATA_DIR`,
-`PHOTOS_DB` et `PHOTOS_FACE_DB` permettent de tout déplacer.
+`reference.py` peut la reconstruire entièrement depuis les XMP. Les variables
+`PHOTOS_ROOT`, `PHOTOS_DATA_DIR`, `PHOTOS_DB` et `PHOTOS_FACE_DB` restent
+prioritaires sur le fichier de préférences pour un lancement ponctuel.
 
 ## Mesures sur le fonds actuel
 

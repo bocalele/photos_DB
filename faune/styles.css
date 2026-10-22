@@ -218,3 +218,6 @@ button:disabled { opacity: .55; cursor: default; }
   .thumbnail-size input { width: 75px; }
   #photo-grid { gap: 7px; padding: 8px; }
 }
+
+/* Intégrée dans l’application Annotations : le dossier se change depuis la barre globale. */
+.embedded #change-directory { display: none; }

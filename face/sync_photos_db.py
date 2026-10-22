@@ -16,6 +16,7 @@ l'application).
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -50,6 +51,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Retirer aussi les liens absents du XMP (corrections dans l'application).",
     )
     parser.add_argument("--dry-run", action="store_true", help="Afficher sans écrire.")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Sortie JSON, pour le bouton « Mettre à jour photos.db ».",
+    )
     parser.add_argument("--limit", type=int, default=0, help="Limiter le nombre de photos.")
     return parser.parse_args(argv)
 
@@ -88,6 +94,22 @@ def main(argv: list[str] | None = None) -> int:
         if args.limit:
             wanted = wanted[: args.limit]
         if not wanted:
+            if args.json:
+                print(
+                    json.dumps(
+                        {
+                            "photos": 0,
+                            "changed": 0,
+                            "added": 0,
+                            "removed": 0,
+                            "unknown": [],
+                            "prune": args.prune,
+                            "dryRun": args.dry_run,
+                        },
+                        ensure_ascii=False,
+                    )
+                )
+                return 0
             print("Aucune photo à synchroniser.", file=sys.stderr)
             return 1
 
@@ -140,6 +162,23 @@ def main(argv: list[str] | None = None) -> int:
                             "DELETE FROM Photo_Peoples WHERE id_photo = ? AND id_people = ?",
                             (id_photo, id_people),
                         )
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "photos": len(wanted),
+                    "changed": changed,
+                    "added": added,
+                    "removed": removed,
+                    "unknown": sorted(unknown),
+                    "prune": args.prune,
+                    "dryRun": args.dry_run,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
 
     prefix = " (simulation)" if args.dry_run else ""
     print(f"Photos examinées : {len(wanted)}{prefix}")

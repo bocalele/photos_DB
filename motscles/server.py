@@ -364,6 +364,8 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             self.handle_update_photo()
         elif route == "/api/change-directory":
             self.handle_change_directory()
+        elif route == "/api/directory":
+            self.handle_set_directory()
         elif route == "/api/preferences":
             self.save_preferences()
         else:
@@ -421,6 +423,23 @@ class MotsclesHandler(BaseHTTPRequestHandler):
                 preview_cache.clear()
             self.send_json({"directory": str(new_dir)})
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def handle_set_directory(self):
+        """Change le dossier sans dialogue : utilisé par l'application globale."""
+        try:
+            data = self.read_request_json()
+            directory = Path(str(data.get("directory") or "")).expanduser().resolve()
+            if not directory.is_dir():
+                raise ValueError(f"Dossier introuvable : {directory}")
+            MotsclesHandler.photos_dir = directory
+            _read_photo_metadata.cache_clear()
+            with thumbnail_lock:
+                preview_cache.clear()
+            self.send_json({"directory": str(directory)})
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json({"error": str(error)}, 400)
+        except OSError as error:
             self.send_json({"error": str(error)}, 500)
 
     def choose_new_directory(self) -> Path | None:

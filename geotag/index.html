@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>if (new URLSearchParams(location.search).has("embed")) document.documentElement.classList.add("embedded");</script>
   <title>Géolocaliser des photos</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="styles.css">
@@ -31,6 +32,9 @@
       </div>
       <div id="photo-grid" aria-live="polite"></div>
     </section>
+    <div id="splitter" class="splitter" role="separator" aria-orientation="vertical"
+         aria-label="Redimensionner les panneaux" tabindex="0"
+         title="Glisser pour redimensionner · double-clic pour réinitialiser"></div>
     <section class="map-panel" aria-label="Carte">
       <div class="place-search">
         <input id="place-search" type="search" placeholder="Rechercher une ville ou une adresse…">

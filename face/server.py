@@ -797,6 +797,16 @@ class FaceHandler(BaseHTTPRequestHandler):
             elif route == "/api/people":
                 payload = self.read_json()
                 self.send_json(STATE.create_person(payload.get("name", "")), 201)
+            elif route == "/api/directory":
+                payload = self.read_json()
+                directory = Path(str(payload.get("directory") or "")).expanduser().resolve()
+                if not directory.is_dir():
+                    raise ValueError(f"Dossier introuvable : {directory}")
+                STATE.set_directory(directory)
+                _thumbnail_bytes.cache_clear()
+                _image_bytes.cache_clear()
+                _crop_bytes.cache_clear()
+                self.send_json({"directory": str(directory)})
             elif route == "/api/analyze":
                 self.read_json()
                 self.send_json({"jobId": STATE.start_analyze()}, 202)

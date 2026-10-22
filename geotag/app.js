@@ -383,6 +383,69 @@
     if (event.key === "Escape") closeEditor();
   });
 
+  // --- séparateur redimensionnable ------------------------------------------
+  (() => {
+    const workspace = document.querySelector(".workspace");
+    const splitter = byId("splitter");
+    if (!workspace || !splitter) return;
+    const STORAGE_KEY = "geotag.split";
+    const DEFAULT_RATIO = 0.46;
+    const MIN_LEFT_PX = 320;
+    const MIN_RIGHT_PX = 380;
+    const clamp = value => {
+      const width = workspace.getBoundingClientRect().width;
+      if (!width) return value;
+      const minimum = MIN_LEFT_PX / width;
+      const maximum = Math.max(minimum, (width - 7 - MIN_RIGHT_PX) / width);
+      return Math.min(maximum, Math.max(minimum, value));
+    };
+    let ratio = Number(localStorage.getItem(STORAGE_KEY));
+    if (!Number.isFinite(ratio) || ratio <= 0) ratio = DEFAULT_RATIO;
+    ratio = clamp(ratio);
+    const apply = () => workspace.style.setProperty("--split", `${(ratio * 100).toFixed(2)}%`);
+    apply();
+    window.addEventListener("resize", () => {
+      ratio = clamp(ratio);
+      apply();
+    });
+
+    const move = event => {
+      const rect = workspace.getBoundingClientRect();
+      if (!rect.width) return;
+      ratio = clamp((event.clientX - rect.left) / rect.width);
+      apply();
+    };
+    const stop = event => {
+      splitter.classList.remove("dragging");
+      splitter.removeEventListener("pointermove", move);
+      splitter.removeEventListener("pointerup", stop);
+      splitter.removeEventListener("pointercancel", stop);
+      try { splitter.releasePointerCapture(event.pointerId); } catch (_) { /* déjà relâché */ }
+      localStorage.setItem(STORAGE_KEY, String(ratio));
+    };
+    splitter.addEventListener("pointerdown", event => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      splitter.setPointerCapture(event.pointerId);
+      splitter.classList.add("dragging");
+      splitter.addEventListener("pointermove", move);
+      splitter.addEventListener("pointerup", stop);
+      splitter.addEventListener("pointercancel", stop);
+    });
+    splitter.addEventListener("dblclick", () => {
+      ratio = DEFAULT_RATIO;
+      apply();
+      localStorage.removeItem(STORAGE_KEY);
+    });
+    splitter.addEventListener("keydown", event => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      ratio = clamp(ratio + (event.key === "ArrowLeft" ? -0.02 : 0.02));
+      apply();
+      localStorage.setItem(STORAGE_KEY, String(ratio));
+    });
+  })();
+
   initializeMap();
   loadPhotos();
   const mapResizeObserver = new ResizeObserver(() => map.invalidateSize({ pan: false }));

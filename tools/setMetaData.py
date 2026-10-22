@@ -1,7 +1,8 @@
-import shutil
 import subprocess
 from os import PathLike
 from typing import Union
+
+from tools.environment import exiftool_executable
 
 
 WRITABLE_CATEGORIES = {"EXIF", "IPTC", "XMP"}
@@ -31,7 +32,7 @@ def set_metadata(filepath: Union[str, PathLike], categories: dict, dry_run=False
             print(argument)
         return arguments
 
-    executable = shutil.which("exiftool")
+    executable = exiftool_executable()
     if executable is None:
         raise FileNotFoundError("ExifTool est introuvable dans le PATH.")
     result = subprocess.run(

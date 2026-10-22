@@ -262,3 +262,6 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .editor { padding: 16px; }
   .rating-stars .star { font-size: 26px; }
 }
+
+/* Intégrée dans l’application Annotations : le dossier se change depuis la barre globale. */
+.embedded #change-directory { display: none; }

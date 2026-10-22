@@ -21,8 +21,19 @@ PROJECT_DIR = APP_DIR.parent
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
+from tools import environment
 from tools.getMetaData import getGPS, get_metadata_many
 from tools.setMetaData import set_metadata
+
+
+def geocoding_enabled() -> bool:
+    """Géocodage Nominatim : désactivable dans la section `environment`.
+
+    `"geocoding": "off"` évite tout envoi de coordonnées ou de texte à
+    OpenStreetMap ; la carte et les fonds restent disponibles.
+    """
+    setting = str(environment.value("geocoding", "nominatim")).strip().lower()
+    return setting not in {"off", "none", "non", "false", "0"}
 
 
 PHOTO_EXTENSIONS = {
@@ -149,6 +160,8 @@ class GeotagHandler(BaseHTTPRequestHandler):
             self.handle_save_location()
         elif route == "/api/change-directory":
             self.handle_change_directory()
+        elif route == "/api/directory":
+            self.handle_set_directory()
         else:
             self.send_error(404)
 
@@ -179,6 +192,24 @@ class GeotagHandler(BaseHTTPRequestHandler):
             _read_photo_metadata.cache_clear()
             self.send_json({"directory": str(new_dir)})
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def handle_set_directory(self):
+        """Change le dossier sans dialogue : utilisé par l'application globale."""
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+            if content_length <= 0 or content_length > 100_000:
+                raise ValueError("La requête est vide ou trop volumineuse.")
+            data = json.loads(self.rfile.read(content_length))
+            directory = Path(str(data.get("directory") or "")).expanduser().resolve()
+            if not directory.is_dir():
+                raise ValueError(f"Dossier introuvable : {directory}")
+            GeotagHandler.photos_dir = directory
+            _read_photo_metadata.cache_clear()
+            self.send_json({"directory": str(directory)})
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json({"error": str(error)}, 400)
+        except OSError as error:
             self.send_json({"error": str(error)}, 500)
 
     def choose_new_directory(self):
@@ -461,6 +492,9 @@ class GeotagHandler(BaseHTTPRequestHandler):
         if len(place) < 3:
             self.send_json({"places": []})
             return
+        if not geocoding_enabled():
+            self.send_json({"places": [], "disabled": True})
+            return
         try:
             results = Nominatim(user_agent="photos_geotag_editor", timeout=10).geocode(
                 place,
@@ -507,6 +541,9 @@ class GeotagHandler(BaseHTTPRequestHandler):
                 raise ValueError
         except (KeyError, ValueError):
             self.send_json({"error": "Coordonnées GPS invalides."}, 400)
+            return
+        if not geocoding_enabled():
+            self.send_json({"subLocation": "", "country": "", "disabled": True})
             return
         try:
             result = Nominatim(user_agent="photos_geotag_editor", timeout=10).reverse(

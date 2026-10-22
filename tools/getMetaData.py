@@ -1,10 +1,11 @@
 import json
-import shutil
 import subprocess
 from collections import defaultdict
 from typing import Optional
 
 import pandas as pd
+
+from tools.environment import exiftool_executable
 
 
 def _categories_from_record(record: dict) -> dict[str, dict]:
@@ -61,7 +62,7 @@ def get_metadata_many(
     filepaths: list[str], tags: Optional[list[str]] = None
 ) -> dict[str, dict[str, dict]]:
     """Read several files in one ExifTool process, keyed by input path."""
-    executable = shutil.which("exiftool")
+    executable = exiftool_executable()
     if executable is None:
         raise FileNotFoundError("ExifTool est introuvable dans le PATH.")
     results = {}

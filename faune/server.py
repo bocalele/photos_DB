@@ -29,6 +29,7 @@ from classify_photo import (
     load_photo,
     prediction_details,
 )
+from tools import environment
 from tools.getMetaData import get_metadata_many
 from tools.setMetaData import set_metadata
 
@@ -356,6 +357,8 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             self.handle_confirm()
         elif route == "/api/change-directory":
             self.handle_change_directory()
+        elif route == "/api/directory":
+            self.handle_set_directory()
         else:
             self.send_error(404)
 
@@ -425,6 +428,22 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             result_cache.clear()
             self.send_json({"directory": str(new_dir)})
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def handle_set_directory(self):
+        """Change le dossier sans dialogue : utilisé par l'application globale."""
+        try:
+            data = self.read_request_json()
+            directory = Path(str(data.get("directory") or "")).expanduser().resolve()
+            if not directory.is_dir():
+                raise ValueError(f"Dossier introuvable : {directory}")
+            ClassifierHandler.photos_dir = directory
+            cached_preview.cache_clear()
+            result_cache.clear()
+            self.send_json({"directory": str(directory)})
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json({"error": str(error)}, 400)
+        except OSError as error:
             self.send_json({"error": str(error)}, 500)
 
     def choose_new_directory(self):
@@ -717,7 +736,13 @@ def main():
     if not photos_dir.is_dir():
         parser.error(f"Le dossier de photos n’existe pas : {photos_dir}")
     try:
-        taxref_path = args.taxref or find_taxref_path(APP_DIR / "TAXREF")
+        configured_taxref = environment.taxref_dir()
+        if args.taxref:
+            taxref_path = Path(args.taxref).expanduser()
+        elif configured_taxref.is_file():
+            taxref_path = configured_taxref
+        else:
+            taxref_path = find_taxref_path(configured_taxref)
         ClassifierHandler.taxref = TaxrefIndex(taxref_path)
     except (FileNotFoundError, OSError, ValueError) as error:
         parser.error(str(error))

@@ -200,7 +200,7 @@ def render_large_preview(path: Path, max_side: int = 2048) -> Path | None:
     except OSError:
         return None
     digest = hashlib.sha1(f"{path}:{stat.st_mtime_ns}".encode("utf-8")).hexdigest()[:24]
-    cache_dir = face_db.DATA_DIR / "previews"
+    cache_dir = face_db.PREVIEWS_DIR
     target = cache_dir / f"{digest}.jpg"
     if target.is_file() and target.stat().st_size:
         return target

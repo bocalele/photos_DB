@@ -1,0 +1,15 @@
+{
+  "initial_directory": "/Volumes/WD/PHOTOS/2026/DIVERS/PSD",
+  "active_app": "geotag",
+  "environment": {
+    "photos_root": "/Volumes/WD/PHOTOS",
+    "data_dir": "/Volumes/WD/PHOTOS/_DATA",
+    "photos_db": "/Volumes/WD/PHOTOS/_DATA/photos.db",
+    "face_db": "/Volumes/WD/PHOTOS/_DATA/face.db",
+    "previews_dir": "/Volumes/WD/PHOTOS/_DATA/previews",
+    "taxref_dir": "/Users/pc/DVPT/photos/faune/TAXREF",
+    "exiftool": "",
+    "thesaurus_dir": "/Volumes/WD/PHOTOS/_DATA/Thesaurus",
+    "geocoding": "nominatim"
+  }
+}

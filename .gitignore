@@ -223,3 +223,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Journaux de l'application globale d'annotation
+annotations/logs/
