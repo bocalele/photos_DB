@@ -7,22 +7,24 @@ correspondant. Ces étiquettes forment la galerie de référence.
 
 Exemples :
     pixi run python index.py --from-db --only-labelled
-    pixi run python index.py "/Volumes/WD/PHOTOS/2015" --max-side 2048
+    pixi run python index.py "/chemin/vers/le/dossier-de-photos" --max-side 2048
 """
 
 from __future__ import annotations
 
 import argparse
-import sqlite3
 import sys
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-import face_db
-import metadata
-import people as people_module
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from dataBase import face_db, photos_db  # noqa: E402
+import metadata  # noqa: E402
 
 IMAGE_EXTS = {
     ".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp",
@@ -108,17 +110,14 @@ def create_app(det_size: int = 640):
     return app
 
 
-def collect_from_photos_db(photos_db: Path, only_labelled: bool) -> list[Path]:
-    query = "SELECT DISTINCT path FROM Photos"
-    if only_labelled:
-        query = (
-            "SELECT DISTINCT p.path FROM Photos p "
-            "JOIN Photo_Peoples pp ON pp.id_photo = p.id_photo"
-        )
-    with sqlite3.connect(photos_db) as connection:
-        rows = connection.execute(query).fetchall()
+def collect_from_photos_db(database_path: Path, only_labelled: bool) -> list[Path]:
+    conn = photos_db.connect(database_path, readonly=True)
+    try:
+        rows = photos_db.photo_paths(conn, only_labelled)
+    finally:
+        conn.close()
     paths = []
-    for (path,) in rows:
+    for path in rows:
         try:
             relpath = face_db.to_relpath(path)
         except ValueError:
@@ -184,7 +183,7 @@ def process_photo(
     if source != "embedded":
         matches = match_regions(regions, faces)
         for face_index, name, score in matches:
-            id_people = name_index.get(people_module.normalize_name(name))
+            id_people = name_index.get(photos_db.normalize_name(name))
             if id_people is None:
                 unknown.append(name)
                 continue
@@ -327,8 +326,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit:
         paths = paths[: args.limit]
 
-    photo_map = {person["id_people"]: person for person in people_module.load_people(args.photos_db)}
-    name_index = people_module.build_index(list(photo_map.values()))
+    photo_map = {person["id_people"]: person for person in photos_db.load_people(args.photos_db)}
+    name_index = photos_db.build_index(list(photo_map.values()))
 
     conn = face_db.connect(args.db)
     face_db.create_schema(conn)

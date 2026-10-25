@@ -21,7 +21,8 @@ PROJECT_DIR = APP_DIR.parent
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from tools import environment
+from dataBase import photos_db
+from tools import environment, preferences
 from tools.getMetaData import getGPS, get_metadata_many
 from tools.setMetaData import set_metadata
 
@@ -241,9 +242,7 @@ class GeotagHandler(BaseHTTPRequestHandler):
             return Path(selected).expanduser().resolve()
 
     def update_preferences(self, new_dir):
-        preferences_path = APP_DIR / "preferences.json"
-        preferences = {"initial_directory": str(new_dir)}
-        preferences_path.write_text(json.dumps(preferences, ensure_ascii=False, indent=2), encoding="utf-8")
+        preferences.set_initial_directory(new_dir)
 
     def start_location_job(self, names, latitude, longitude, sub_location, country):
         job_id = uuid.uuid4().hex
@@ -335,6 +334,12 @@ class GeotagHandler(BaseHTTPRequestHandler):
                 },
             },
         )
+        try:
+            photos_db.record_location_for_path(
+                environment.photos_root(), path, latitude, longitude, sub_location, country
+            )
+        except Exception as error:
+            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
 
     def send_static(self, filename, content_type):
         path = APP_DIR / filename
@@ -591,22 +596,10 @@ class GeotagHandler(BaseHTTPRequestHandler):
 
 
 def initial_directory_from_preferences():
-    preferences_path = APP_DIR / "preferences.json"
-    try:
-        preferences = json.loads(preferences_path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
+    configured = preferences.value("initial_directory")
+    if not isinstance(configured, str) or not configured.strip():
         return Path.cwd()
-    except (OSError, json.JSONDecodeError) as error:
-        print(f"Préférences illisibles ({preferences_path}) : {error}. Utilisation du dossier courant.")
-        return Path.cwd()
-
-    if not isinstance(preferences, dict):
-        print(f"Préférences invalides ({preferences_path}) : un objet JSON est attendu. Utilisation du dossier courant.")
-        return Path.cwd()
-    configured_path = preferences.get("initial_directory")
-    if not isinstance(configured_path, str) or not configured_path.strip():
-        return Path.cwd()
-    initial_directory = Path(configured_path).expanduser()
+    initial_directory = Path(configured).expanduser()
     if not initial_directory.is_dir():
         print(
             f"Le dossier initial configuré n’existe pas ({initial_directory}). "

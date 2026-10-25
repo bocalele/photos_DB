@@ -18,8 +18,9 @@ pixi run python server.py "/chemin/vers/le/dossier-de-photos"
 Le serveur choisit `http://127.0.0.1:8000` (ou affiche l’adresse si le port est
 déjà occupé). Pour arrêter le serveur, faire `Ctrl+C` dans le terminal.
 Le dossier initial du sélecteur est défini par la clé `initial_directory` dans
-[`preferences.json`](./preferences.json). Si ce volume ou dossier n’est pas
-disponible, le sélecteur s’ouvre dans le dossier personnel.
+le [`preferences.json`](../preferences.json) commun à toutes les applications.
+Si ce volume ou dossier n’est pas disponible, le sélecteur s’ouvre dans le
+dossier personnel.
 
 Les photos du dossier s’affichent sous forme de vignettes à taille réglable.
 Sélectionner les photos à traiter, puis cliquer sur **Classer les photos
@@ -70,7 +71,7 @@ Le calcul se fait sur le GPU Apple (`mps`) par défaut. Pour lancer sur le proce
 pixi run python classify_photo.py "/chemin/vers/une-photo.jpg" --device cpu
 ```
 
-Le script détecte automatiquement l’unique fichier `TAXREFv*.txt` dans `TAXREF/` et utilise le fichier `TAXVERNv*.txt` de même version situé à côté. Le dossier peut être déplacé : renseigner `taxref_dir` dans la section `environment` de `annotations/preferences.json` (ou passer `--taxref`). Si plusieurs versions sont présentes, choisir explicitement le fichier :
+Le script détecte automatiquement l’unique fichier `TAXREFv*.txt` dans `TAXREF/` et utilise le fichier `TAXVERNv*.txt` de même version situé à côté. Le dossier peut être déplacé : renseigner `taxref_dir` dans la section `environment` du [`preferences.json`](../preferences.json) (ou passer `--taxref`). Si plusieurs versions sont présentes, choisir explicitement le fichier :
 
 ```bash
 pixi run python classify_photo.py photo.jpg --taxref TAXREF/TAXREFv18.txt
@@ -79,3 +80,5 @@ pixi run python classify_photo.py photo.jpg --taxref TAXREF/TAXREFv18.txt
 BioCLIP applique lui-même les transformations et la résolution attendues par son modèle ; l’image n’est pas étirée. Le script lit les formats gérés par Pillow (dont les PSD lisibles par Pillow) et essaie la conversion macOS `sips` pour les autres formats pris en charge par macOS.
 
 Le nom scientifique prédit est rapproché de TAXREF, y compris via les noms synonymes. L’arborescence affiche les noms vernaculaires français quand TAXREF/TAXVERN en fournit un, et conserve le nom taxonomique comme solution de repli. Les noms TAXREF sont issus de la version locale téléchargée ; ils ne changent pas le classement fait par BioCLIP.
+
+Si le nom scientifique proposé par BioCLIP est absent de TAXREF, l’application le cherche dans les thésaurus naturalistes de `faune/Thesaurus/` (format Lightroom, à côté de `TAXREF/`). Quand elle l’y trouve, elle utilise le nom vernaculaire et l’arborescence du thésaurus (par exemple `Arbres > … > Cyprès > Cyprès de Santa Cruz`). La recherche manuelle accepte aussi ces noms. Le dossier est configurable par `thesaurus_dir` dans `preferences.json`.

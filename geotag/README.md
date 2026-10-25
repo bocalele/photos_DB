@@ -13,7 +13,7 @@ pixi run python geotag/server.py "/Volumes/WD/PHOTOS/2026/Saisies-Ete/PSD"
 
 Si aucun dossier n’est indiqué, une fenêtre système permet de choisir le dossier
 au démarrage. Le dossier initial de cette fenêtre se configure dans
-[`preferences.json`](./preferences.json), avec la clé `initial_directory`.
+[`preferences.json`](../preferences.json), avec la clé `initial_directory`.
 Si le chemin indiqué n’existe pas ou si le fichier est invalide, le dossier
 courant est utilisé.
 

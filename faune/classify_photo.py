@@ -14,6 +14,8 @@ from pathlib import Path
 import re
 from typing import Any
 
+from thesaurus import ThesaurusIndex
+
 
 RANK_COLUMNS = (
     ("REGNE", "KD"),
@@ -36,7 +38,7 @@ def normalize_search_text(text: str) -> str:
 
 
 class TaxrefIndex:
-    def __init__(self, taxref_path: Path):
+    def __init__(self, taxref_path: Path, thesaurus_dir: Path | str | None = None):
         vernacular_path = taxref_path.with_name(
             taxref_path.name.replace("TAXREF", "TAXVERN", 1)
         )
@@ -115,6 +117,11 @@ class TaxrefIndex:
                 self.taxa_by_rank_and_name[key] = row
         self.accepted_species = accepted_species
 
+        if thesaurus_dir is None:
+            thesaurus_dir = Path(__file__).resolve().parent / "Thesaurus"
+        directory = Path(thesaurus_dir).expanduser()
+        self.thesaurus = ThesaurusIndex(directory) if directory.is_dir() else None
+
     def vernacular_name(self, row: dict[str, str]) -> str:
         names = self.vernaculars.get(row.get("CD_NOM", ""), [])
         if names:
@@ -127,6 +134,8 @@ class TaxrefIndex:
     def lineage(self, scientific_name: str) -> tuple[str | None, str | None, list[str]]:
         species = self.species_by_name.get(normalize_name(scientific_name))
         if species is None:
+            if self.thesaurus is not None:
+                return self.thesaurus.lineage(scientific_name)
             return None, None, []
 
         species_name = self.vernacular_name(species)
@@ -162,7 +171,11 @@ class TaxrefIndex:
 
     def resolve_vernacular(self, vernacular_name: str) -> dict[str, Any] | None:
         row = self.species_by_vernacular.get(normalize_search_text(vernacular_name))
-        return self.resolve_species(row["LB_NOM"]) if row else None
+        if row is not None:
+            return self.resolve_species(row["LB_NOM"])
+        if self.thesaurus is not None:
+            return self.thesaurus.resolve_vernacular(vernacular_name)
+        return None
 
     def resolve_hierarchical_path(self, path: str) -> dict[str, Any] | None:
         segments = [
@@ -182,8 +195,12 @@ class TaxrefIndex:
             try:
                 position = lineage.index(normalized, position) + 1
             except ValueError:
-                return None
-        return taxon
+                break
+        else:
+            return taxon
+        if self.thesaurus is not None:
+            return self.thesaurus.resolve_hierarchical_path(path)
+        return None
 
     def search_species(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         needle = normalize_search_text(query)
@@ -208,7 +225,15 @@ class TaxrefIndex:
             if resolved:
                 matches.append((match_rank, normalize_search_text(resolved["vernacularName"]), resolved))
         matches.sort(key=lambda item: (item[0], item[1]))
-        return [item[2] for item in matches[:limit]]
+        results = [item[2] for item in matches[:limit]]
+        if self.thesaurus is not None:
+            known = {normalize_name(item["scientificName"]) for item in results}
+            for item in self.thesaurus.search(query, limit=limit):
+                if normalize_name(item["scientificName"]) not in known:
+                    results.append(item)
+                    if len(results) >= limit:
+                        break
+        return results
 
 
 def find_taxref_path(directory: Path) -> Path:
@@ -319,7 +344,7 @@ def main() -> int:
     project_directory = Path(__file__).resolve().parent
     try:
         taxref_path = args.taxref or find_taxref_path(project_directory / "TAXREF")
-        taxref = TaxrefIndex(taxref_path)
+        taxref = TaxrefIndex(taxref_path, project_directory / "Thesaurus")
         from bioclip.predict import Rank, TreeOfLifeClassifier
 
         with tempfile.TemporaryDirectory(prefix="bioclip-") as temp_dir:

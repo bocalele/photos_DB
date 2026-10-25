@@ -24,7 +24,11 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-import face_db
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from dataBase import face_db  # noqa: E402
 
 REGION_TAGS = (
     "-XMP-mwg-rs:RegionName",

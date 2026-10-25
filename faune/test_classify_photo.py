@@ -7,7 +7,9 @@ from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 from classify_photo import TaxrefIndex, find_taxref_path, prediction_details
+from thesaurus import ThesaurusIndex
 import server as classifier_server
+from tools import preferences
 
 
 CLASSIFIER_DIR = Path(__file__).resolve().parent
@@ -135,16 +137,53 @@ class TaxrefIndexTests(unittest.TestCase):
             finally:
                 classifier_server.jobs.pop(job_id, None)
 
+    def test_uses_thesaurus_when_species_is_absent_from_taxref(self):
+        taxref = TaxrefIndex(
+            CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt",
+            CLASSIFIER_DIR / "Thesaurus",
+        )
+        scientific, vernacular, lineage = taxref.lineage("Cupressus abramsiana")
+
+        self.assertEqual(scientific, "Cupressus abramsiana")
+        self.assertEqual(vernacular, "Cyprès de Santa Cruz")
+        self.assertEqual(lineage[0], "Arbres")
+        self.assertEqual(lineage[-1], "Cyprès de Santa Cruz")
+
+        result = prediction_details(
+            {"species": "Cupressus abramsiana", "score": 0.81},
+            taxref,
+        )
+        self.assertEqual(result["vernacularName"], "Cyprès de Santa Cruz")
+        self.assertEqual(result["lineage"][-1], "Cyprès de Santa Cruz")
+
+    def test_thesaurus_reads_scientific_label_at_same_depth(self):
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "thesaurus-test-utf8.txt").write_text(
+                "Arbres\n"
+                "\tTaxodiacées\n"
+                "\t\tCyprès\n"
+                "\t\t{Cupressus}\n"
+                "\t\t\tCyprès de Santa Cruz\n"
+                "\t\t\t\t{Cupressus abramsiana}\n",
+                encoding="utf-8",
+            )
+            thesaurus = ThesaurusIndex(Path(directory))
+            taxon = thesaurus.resolve_species("Cupressus abramsiana")
+            self.assertIsNotNone(taxon)
+            self.assertEqual(taxon["vernacularName"], "Cyprès de Santa Cruz")
+            self.assertEqual(thesaurus.resolve_species("Cupressus")["vernacularName"], "Cyprès")
+
     def test_loads_initial_directory_from_preferences(self):
         with tempfile.TemporaryDirectory() as directory:
             settings = Path(directory)
             photos = settings / "photos"
             photos.mkdir()
-            (settings / "preferences.json").write_text(
+            preferences_file = settings / "preferences.json"
+            preferences_file.write_text(
                 json.dumps({"initial_directory": str(photos)}),
                 encoding="utf-8",
             )
-            with patch.object(classifier_server, "APP_DIR", settings):
+            with patch.object(preferences, "PREFERENCES_PATH", preferences_file):
                 self.assertEqual(
                     classifier_server.initial_directory_from_preferences(),
                     photos.resolve(),
@@ -153,12 +192,13 @@ class TaxrefIndexTests(unittest.TestCase):
     def test_falls_back_when_preferred_directory_is_unavailable(self):
         with tempfile.TemporaryDirectory() as directory:
             settings = Path(directory)
-            (settings / "preferences.json").write_text(
+            preferences_file = settings / "preferences.json"
+            preferences_file.write_text(
                 json.dumps({"initial_directory": str(settings / "missing")}),
                 encoding="utf-8",
             )
             with (
-                patch.object(classifier_server, "APP_DIR", settings),
+                patch.object(preferences, "PREFERENCES_PATH", preferences_file),
                 patch.object(Path, "home", return_value=settings),
             ):
                 self.assertEqual(

@@ -8,14 +8,13 @@ au format Lightroom.
 
 Usage :
     pixi run python server.py                 # ouvre le sélecteur de dossier
-    pixi run python server.py "/Volumes/WD/PHOTOS/2015/Queyras"
+    pixi run python server.py "/chemin/vers/le/dossier-de-photos"
 """
 
 from __future__ import annotations
 
 import json
 import mimetypes
-import sqlite3
 import subprocess
 import sys
 import threading
@@ -29,12 +28,16 @@ from urllib.parse import parse_qs, quote, urlparse
 import cv2
 import numpy as np
 
-import face_db
-import index
-import metadata
-import people as people_module
-
 APP_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = APP_DIR.parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from dataBase import face_db, photos_db  # noqa: E402
+import index  # noqa: E402
+import metadata  # noqa: E402
+from tools import environment, preferences  # noqa: E402
+
 PHOTO_ROOT = face_db.DEFAULT_PHOTO_ROOT
 PAGE_SIZE = 200
 PREVIEW_SIZE = 1600
@@ -168,11 +171,11 @@ class AppState:
     def load_catalogue(self) -> None:
         self.people = {
             person["id_people"]: person
-            for person in people_module.load_people()
+            for person in photos_db.load_people()
         }
-        self.name_index = people_module.build_index(list(self.people.values()))
+        self.name_index = photos_db.build_index(list(self.people.values()))
         self.known_names = {
-            people_module.normalize_name(person["label"])
+            photos_db.normalize_name(person["label"])
             for person in self.people.values()
         }
 
@@ -185,32 +188,21 @@ class AppState:
             raise ValueError("Le nom est trop long (80 caractères maximum).")
         if any(character in cleaned for character in "\0\n\r\t"):
             raise ValueError("Le nom contient des caractères interdits.")
-        key = people_module.normalize_name(cleaned)
+        key = photos_db.normalize_name(cleaned)
         if not key:
             raise ValueError("Nom invalide.")
         for person in self.people.values():
-            if people_module.normalize_name(person["label"]) == key:
+            if photos_db.normalize_name(person["label"]) == key:
                 return person
 
-        # Convention de la base : prénom puis nom (le reste du nom reste groupé).
-        head, _, tail = cleaned.partition(" ")
-        prenom, nom = (head, tail.strip()) if tail.strip() else ("", head)
-        with sqlite3.connect(face_db.DEFAULT_PHOTOS_DB, timeout=30) as conn:
-            cursor = conn.execute(
-                "INSERT INTO Peoples(nom, prenom, surnom) VALUES (?, ?, '')",
-                (nom, prenom),
-            )
-            id_people = int(cursor.lastrowid)
-        person = {
-            "id_people": id_people,
-            "prenom": prenom,
-            "nom": nom,
-            "surnom": "",
-            "label": f"{prenom} {nom}".strip(),
-        }
+        conn = photos_db.connect()
+        try:
+            person = photos_db.insert_person(conn, cleaned)
+        finally:
+            conn.close()
         with self.lock:
-            self.people[id_people] = person
-            self.name_index.update(people_module.build_index([person]))
+            self.people[person["id_people"]] = person
+            self.name_index.update(photos_db.build_index([person]))
             self.known_names.add(key)
             self.status_dirty = True
         return person
@@ -277,10 +269,7 @@ class AppState:
     def face_row(self, key: str, face_index: int):
         conn = face_db.connect()
         try:
-            return conn.execute(
-                "SELECT * FROM Face WHERE relpath = ? AND face_idx = ?",
-                (key, face_index),
-            ).fetchone()
+            return face_db.face_row(conn, key, face_index)
         finally:
             conn.close()
 
@@ -348,9 +337,7 @@ class AppState:
         conn = face_db.connect()
         try:
             rows = face_db.photo_faces(conn, key)
-            limits = conn.execute(
-                "SELECT width, height FROM Photo WHERE relpath = ?", (key,)
-            ).fetchone()
+            limits = face_db.photo_dimensions(conn, key)
         finally:
             conn.close()
 
@@ -381,7 +368,7 @@ class AppState:
                 name, score = existing
                 existing_payload = {
                     "name": name,
-                    "id_people": self.name_index.get(people_module.normalize_name(name)),
+                    "id_people": self.name_index.get(photos_db.normalize_name(name)),
                     "score": round(float(score), 3),
                 }
             faces.append(
@@ -496,9 +483,7 @@ class AppState:
         if not width or not height:
             conn = face_db.connect()
             try:
-                limits = conn.execute(
-                    "SELECT width, height FROM Photo WHERE relpath = ?", (key,)
-                ).fetchone()
+                limits = face_db.photo_dimensions(conn, key)
             finally:
                 conn.close()
             if limits:
@@ -509,7 +494,7 @@ class AppState:
         def merged(values: list[str]) -> list[str]:
             result = []
             for value in values:
-                if people_module.normalize_name(value) in self.known_names:
+                if photos_db.normalize_name(value) in self.known_names:
                     continue
                 if value not in result:
                     result.append(value)
@@ -527,6 +512,10 @@ class AppState:
             hierarchical=merged(keywords["hierarchical"]),
             weighted=merged(keywords["weighted"]),
         )
+        try:
+            photos_db.record_people_for_path(environment.photos_root(), path, names)
+        except Exception as error:
+            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
 
         conn = face_db.connect()
         try:
@@ -537,7 +526,7 @@ class AppState:
             face_db.clear_exemplars(conn, key)
             labels = []
             for face_index, name, score in index.match_regions(regions, boxes):
-                id_people = self.name_index.get(people_module.normalize_name(name))
+                id_people = self.name_index.get(photos_db.normalize_name(name))
                 if id_people is None:
                     continue
                 labels.append(
@@ -660,13 +649,7 @@ class AppState:
 
         conn = face_db.connect()
         try:
-            rows = conn.execute(
-                """
-                SELECT f.relpath, f.face_idx, f.det_score, f.embedding
-                FROM Face f LEFT JOIN FaceLabel l ON l.id_face = f.id
-                WHERE l.id_face IS NULL
-                """
-            ).fetchall()
+            rows = face_db.unlabelled_faces(conn)
         finally:
             conn.close()
 
@@ -996,27 +979,13 @@ class FaceHandler(BaseHTTPRequestHandler):
 # --- préférences et sélecteur de dossier ---------------------------------
 
 
-def preferences_path() -> Path:
-    return APP_DIR / "preferences.json"
-
-
 def initial_directory() -> Path:
-    try:
-        preferences = json.loads(preferences_path().read_text(encoding="utf-8"))
-        configured = Path(str(preferences.get("initial_directory", ""))).expanduser()
-        if configured.is_dir():
-            return configured.resolve()
-    except (OSError, json.JSONDecodeError, ValueError):
-        pass
-    return PHOTO_ROOT if PHOTO_ROOT.is_dir() else Path.cwd()
+    return preferences.initial_directory(PHOTO_ROOT if PHOTO_ROOT.is_dir() else Path.cwd()) or Path.cwd()
 
 
 def save_preference(directory: Path) -> None:
     try:
-        preferences_path().write_text(
-            json.dumps({"initial_directory": str(directory)}, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        preferences.set_initial_directory(directory)
     except OSError as error:
         print(f"Préférences non enregistrées : {error}", flush=True)
 

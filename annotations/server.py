@@ -12,8 +12,8 @@ et affiche leur interface dans un cadre. Il ne réimplémente rien : il orchestr
 Points importants :
 
 - le dossier courant est unique et propagé aux quatre apps ;
-- changer de dossier dans une app est détecté (via son `preferences.json`) et
-  répercuté sur les autres ;
+- changer de dossier dans une app est détecté (via le `preferences.json`
+  partagé) et répercuté sur les autres ;
 - l'application globale ne dépend que de la bibliothèque standard.
 """
 
@@ -36,7 +36,6 @@ from urllib.parse import parse_qs, urlparse
 
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
-PREFS_PATH = APP_DIR / "preferences.json"
 LOG_DIR = APP_DIR / "logs"
 HOST = "127.0.0.1"
 START_TIMEOUT = 120.0
@@ -44,7 +43,7 @@ START_TIMEOUT = 120.0
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from tools import environment  # noqa: E402
+from tools import environment, preferences  # noqa: E402
 
 # Ordre demandé : Géotag, Faune, Visages, Mots-clés.
 APPS = [
@@ -89,26 +88,20 @@ APPS = [
 
 
 def read_preferences() -> dict:
-    try:
-        data = json.loads(PREFS_PATH.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        return {}
+    return preferences.load()
 
 
-def write_preferences(preferences: dict) -> None:
+def write_preferences(preferences_data: dict) -> None:
     try:
-        PREFS_PATH.write_text(
-            json.dumps(preferences, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        preferences.save(preferences_data)
     except OSError as error:
         print(f"Préférences non enregistrées : {error}", flush=True)
 
 
 def ensure_environment_defaults() -> None:
     """Complète la section `environment` sans écraser les valeurs choisies."""
-    preferences = read_preferences()
-    section = preferences.get("environment")
+    data = read_preferences()
+    section = data.get("environment")
     if not isinstance(section, dict):
         section = {}
     defaults = {
@@ -117,19 +110,24 @@ def ensure_environment_defaults() -> None:
         "photos_db": str(environment.photos_db()),
         "face_db": str(environment.face_db()),
         "previews_dir": str(environment.previews_dir()),
-        "thesaurus_dir": str(environment.data_dir() / "Thesaurus"),
-        "geocoding": "nominatim",
+        "thesaurus_dir": str(environment.thesaurus_dir()),
         "taxref_dir": str(environment.taxref_dir()),
+        "legacy_photo_roots": [str(path) for path in environment.legacy_photo_roots()],
+        "geocoding": "nominatim",
         "exiftool": "",
     }
+    changed = False
     for key, value in defaults.items():
-        section.setdefault(key, value)
-    preferences["environment"] = section
-    write_preferences(preferences)
+        if key not in section:
+            section[key] = value
+            changed = True
+    if changed:
+        data["environment"] = section
+        write_preferences(data)
 
 
 def default_directory() -> Path:
-    configured = read_preferences().get("initial_directory")
+    configured = preferences.value("initial_directory")
     if configured:
         candidate = Path(str(configured)).expanduser()
         if candidate.is_dir():
@@ -189,31 +187,41 @@ def environment_for(spec: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# Base du site (photos.db)
+# Base du sélecteur (photos.db)
 # --------------------------------------------------------------------------- #
 
 
 def sync_photos_database() -> dict:
-    """Reporte dans photos.db les noms de personnes lus dans les XMP.
+    """Met à jour photos.db pour le dossier de travail courant.
 
-    Le script vit avec l'app Visages (même environnement, même ExifTool) ; il
-    est additif : aucun lien existant n'est retiré sans `--prune` explicite.
+    Un seul script fait le reset et les mises à jour :
+    ``python -m dataBase.sync update <dossier> --json``. On utilise
+    l'environnement racine (pandas + ExifTool), pas l'environnement Visages
+    qui ne contient pas pandas.
     """
-    spec = next(app for app in APPS if app["id"] == "face")
-    script = spec["directory"] / "sync_photos_db.py"
-    command = [str(python_for(spec)), str(script), "--json"]
+    spec = next(app for app in APPS if app["id"] == "geotag")
+    runtime = globals().get("RUNTIME")
+    scope = runtime.directory.resolve() if runtime is not None else environment.photos_root()
+    command = [
+        str(python_for(spec)),
+        "-m",
+        "dataBase.sync",
+        "update",
+        str(scope),
+        "--json",
+    ]
     try:
         result = subprocess.run(
             command,
-            cwd=str(spec["directory"]),
+            cwd=str(PROJECT_DIR),
             env=environment_for(spec),
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=1800,
         )
     except subprocess.TimeoutExpired as error:
         raise RuntimeError(
-            "La mise à jour de photos.db a dépassé cinq minutes."
+            "La mise à jour de photos.db a dépassé trente minutes."
         ) from error
     if result.returncode != 0:
         message = (result.stderr or result.stdout).strip()
@@ -222,7 +230,7 @@ def sync_photos_database() -> dict:
     try:
         return json.loads(lines[-1])
     except (IndexError, json.JSONDecodeError) as error:
-        raise RuntimeError("Réponse inattendue de sync_photos_db.py.") from error
+        raise RuntimeError("Réponse inattendue de dataBase.sync.") from error
 
 
 # --------------------------------------------------------------------------- #
@@ -350,15 +358,13 @@ class Runtime:
         self.lock = threading.RLock()
         self.directory = directory
         self.apps = {spec["id"]: AppProcess(spec) for spec in APPS}
-        self.active = str(read_preferences().get("active_app") or "geotag")
+        self.active = preferences.active_app()
         if self.active not in self.apps:
             self.active = "geotag"
         self.stop_event = threading.Event()
         self.preferences_lock = threading.Lock()
-        # Dernier état connu du preferences.json de chaque app : (mtime, dossier).
-        self.seen: dict[str, tuple[int, str | None]] = {}
-        for app in self.apps.values():
-            self.seen[app.id] = self._read_app_preference(app)
+        # Dernier dossier vu dans le preferences.json partagé.
+        self.seen_directory: str | None = str(directory)
 
     # --- état -------------------------------------------------------------
 
@@ -386,9 +392,7 @@ class Runtime:
             if app_id not in self.apps:
                 raise ValueError("Application inconnue.")
             self.active = app_id
-            preferences = read_preferences()
-            preferences["active_app"] = app_id
-            write_preferences(preferences)
+            preferences.update(active_app=app_id)
 
     # --- démarrage --------------------------------------------------------
 
@@ -420,44 +424,11 @@ class Runtime:
         with self.lock:
             changed = directory != self.directory
             self.directory = directory
-            preferences = read_preferences()
-            preferences["initial_directory"] = str(directory)
-            write_preferences(preferences)
+            self.seen_directory = str(directory)
+            preferences.set_initial_directory(directory)
         if changed:
             print(f"Dossier : {directory}", flush=True)
         self.propagate(directory, skip=skip)
-        self.remember_directory(directory)
-
-    def remember_directory(self, directory: Path) -> None:
-        """Aligne les preferences.json des apps sur le dossier courant.
-
-        Ainsi, le sélecteur de dossier de chaque app s'ouvre au bon endroit et
-        une app relancée seule retrouve le même dossier. On met à jour `seen`
-        dans le même mouvement pour que la surveillance ne prenne pas cette
-        écriture pour une action de l'utilisateur.
-        """
-        value = str(directory)
-        with self.preferences_lock:
-            for app in self.apps.values():
-                path = app.spec["directory"] / "preferences.json"
-                try:
-                    try:
-                        data = json.loads(path.read_text(encoding="utf-8"))
-                    except (OSError, json.JSONDecodeError):
-                        data = {}
-                    if not isinstance(data, dict):
-                        data = {}
-                    data["initial_directory"] = value
-                    path.write_text(
-                        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-                    )
-                    mtime = path.stat().st_mtime_ns
-                except OSError as error:
-                    print(
-                        f"[{app.id}] préférences non enregistrées : {error}", flush=True
-                    )
-                    mtime = 0
-                self.seen[app.id] = (mtime, value)
 
     def propagate(self, directory: Path, skip: str | None = None) -> None:
         for app in list(self.apps.values()):
@@ -482,32 +453,27 @@ class Runtime:
                 except Exception as error:  # noqa: BLE001
                     print(f"[{app.id}] contrôle : {error}", flush=True)
 
-            for app in self.apps.values():
-                try:
-                    # Lecture et comparaison sous le même verrou que les écritures :
-                    # sinon on peut lire un ancien fichier juste avant que le
-                    # programme ne le réécrive, et prendre ce retard pour une
-                    # action de l'utilisateur.
-                    with self.preferences_lock:
-                        mtime, value = self._read_app_preference(app)
-                        if mtime == 0:
-                            continue
-                        seen_mtime, _seen_value = self.seen.get(app.id, (0, None))
-                        if mtime == seen_mtime:
-                            continue
-                        self.seen[app.id] = (mtime, value)
-                    if not value:
+            try:
+                # Une app qui change de dossier écrit le preferences.json partagé.
+                # On compare la valeur à celle connue pour ne pas boucler sur nos
+                # propres écritures.
+                with self.preferences_lock:
+                    value = preferences.value("initial_directory")
+                    if not isinstance(value, str) or not value.strip():
+                        continue
+                    if value == self.seen_directory:
                         continue
                     candidate = Path(value).expanduser()
                     if not candidate.is_dir():
                         continue
                     candidate = candidate.resolve()
                     if candidate == self.directory:
+                        self.seen_directory = value
                         continue
-                    # L'utilisateur a changé de dossier dans cette app : on aligne les autres.
-                    self.set_directory(candidate, skip=app.id)
-                except Exception as error:  # noqa: BLE001
-                    print(f"[{app.id}] surveillance : {error}", flush=True)
+                    # L'utilisateur a changé de dossier dans une app : on aligne les autres.
+                    self.set_directory(candidate)
+            except Exception as error:  # noqa: BLE001
+                print(f"[surveillance] {error}", flush=True)
 
     def _propagate_one(self, app: AppProcess, directory: Path) -> None:
         if app.status != "ready" or not app.port:
@@ -525,17 +491,6 @@ class Runtime:
             app.directory_sent = str(directory)
         except (urllib.error.URLError, OSError, TimeoutError) as error:
             print(f"[{app.id}] dossier non propagé : {error}", flush=True)
-
-    @staticmethod
-    def _read_app_preference(app: AppProcess) -> tuple[int, str | None]:
-        path = app.spec["directory"] / "preferences.json"
-        try:
-            mtime = path.stat().st_mtime_ns
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return (0, None)
-        value = data.get("initial_directory") if isinstance(data, dict) else None
-        return (mtime, str(value) if value else None)
 
     # --- arrêt ------------------------------------------------------------
 
@@ -701,9 +656,7 @@ def main() -> None:
     global RUNTIME
     RUNTIME = Runtime(directory)
     ensure_environment_defaults()
-    preferences = read_preferences()
-    preferences["initial_directory"] = str(directory)
-    write_preferences(preferences)
+    preferences.set_initial_directory(directory)
 
     atexit.register(RUNTIME.shutdown)
 

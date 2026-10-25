@@ -1,0 +1,241 @@
+Orchidées
+	{Orchidales}
+		Cypripediacea
+			Cypripedium calceolus
+		Orchidaceae		
+			Cephalanthera damasonium
+			Cephalanthera longifolia
+			Cephalanthera rubra
+			Epipactis palustris
+			Epipactis microphylla
+			Epipactis atrorubens
+			Epipactis kleinii
+			Epipactis lusitanica
+			Epipactis tremolsii
+			Epipactis neerlandica
+			Epipactis helleborine
+			Epipactis helleborine f. minor
+			Epipactis helleborine var. orbicularis
+			Epipactis rhodanensis
+			Epipactis purpurata
+			Epipactis distans
+			Epipactis provincialis
+			Epipactis leptochila
+			Epipactis leptochila var. neglecta
+			Epipactis placentina
+			Epipactis muelleri
+			Epipactis fibri
+			Epipactis exilis
+			Epipactis phyllanthes
+			Epipactis phyllanthes var. olarionensis
+			Epipactis phyllanthes var. pendula
+			Epipactis phyllanthes var. vectensis
+			Epipactis phyllanthes var. degenera
+			Epipactis fageticola
+			Limnodorum abortivum
+			Limnodorum abortivum var. trabutianum
+			Epipogium aphyllum
+			Neottia nidus-avis
+			Neottia ovata
+			Neottia cordata
+			Spiranthes spiralis
+			Spiranthes aestivalis
+			Goodyera repens
+			Corallorhiza trifida
+			Liparis loeselii
+			Malaxis monophyllos
+			Malaxis paludosa
+			Gennaria diphylla
+			Herminium monorchis
+			Traunsteinera globosa
+			Chamorchis alpina
+			Platanthera bifolia
+			Platanthera bifolia var. robusta
+			Platanthera chlorantha
+			Platanthera algeriensis
+			Gymnadenia albida
+			Gymnadenia albida f. subalpina
+			Gymnadenia conopsea
+			Gymnadenia conopsea var. densiflora
+			Gymnadenia odoratissima
+			Gymnadenia odoratissima var. pyrenaica
+			Gymnadenia rhellicani
+			Gymnadenia rhellicani var. robusta
+			Gymnadenia gabasiana
+			Gymnadenia corneliana 
+			Gymnadenia corneliana f. bourneriasii
+			Gymnadenia austriaca
+			Gymnadenia austriaca var. gallica
+			Gymnadenia rubra
+			Coeloglossum viride
+			Coeloglossum viride alpinum
+			Dactylorhiza sambucina
+			Dactylorhiza insularis
+			Dactylorhiza insularis f. bartonii
+			Dactylorhiza ochroleuca
+			Dactylorhiza incarnata
+			Dactylorhiza incarnata gemmana
+			Dactylorhiza incarnata f. ochrantha
+			Dactylorhiza incarnata f. brevibracteata
+			Dactylorhiza incarnata var. lobelii
+			Dactylorhiza incarnata var. hyphaematodes
+			Dactylorhiza incarnata f. haematodes
+			Dactylorhiza incarnata var. haussknechtii
+			Dactylorhiza pulchella
+			Dactylorhiza cruenta
+			Dactylorhiza alpestris
+			Dactylorhiza majalis
+			Dactylorhiza lapponica
+			Dactylorhiza lapponica parvimajalis
+			Dactylorhiza traunsteineri
+			Dactylorhiza traunsteineri angustata
+			Dactylorhiza traunsteineri brevifolia
+			Dactylorhiza traunsteineri deweveri 
+			Dactylorhiza wirtgenii
+			Dactylorhiza traunsteinerioides
+			Dactylorhiza sphagnicola
+			Dactylorhiza praetermissa
+			Dactylorhiza praetermissa integrata
+			Dactylorhiza praetermissa var. junialis
+			Dactylorhiza elata
+			Dactylorhiza elata var. brennensis
+			Dactylorhiza elata var. iberica
+			Dactylorhiza elata var. ambigua
+			Dactylorhiza elata de Lesdiguières
+			Dactylorhiza saccifera 
+			Dactylorhiza fuchsii
+			Dactylorhiza fuchsii meyeri
+			Dactylorhiza psychophila
+			Dactylorhiza savogiensis
+			Dactylorhiza ericetorum
+			Dactylorhiza maculata
+			Dactylorhiza maculata arduennensis
+			Dactylorhiza maculata var. elodes
+			Dactylorhiza maculata var. podesta
+			Dactylorhiza caramulensis
+			Serapias nurrica
+			Serapias parviflora
+			Serapias vomeracea
+			Serapias neglecta
+			Serapias cordigera
+			Serapias lingua
+			Serapias olbia
+			Serapias gregaria
+			Serapias strictiflora
+			Anacamptis pyramidalis
+			Anacamptis pyramidalis var. tanayensis
+			Orchis palustris
+			Orchis laxiflora
+			Orchis morio
+			Orchis champagneuxii
+			Orchis longicornu
+			Orchis morio
+			Orchis picta
+			Orchis papilionacea
+			Orchis papilionacea rubra
+			Orchis papilionacea var. vexillifera
+			Orchis papilionacea var. grandiflora
+			Orchis collina
+			Orchis coriophora
+			Orchis coriophora var. martrinii
+			Orchis coriophora apricorum
+			Orchis fragrans
+			Orchis spitzelii
+			Orchis langei
+			Orchis ichnusae
+			Orchis olbiensis
+			Orchis mascula 
+			Orchis ovalis
+			Orchis pallens
+			Orchis provincialis
+			Orchis pauciflora
+			Orchis anthropophora
+			Orchis simia
+			Orchis purpurea
+			Orchis militaris
+			Orchis lactea
+			Orchis lactea hanrii
+			Orchis lactea corsica
+			Orchis conica
+			Orchis tridentata
+			Orchis commutata
+			Orchis ustulata
+			Orchis ustulata aestivalis
+			Orchis intacta
+			Himantoglossum robertianum
+			Himantoglossum hircinum
+			Ophrys eleonorae
+			Ophrys delforgei
+			Ophrys fusca
+			Ophrys bilunulata
+			Ophrys lupercalis
+			Ophrys funerea
+			Ophrys arnoldii
+			Ophrys zonata
+			Ophrys zonata peraiolae
+			Ophrys marmorata
+			Ophrys forestieri
+			Ophrys sulcata
+			Ophrys lucentina
+			Ophrys sicula
+			Ophrys phryganae
+			Ophrys phryganae corsica
+			Ophrys lutea
+			Ophrys vasconica
+			Ophrys speculum
+			Ophrys bombyliflora
+			Ophrys tenthredinifera
+			Ophrys aprilia
+			Ophrys neglecta
+			Ophrys ficalhoana
+			Ophrys aymoninii
+			Ophrys insectifera
+			Ophrys apifera
+			Ophrys apifera f. friburgensis
+			Ophrys apifera f. botteronii
+			Ophrys apifera f. trollii
+			Ophrys apifera f. bicolor
+			Ophrys annae
+			Ophrys conradiae
+			Ophrys santonica
+			Ophrys philippi
+			Ophrys vetula
+			Ophrys gresivaudanica
+			Ophrys elatior
+			Ophrys aegirticva
+			Ophrys druentica
+			Ophrys linearis
+			Ophrys brachyotes
+			Ophrys serotina
+			Ophrys gracilis
+			Ophrys fuciflora
+			Ophrys picta
+			Ophrys scolopax
+			Ophrys corbariensis
+			Ophrys morisii
+			Ophrys panormitana var. praecox
+			Ophrys arachnitiformis
+			Ophrys arachnitiformis f. nicaeensis
+			Ophrys arachnitiformis f. specularia
+			Ophrys arachnitiformis var. occidentalis
+			Ophrys arachnitiformis var. passionis
+			Ophrys argensonensis
+			Ophrys provincialis
+			Ophrys quadriloba
+			Ophrys massiliensis
+			Ophrys sphegodes
+			Ophrys majellensis
+			Ophrys incubacea
+			Ophrys caloptera
+			Ophrys caloptera de Saint-Cézaire
+			Ophrys virescens
+			Ophrys araneola
+			Ophrys splendida
+			Ophrys aveyronensis
+			Ophrys bertolonii
+			Ophrys aurelia
+			Ophrys benacensis
+			Ophrys catalaunica
+			Ophrys catalaunica magniflora
+			Ophrys saratoi
+			Ophrys drumana

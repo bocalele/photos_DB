@@ -14,19 +14,21 @@ Application web locale pour éditer les mots-clés, les notes (étoiles) et l'au
 
 ## Préférences
 
-Le fichier `preferences.json` contient :
+Le fichier [`preferences.json`](../preferences.json), commun à toutes les
+applications, contient :
 
 ```json
 {
-  "initial_directory": "/Users/pc/Pictures",
-  "default_author": "Pierre",
-  "default_rating": 3
+  "initial_directory": "/Volumes/WD/PHOTOS/2026/DIVERS/PSD",
+  "apps": {
+    "motscles": {"default_author": "Pierre", "default_rating": 3}
+  }
 }
 ```
 
 - `initial_directory` : dernier dossier ouvert (mis à jour automatiquement).
-- `default_author` : auteur proposé quand les photos n'en ont pas.
-- `default_rating` : note proposée quand les photos n'en ont pas.
+- `apps.motscles.default_author` : auteur proposé quand les photos n'en ont pas.
+- `apps.motscles.default_rating` : note proposée quand les photos n'en ont pas.
 
 ## Lancement
 

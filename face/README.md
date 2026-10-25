@@ -5,7 +5,7 @@ InsightFace (`buffalo_l` : RetinaFace + ArcFace) sur CPU.
 
 La galerie de référence n'est pas saisie à la main : elle est déduite des
 régions visage XMP posées dans Lightroom (`RegionName`), que `photos.db` connaît
-déjà via `Peoples` et `Photo_Peoples`.
+déjà via `people` et `photo_people`.
 
 ## Installation
 
@@ -28,11 +28,11 @@ pixi run python index.py --from-db --only-labelled
 pixi run python reference.py
 
 # Reconnaître sur un dossier, sans rien écrire
-pixi run python recognize.py "/Volumes/WD/PHOTOS/2015/Queyras"
-pixi run python recognize.py "/Volumes/WD/PHOTOS/2015/Queyras" --show-xmp
+pixi run python recognize.py "/chemin/vers/le/dossier-de-photos"
+pixi run python recognize.py "/chemin/vers/le/dossier-de-photos" --show-xmp
 ```
 
-`index.py` accepte aussi des dossiers : `pixi run python index.py "/Volumes/WD/PHOTOS/2026"`.
+`index.py` accepte aussi des dossiers : `pixi run python index.py "/chemin/vers/le/dossier-de-photos"`.
 Seules les photos dont la taille ou la date de modification a changé sont
 réindexées ; `--force` réindexe tout.
 
@@ -43,7 +43,7 @@ noms dans les métadonnées des photos.
 
 ```sh
 pixi run python server.py                       # choisit un dossier
-pixi run python server.py "/Volumes/WD/PHOTOS/2015/Queyras"
+pixi run python server.py "/chemin/vers/le/dossier-de-photos"
 ```
 
 Ou double-cliquer `Face.app` (icône « Visages »). Le lanceur ouvre le Terminal,
@@ -58,11 +58,11 @@ Deux vues :
   sûr, avec la proposition et son score. C'est la vue de validation en série.
 
 Dans la photo, chaque visage est encadré. Un clic sur un visage affiche les
-trois meilleures propositions ; on choisit, on cherche dans les 78 personnes,
+trois meilleures propositions ; on choisit, on cherche dans les personnes du catalogue,
 ou on laisse sans nom. La recherche accepte les flèches `↑`/`↓` et `Entrée`.
 Si le nom cherché n'existe pas encore, une entrée « Créer « … » » l'ajoute au
-catalogue `photos.db` (table `Peoples`) : il devient immédiatement disponible
-pour les autres photos et pour le site. Raccourcis : `←`/`→` visage précédent/suivant, `Entrée`
+catalogue `photos.db` (table `people`) : il devient immédiatement disponible
+pour les autres photos et pour le sélecteur. Raccourcis : `←`/`→` visage précédent/suivant, `Entrée`
 accepte la proposition, `1`–`3` choisit une alternative, `Retour arrière`
 efface le nom.
 
@@ -84,11 +84,11 @@ reconstruire cette galerie depuis les étiquettes XMP.
 Les écritures passent par ExifTool avec `-overwrite_original` : pas de fichier
 `_original` à côté des photos, comme pour l'app Géotag.
 
-`photos.db` n'est **pas** modifié pour les étiquettes : la source de vérité
-devient le fichier lui-même, et le site continuera d'afficher l'ancien état
-tant que la base n'est pas réimportée depuis les métadonnées. Seule exception :
-« Créer « … » » ajoute une ligne dans la table `Peoples` (nom, prénom), pour que
-la nouvelle personne existe aussi pour les autres apps.
+Le XMP reste la source de vérité, mais `photos.db` est mise à jour juste après
+l'écriture de la photo : les liens `photo_people` sont réécrits pour cette
+photo. Si la base est absente ou en erreur, l'écriture XMP reste prioritaire et
+l'application continue de fonctionner. « Créer « … » » ajoute aussi la personne
+dans la table `people`.
 
 ## Indexer tout le fonds
 
@@ -97,7 +97,7 @@ L'application analyse le dossier ouvert. En ligne de commande :
 ```sh
 pixi run python index.py --from-db             # toutes les photos de photos.db
 pixi run python index.py --from-db --only-labelled
-pixi run python index.py "/Volumes/WD/PHOTOS/2026"   # un dossier ou un fichier
+pixi run python index.py "/chemin/vers/le/dossier-de-photos"   # un dossier ou un fichier
 pixi run python index.py --force --from-db     # tout réanalyser
 ```
 
@@ -111,29 +111,32 @@ de les ajouter. Deux copies physiques du même fichier restent deux entrées (de
 chemins différents) : elles peuvent gonfler la galerie de référence, il vaut
 mieux les supprimer ou les exclure du fonds.
 
-## Mettre à jour photos.db (le site)
+## Mettre à jour photos.db (le sélecteur)
 
-Les validations vont dans le XMP, pas dans `photos.db` : le site continue
-d'afficher l'état précédent. Le bouton **photos.db** de la barre d'Annotations
-(ou le script ci-dessous) reporte les noms XMP vers `Photo_Peoples` :
+Les validations mettent à jour le XMP et `photo_people`. Le bouton **photos.db**
+de la barre d'Annotations (ou la commande ci-dessous) reprend aussi les
+modifications faites hors application. La mise à jour est limitée au dossier
+demandé et passe par le script unique `dataBase.sync` (personnes, mots-clés,
+taxons et lieux).
 
 ```sh
-pixi run python sync_photos_db.py                              # tout, en ajout seul
-pixi run python sync_photos_db.py --scope 2026/Angleterre      # un dossier
-pixi run python sync_photos_db.py --prune --scope 2026/Angleterre
-pixi run python sync_photos_db.py --dry-run                    # simulation
+# Depuis la racine du projet, avec l'environnement racine
+pixi run python -m dataBase.sync update 2026/Angleterre/PSD
+pixi run python -m dataBase.sync update 2026/Angleterre --prune
+pixi run python -m dataBase.sync update 2026/Angleterre --dry-run
 ```
 
-Par défaut il **ajoute** les liens manquants et ne retire rien. `--prune` retire
-aussi les liens des photos traitées qui ne sont plus nommées dans le XMP (à
-utiliser après une correction ou un « Aucun nom »).
+Le chemin est relatif à la racine photo de `preferences.json` (ou absolu).
+`--prune` retire aussi les photos absentes du disque dans ce dossier.
 
 ## Base
 
 `face.db` est créé à côté de `photos.db`, dans `_DATA` du fonds photo, et
 peut être supprimé sans perte : tout est reconstructible. Ces chemins sont
-décrits dans la section `environment` de `annotations/preferences.json`
-(`photos_root`, `data_dir`, `photos_db`, `face_db`, `previews_dir`).
+décrits dans la section `environment` du
+[`preferences.json`](../preferences.json) commun (`photos_root`, `data_dir`,
+`photos_db`, `face_db`, `previews_dir`). Le code d'accès aux deux bases vit
+dans `dataBase/` (`photos_db.py`, `face_db.py`).
 
 | Table | Contenu |
 |---|---|
@@ -145,7 +148,7 @@ décrits dans la section `environment` de `annotations/preferences.json`
 | `Meta` | seuil calibré et statistiques |
 
 Les chemins sont **relatifs à la racine du fonds photo**, ce qui rend la base
-indépendante du point de montage. Le catalogue des personnes (`Peoples`) reste
+indépendante du point de montage. Le catalogue des personnes (`people`) reste
 dans `photos.db` et est lu au démarrage : une personne créée dans l'application
 est disponible tout de suite, sans redémarrer.
 
@@ -193,6 +196,19 @@ scans : le programme propose, l'humain valide.
   macOS (`sips`, ImageIO), dans un cache `_DATA/previews/`. Un PSD peut ainsi
   être analysé en 2048 px au lieu de sa vignette de 160 px, et recevoir des
   étiquettes XMP comme les JPEG.
-- Changer `PIPELINE_VERSION` (`face_db.py`) marque les photos comme à
+- Changer `PIPELINE_VERSION` (`dataBase/face_db.py`) marque les photos comme à
   réanalyser : c'est ce qui a permis de refaire les PSD après cette
   amélioration.
+
+## Aperçus (cache)
+
+Les aperçus 2048 px utilisés pour la détection sont créés à la demande quand
+OpenCV ne peut pas décoder la photo (PSD, RAW, HEIC). Ils sont stockés dans
+`previews_dir` sous un nom `sha1(chemin + mtime)[:24].jpg` : **il n'existe pas
+de lien en base**, le nom se recalcule à partir de la photo. Ce sont des données
+dérivées et volatiles : si la photo change, un nouvel aperçu est créé ; les
+anciens fichiers restent dans le dossier jusqu'à un nettoyage manuel.
+
+`photos.db` (schéma v4) ne contient plus de colonne de vignette : le sélecteur
+génère ses aperçus à la demande dans `previews_dir/selector`. Les aperçus de
+détection de Visages restent eux aussi un cache reconstructible.

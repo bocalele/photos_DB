@@ -1,0 +1,72 @@
+{
+  "defaultSelf": "lucas",
+  "people": [
+    { "id": "henri",      "name": "Henri Dubois",       "gender": "M", "birth": 1900, "death": 1975, "job": "Horloger",          "bio": "Horloger à Besançon, passionné de mécanique." },
+    { "id": "marguerite", "name": "Marguerite Lefèvre", "gender": "F", "birth": 1905, "death": 1980, "job": "Institutrice",      "bio": "Institutrice de village, mère de Jean et Louise." },
+    { "id": "pierre",     "name": "Pierre Moreau",      "gender": "M", "birth": 1898, "death": 1970, "job": "Notaire",           "bio": "Notaire à Lyon, féru d'histoire locale." },
+    { "id": "camille",    "name": "Camille Rousseau",   "gender": "F", "birth": 1902, "death": 1985, "job": "Pianiste",          "bio": "Pianiste reconnue, elle donna des concerts dans toute la France." },
+
+    { "id": "jean",       "name": "Jean Dubois",        "gender": "M", "birth": 1928, "death": 2005, "job": "Architecte",        "bio": "Architecte, a conçu plusieurs édifices publics." },
+    { "id": "louise",     "name": "Louise Dubois",      "gender": "F", "birth": 1930, "death": 2010, "job": "Médecin",           "bio": "Pédiatre dévouée, soeur de Jean." },
+    { "id": "antoine",    "name": "Antoine Moreau",     "gender": "M", "birth": 1925, "death": 2000, "job": "Ingénieur",         "bio": "Ingénieur ferroviaire à la SNCF." },
+    { "id": "helene",     "name": "Hélène Moreau",      "gender": "F", "birth": 1932, "death": 2015, "job": "Traductrice",       "bio": "Traductrice du russe et du polonais." },
+    { "id": "marcel",     "name": "Marcel Bernard",     "gender": "M", "birth": 1928, "death": 2008, "job": "Vétérinaire",       "bio": "Vétérinaire de campagne, époux de Louise." },
+    { "id": "suzanne",    "name": "Suzanne Petit",      "gender": "F", "birth": 1930, "death": 2018, "job": "Couturière",        "bio": "Couturière, épouse d'Antoine." },
+
+    { "id": "roger",      "name": "Roger Lambert",      "gender": "M", "birth": 1920, "death": 1995, "job": "Boulanger",         "bio": "Boulanger, branche éloignée et indépendante." },
+    { "id": "yvonne",     "name": "Yvonne Garnier",     "gender": "F", "birth": 1925, "death": 2000, "job": "Couturière",        "bio": "Épouse de Roger." },
+
+    { "id": "philippe",   "name": "Philippe Dubois",    "gender": "M", "birth": 1955, "death": null, "job": "Avocat",            "bio": "Avocat parisien, aîné de la fratrie." },
+    { "id": "catherine",  "name": "Catherine Dubois",   "gender": "F", "birth": 1958, "death": null, "job": "Journaliste",       "bio": "Reporter à l'étranger pendant 20 ans." },
+    { "id": "michel",     "name": "Michel Dubois",      "gender": "M", "birth": 1962, "death": null, "job": "Restaurateur",      "bio": "Tient un bistrot à Lyon." },
+    { "id": "sophie",     "name": "Sophie Bernard",     "gender": "F", "birth": 1957, "death": null, "job": "Architecte",        "bio": "A repris la passion de son oncle Jean." },
+    { "id": "thomas",     "name": "Thomas Bernard",     "gender": "M", "birth": 1960, "death": null, "job": "Vigneron",          "bio": "Vigneron en Bourgogne." },
+    { "id": "isabelle",   "name": "Isabelle Moreau",    "gender": "F", "birth": 1955, "death": null, "job": "Chercheuse",        "bio": "Chercheuse en biologie marine." },
+    { "id": "francois",   "name": "François Moreau",    "gender": "M", "birth": 1958, "death": null, "job": "Photographe",       "bio": "Photographe de presse, célibataire endurci." },
+    { "id": "anne",       "name": "Anne Martin",        "gender": "F", "birth": 1957, "death": null, "job": "Pédiatre",          "bio": "Pédiatre, épouse de Philippe." },
+    { "id": "bernard",    "name": "Bernard Leroy",      "gender": "M", "birth": 1956, "death": null, "job": "Diplomate",         "bio": "Diplomate, époux de Catherine." },
+
+    { "id": "nicolas",    "name": "Nicolas Lambert",    "gender": "M", "birth": 1950, "death": null, "job": "Marin pêcheur",     "bio": "Vit à Brest, branche détachée." },
+    { "id": "bernadette", "name": "Bernadette Lambert", "gender": "F", "birth": 1953, "death": null, "job": "Institutrice",      "bio": "Institutrice à la retraite, branche détachée." },
+
+    { "id": "lucas",      "name": "Lucas Dubois",       "gender": "M", "birth": 1985, "death": null, "job": "Développeur",       "bio": "Développeur logiciel, passionné de généalogie." },
+    { "id": "emma",       "name": "Emma Dubois",        "gender": "F", "birth": 1988, "death": null, "job": "Designer",          "bio": "Designer graphique." },
+    { "id": "julien",     "name": "Julien Leroy",       "gender": "M", "birth": 1986, "death": null, "job": "Musicien",          "bio": "Violoniste dans un orchestre symphonique." },
+    { "id": "chloe",      "name": "Chloé Bernard",      "gender": "F", "birth": 1990, "death": null, "job": "Étudiante doctorale", "bio": "Doctorante en histoire de l'art." },
+    { "id": "lea",        "name": "Léa Moreau",         "gender": "F", "birth": 1989, "death": null, "job": "Vétérinaire",       "bio": "Fille d'Isabelle, vétérinaire équin." },
+    { "id": "marie",      "name": "Marie Durand",       "gender": "F", "birth": 1987, "death": null, "job": "Médecin",           "bio": "Épouse de Lucas." },
+    { "id": "paul",       "name": "Paul Girard",        "gender": "M", "birth": 1985, "death": null, "job": "Chef cuisinier",    "bio": "Époux d'Emma, chef étoilé." }
+  ],
+  "couples": [
+    ["henri", "marguerite"],
+    ["pierre", "camille"],
+    ["jean", "helene"],
+    ["louise", "marcel"],
+    ["antoine", "suzanne"],
+    ["roger", "yvonne"],
+    ["philippe", "anne"],
+    ["catherine", "bernard"],
+    ["lucas", "marie"],
+    ["emma", "paul"]
+  ],
+  "parentsOf": {
+    "jean":       ["henri", "marguerite"],
+    "louise":     ["henri", "marguerite"],
+    "antoine":    ["pierre", "camille"],
+    "helene":     ["pierre", "camille"],
+    "philippe":   ["jean", "helene"],
+    "catherine":  ["jean", "helene"],
+    "michel":     ["jean", "helene"],
+    "sophie":     ["louise", "marcel"],
+    "thomas":     ["louise", "marcel"],
+    "isabelle":   ["antoine", "suzanne"],
+    "francois":   ["antoine", "suzanne"],
+    "bernadette": ["roger", "yvonne"],
+    "nicolas":    ["roger", "yvonne"],
+    "lucas":      ["philippe", "anne"],
+    "emma":       ["philippe", "anne"],
+    "julien":     ["catherine", "bernard"],
+    "chloe":      ["sophie"],
+    "lea":        ["isabelle"]
+  }
+}

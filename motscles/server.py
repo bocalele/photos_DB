@@ -23,6 +23,8 @@ PROJECT_DIR = APP_DIR.parent
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
+from dataBase import annotations, photos_db
+from tools import environment, preferences
 from tools.getMetaData import get_metadata_many
 from tools.setMetaData import set_metadata
 
@@ -77,11 +79,18 @@ def read_photo_keywords_rating_author(metadata: dict) -> dict:
     xmp = metadata.get("XMP", {})
     exif = metadata.get("EXIF", {})
 
-    keywords = metadata_values(
+    keywords = []
+    seen = set()
+    for value in (
         iptc.get("Keywords"),
         xmp.get("dc.subject"),
         xmp.get("Subject"),
-    )
+    ):
+        for keyword in annotations.keyword_values(value):
+            key = keyword.casefold()
+            if key not in seen:
+                seen.add(key)
+                keywords.append(keyword)
 
     rating = None
     for value in (xmp.get("xmp.Rating"), exif.get("Rating")):
@@ -114,6 +123,7 @@ def write_photo_metadata(
     keywords: list[str] | None,
     rating: int | None,
     author: str | None,
+    root: Path | None = None,
 ) -> dict:
     iptc_data: dict = {}
     xmp_data: dict = {}
@@ -142,6 +152,13 @@ def write_photo_metadata(
     if exif_data:
         categories["EXIF"] = exif_data
     set_metadata(path, categories)
+    if root is not None:
+        try:
+            photos_db.record_keywords_rating_author_for_path(
+                root, path, keywords, rating, author
+            )
+        except Exception as error:
+            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
 
     updated_records = get_metadata_many([str(path)], tags=ALL_METADATA_TAGS)
     updated = updated_records.get(str(path))
@@ -253,27 +270,16 @@ def thumbnail_for(path: Path) -> tuple[bytes, str]:
 
 
 def read_preferences() -> dict:
-    preferences_path = APP_DIR / "preferences.json"
-    try:
-        data = json.loads(preferences_path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return {}
-    except (OSError, json.JSONDecodeError) as error:
-        print(f"Préférences illisibles ({preferences_path}) : {error}", flush=True)
-        return {}
-    return data if isinstance(data, dict) else {}
+    """Réglages de Mots-clés, dans la section `apps.motscles`."""
+    return preferences.app_settings("motscles")
 
 
-def write_preferences(preferences: dict) -> None:
-    preferences_path = APP_DIR / "preferences.json"
-    preferences_path.write_text(
-        json.dumps(preferences, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+def write_preferences(changes: dict) -> None:
+    preferences.update_app("motscles", changes)
 
 
 def initial_directory_from_preferences() -> Path:
-    configured = read_preferences().get("initial_directory")
+    configured = preferences.value("initial_directory")
     if not isinstance(configured, str) or not configured.strip():
         return Path.home()
     initial_directory = Path(configured).expanduser()
@@ -375,9 +381,9 @@ class MotsclesHandler(BaseHTTPRequestHandler):
     # Preferences
     # ------------------------------------------------------------------ #
     def get_preferences(self):
-        preferences = read_preferences()
-        author = preferences.get("default_author")
-        rating = preferences.get("default_rating")
+        settings = read_preferences()
+        author = settings.get("default_author")
+        rating = settings.get("default_rating")
         if not isinstance(author, str) or not author.strip():
             author = DEFAULT_AUTHOR
         if not isinstance(rating, int) or not 1 <= rating <= 5:
@@ -385,23 +391,23 @@ class MotsclesHandler(BaseHTTPRequestHandler):
         self.send_json({
             "default_author": author,
             "default_rating": rating,
-            "initial_directory": preferences.get("initial_directory", ""),
+            "initial_directory": preferences.value("initial_directory", ""),
         })
 
     def save_preferences(self):
         try:
             data = self.read_request_json()
-            preferences = read_preferences()
+            changes = {}
             if "default_author" in data:
                 author = str(data["default_author"]).strip()
                 if author:
-                    preferences["default_author"] = author
+                    changes["default_author"] = author
             if "default_rating" in data:
                 rating = data["default_rating"]
                 if isinstance(rating, (int, float)) and 1 <= rating <= 5:
-                    preferences["default_rating"] = int(rating)
-            write_preferences(preferences)
-            self.send_json({"preferences": preferences})
+                    changes["default_rating"] = int(rating)
+            settings = write_preferences(changes)
+            self.send_json({"preferences": settings})
         except (ValueError, json.JSONDecodeError) as error:
             self.send_json({"error": str(error)}, 400)
 
@@ -414,9 +420,7 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             if new_dir is None:
                 self.send_json({"error": "Aucun dossier sélectionné."}, 400)
                 return
-            preferences = read_preferences()
-            preferences["initial_directory"] = str(new_dir)
-            write_preferences(preferences)
+            preferences.set_initial_directory(new_dir)
             MotsclesHandler.photos_dir = new_dir
             _read_photo_metadata.cache_clear()
             with thumbnail_lock:
@@ -563,7 +567,7 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             if keywords is None and rating is None and author is None:
                 raise ValueError("Aucune modification fournie.")
             metadata = write_photo_metadata(
-                self.photo_path(name), keywords, rating, author
+                self.photo_path(name), keywords, rating, author, environment.photos_root()
             )
             _read_photo_metadata.cache_clear()
             self.send_json({"photoName": name, "metadata": metadata})
@@ -679,7 +683,7 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = {
                     executor.submit(
-                        write_photo_metadata, path, keywords, rating, author
+                        write_photo_metadata, path, keywords, rating, author, environment.photos_root()
                     ): path.name
                     for path in paths
                 }

@@ -1,8 +1,8 @@
 """Configuration d'environnement partagée par les applications.
 
-Tout ce qui dépend de la machine (fonds photo, bases, aperçus, TAXREF,
-ExifTool) est décrit une seule fois dans `annotations/preferences.json`, dans
-la section `environment` :
+Tout ce qui dépend de la machine (fonds photo, bases, aperçus, thésaurus,
+TAXREF, ExifTool) est décrit une seule fois dans `preferences.json`, à la racine
+du projet, dans la section `environment` :
 
 ```json
 {
@@ -12,8 +12,9 @@ la section `environment` :
     "photos_db": "/Volumes/WD/PHOTOS/_DATA/photos.db",
     "face_db": "/Volumes/WD/PHOTOS/_DATA/face.db",
     "previews_dir": "/Volumes/WD/PHOTOS/_DATA/previews",
-    "thesaurus_dir": "/Volumes/WD/PHOTOS/_DATA/Thesaurus",
+    "thesaurus_dir": "/Users/pc/DVPT/photos/faune/Thesaurus",
     "taxref_dir": "/Users/pc/DVPT/photos/faune/TAXREF",
+    "legacy_photo_roots": ["/Users/pc/PHOTOS"],
     "exiftool": "",
     "geocoding": "nominatim"
   }
@@ -24,8 +25,9 @@ la section `environment` :
 n'envoie ni texte ni coordonnées au service de géocodage.
 
 Les variables d'environnement (`PHOTOS_ROOT`, `PHOTOS_DATA_DIR`, `PHOTOS_DB`,
-`PHOTOS_FACE_DB`, `PHOTOS_PREVIEWS_DIR`, `PHOTOS_TAXREF`, `EXIFTOOL`)
-restent prioritaires : elles servent aux tests et aux lancements ponctuels.
+`PHOTOS_FACE_DB`, `PHOTOS_PREVIEWS_DIR`, `PHOTOS_THESAURUS_DIR`,
+`PHOTOS_TAXREF`, `EXIFTOOL`) restent prioritaires : elles servent aux tests et
+aux lancements ponctuels.
 
 Les chemins vides sont déduits des précédents (`data_dir` de `photos_root`,
 `photos_db` de `data_dir`, etc.).
@@ -33,25 +35,23 @@ Les chemins vides sont déduits des précédents (`data_dir` de `photos_root`,
 
 from __future__ import annotations
 
-import json
 import os
 import shutil
 from pathlib import Path
 
+from tools import preferences
+
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-PREFERENCES_PATH = PROJECT_DIR / "annotations" / "preferences.json"
+PREFERENCES_PATH = preferences.PREFERENCES_PATH
 
 DEFAULT_PHOTOS_ROOT = Path("/Volumes/WD/PHOTOS")
 DEFAULT_TAXREF_DIR = PROJECT_DIR / "faune" / "TAXREF"
+DEFAULT_THESAURUS_DIR = PROJECT_DIR / "faune" / "Thesaurus"
 
 
 def section() -> dict:
     """Section `environment` du fichier de préférences (ou dictionnaire vide)."""
-    try:
-        data = json.loads(PREFERENCES_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    environment = data.get("environment") if isinstance(data, dict) else None
+    environment = preferences.load().get("environment")
     return environment if isinstance(environment, dict) else {}
 
 
@@ -111,11 +111,29 @@ def previews_dir() -> Path:
     return path("previews_dir", data_dir() / "previews")
 
 
+def thesaurus_dir() -> Path:
+    """Dossier des thésaurus naturalistes (déplacé dans `faune/Thesaurus`)."""
+    configured = os.environ.get("PHOTOS_THESAURUS_DIR") or value("thesaurus_dir")
+    if configured:
+        return Path(str(configured)).expanduser()
+    return DEFAULT_THESAURUS_DIR
+
+
 def taxref_dir() -> Path:
     configured = os.environ.get("PHOTOS_TAXREF") or value("taxref_dir")
     if configured:
         return Path(str(configured)).expanduser()
     return DEFAULT_TAXREF_DIR
+
+
+def legacy_photo_roots() -> tuple[Path, ...]:
+    """Anciennes racines présentes dans les bases (migration de chemins)."""
+    configured = value("legacy_photo_roots")
+    if isinstance(configured, str):
+        configured = [configured]
+    if not isinstance(configured, list):
+        configured = []
+    return tuple(Path(str(item)).expanduser() for item in configured if str(item).strip())
 
 
 def exiftool_executable() -> str | None:

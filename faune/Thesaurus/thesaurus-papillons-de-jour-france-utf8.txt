@@ -1,0 +1,555 @@
+Papillon
+	{Rhopalocères}
+	Hesperiidae
+		Hesperiinae
+			Comma
+				{Hesperia comma (Linnaeus, 1758)}
+				{la Virgule}
+			Hespérie de la houque
+				{Thymelicus sylvestris (Poda, 1761)}
+				{Bande noire}
+			Hespérie du barbon
+				{Gegenes pumilio (Hoffmannsegg, 1804}
+			Hespérie du brome
+				{Carterocephalus palaemon (Pallas, 1771)}
+				{l'Échiquier}
+			Hespérie du chiendent
+				{Thymelicus acteon (Rottemburg, 1775)}
+				{Actéon}
+			Hespérie du dactyle
+				{Thymelicus lineola (Ochsenheimer, 1808)}
+			Miroir
+				{Heteropterus morpheus (Pallas, 1771)}
+			Sylvaine
+				{Ochlodes sylvanus (Esper, 1777)}
+				{Ochlodes venatus}
+		Pyrginae
+			Hespérie à bandes jaunes
+				{Pyrgus sidae (Esper, 1784)}
+			Hespérie de l'aigremoine
+				{Pyrgus malvoides (Elwes & Edwards, 1897)}
+				{le Tacheté austral}
+			Hespérie de l'alchémille
+				{Pyrgus serratulae (Rambur, 1839)}
+			Hespérie de l'épiaire
+				{Carcharodus lavatherae (Esper, 1783)}
+			Hespérie de l'herbe-au-vent
+				{Muschampia proto (Ochsenheimer, 1808)}
+				{Syrichtus proto}
+			Hespérie de la ballote
+				{Carcharodus boeticus (Rambur, 1839)}
+			Hespérie de la malope
+				{Pyrgus onopordi (Rambur, 1839)}
+			Hespérie de la mauve
+				{Le Tacheté}
+				{Pyrgus malvae (Linnaeus, 1758)}
+			Hespérie de la Parcinière
+				{Pyrgus carlinae (Rambur, 1839)}
+				{Hespérie de la Carline}
+			Hespérie de la passe-rose
+				{Carcharodus alceae (Esper, 1780)}
+				{Hespérie de l'alcée}
+				{la Grisette}
+			Hespérie des cirses
+				{Pyrgus cirsii (Rambur, 1839)}
+			Hespérie des frimas
+				{Pyrgus andromedae (Wallengren, 1853)}
+			Hespérie des hélianthèmes
+				{Hespérie de Foulquier}
+				{Pyrgus bellieri (Oberthür, 1910)}
+			Hespérie des potentilles
+				{Pyrgus armoricanus (Oberthür, 1910)}
+			Hespérie des sanguisorbes
+				{La Roussâtre}
+				{Spialia sertorius (Hoffmannsegg, 1804)}
+			Hespérie du carthame
+				{Pyrgus carthami (Hübner, 1813)}
+			Hespérie du faux-buis
+				{le Plain-Chant}
+				{Pyrgus alveus (Hübner, 1803)}
+			Hespérie du marrube
+				{Carcharodus flocciferus (Zeller, 1847)}
+			Hespérie du pas-d'âne
+				{Pyrgus cacaliae (Rambur, 1839)}
+			Hespérie rhétique
+				{Pyrgus warrenensis (Verity, 1928)}
+			Point-de-Hongrie
+				{Erynnis tages (Linnaeus, 1758)}
+			Tacheté tyrrhénien
+				{Spialia therapne (Rambur, 1832)}
+	Lycaenidae
+		Lycaeninae
+			Cuivré commun
+				{Lycaena phlaeas (Linnaeus, 1761)}
+			Cuivré de la bistorte
+				{Lycaena helle (Denis & Schiffermuller, 1775)}
+			Cuivré de la verge-d'or
+				{Lycaena virgaureae (Linnaeus, 1758)}
+			Cuivré des marais
+				{Lycaena dispar (Haworth, 1802)}
+			Cuivré écarlate
+				{Palaeochrysophanus hippothoe (Linnaeus, 1761)}
+			Cuivré fuligineux
+				{Lycaena tityrus (Poda, 1761)}
+			Cuivré mauvin
+				{Lycaena alciphron (Rottemburg, 1775)}
+		Polyommatinae
+			Argus bleu
+				{Polyommatus icarus (Rottemburg, 1775)}
+			Argus bleu-nacré
+				{Polyommatus coridon (Poda, 1761)}
+			Argus castillan
+				{Aricia morronensis (Ribbe, 1910)}
+			Argus de l'hélianthème
+				{Aricia artaxerxes (Fabricius, 1775)}
+			Argus de la sanguinaire
+				{Aricia eumedon (Esper, 1780)}
+			Argus frêle
+				{Cupido minimus (Fuessly, 1775)}
+			Argus iridié
+				{Polyommatus albicans (Gerhard, 1851)}
+			Azuré bleu céleste
+				{Polyommatus bellargus (Rottemburg, 1775)}
+			Azuré de l'ajonc
+				{Plebejus argus (Linnaeus, 1758)}
+			Azuré de l'androsace
+				{Agriades pyrenaicus (Boisduval, 1840)}
+			Azuré de l'esparcette
+				{Polyommatus thersites (Cantener, 1835)}
+			Azuré de l'orobe
+				{Polyommatus daphnis (Denis & Schiffermuller, 1775)}
+			Azuré de l'oxytropide
+				{Polyommatus eros (Ochsenheimer, 1808)}
+			Azuré de la badasse
+				{Glaucopsyche melanops (Boisduval, 1828)}
+			Azuré de la canneberge
+				{Albulina optilete (Knoch, 1781)}
+			Azuré de la chevrette
+				{Cupido osiris (Meigen, 1829)}
+			Azuré de la croisette
+				{Phengaris rebeli (Hirschke, 1904)}
+			Azuré de la faucille
+				{Everes alcetas (Hoffmannsegg, 1804)}
+			Azuré de la jarosse
+				{Polyommatus amandus (Schneider, 1792)}
+			Azuré de la luzerne
+				{Leptotes pirithous (Linnaeus, 1767)}
+			Azuré de la phaque
+				{Albulina orbitulus (Prunner, 1798)}
+			Azuré de la sanguisorbe
+				{Phengaris teleius (Bergstrasser, 1779)}
+			Azuré de la sarriette
+				{Pseudophilotes baton (Bergstrasser, 1779)}
+			Azuré des anthyllides
+				{Cyaniris semiargus (Rottemburg, 1775)}
+				{Polyommatus semiargus (Rottemburg, 1775)}
+			Azuré des coronilles
+				{Plebejus argyrognomon (Bergstrasser, 1779)}
+			Azuré des cytises
+				{Glaucopsyche alexis (Poda, 1761)}
+			Azuré des géraniums
+				{Aricia nicias (Meigen, 1830)}
+			Azuré des mouillères
+				{Phengaris alcon (Denis & Schiffermuller, 1775)}
+			Azuré des nerpruns
+				{Celastrina argiolus (Linnaeus, 1758)}
+			Azuré des orpins
+				{Scolitantides orion (Pallas, 1771)}
+			Azuré des paluds
+				{Phengaris nausithous (Bergstrasser, 1779)}
+			Azuré des soldanelles
+				{Agriades glandon (de Prunner, 1798)}
+			Azuré du baguenaudier
+				{Iolana iolas (Ochsenheimer, 1816)}
+			Azuré du genêt
+				{Plebejus idas (Linnaeus, 1761)}
+			Azuré du mélilot
+				{Polyommatus dorylas (Denis & Schiffermuller, 1775)}
+			Azuré du plantain
+				{Polyommatus escheri (Hübner, 1823)}
+			Azuré du serpolet
+				{Phengaris arion (Linnaeus, 1758)}
+			Azuré du trèfle
+				{Cupido argiades(Pallas, 1771)}
+			Azuré lavandin
+				{Plebejus martini (Allard, 1867)}
+			Azuré marocain
+				{Plebejus vogelii (Oberthür, 1920)}
+				{Azuré du bec-de-grue}
+			Azuré platiné
+				{Polyommatus nivescens (Hübner, 1813)}
+			Azuré porte-queue
+				{Lampides boeticus (Linnaeus, 1767)}
+			Bleu-nacré d'Espagne
+				{Polyommatus hispana (Herrich-Schaffer, 1852)}
+			Brun des pélargoniums
+				{Cacyreus marshalli (Butler, 1898)}
+			Collier-de-corail
+				{Aricia agestis (Denis & Schiffermüller, 1775)}
+			Sablé de la luzerne
+				{Polyommatus dolus (Hubner, 1823)}
+			Sablé du sainfoin
+				{Polyommatus damon (Denis & Schiffermuller, 1775)}
+			Sablé provençal
+				{Polyommatus ripartii (Freyer, 1830)}
+		Riodininae
+			Lucine
+				{Hamearis lucina (Linnaeus, 1758)}
+		Theclinae
+			Faux-cuivré smaragdin
+				{Tomares ballus (Fabricius, 1787)}
+			Thècle de l'aramel
+				{Satyrium acaciae (Fabricius, 1787)}
+			Thècle de l'arbousier
+				{Callophrys avis (Chapman, 1909)}
+			Thècle de l'orme
+				{Satyrium w-album (Knoch, 1782)}
+			Thècle de la ronce
+				{Callophrys rubi (Linnaeus, 1758)}
+			Thècle du bouleau
+				{Thecla betulae (Linnaeus, 1758)}
+			Thècle du frêne
+				{Laeosopis roboris (Esper, 1789)}
+			Thècle du kermès
+				{Satyrium esculi (Hübner, 1804)}
+			Thècle du prunier
+				{Satyrium pruni (Linnaeus, 1758)}
+			Thécla de l'yeuse
+				{Satyrium ilicis (Esper, 1779)}
+			Thécla des nerpruns
+				{Satyrium spini (Denis & Schiffermuller, 1775)}
+			Thécla du chêne
+				{Favonius quercus (Linnaeus, 1758)}
+	Nymphalidae
+		Apaturinae
+			Grand mars changeant
+				{Apatura iris (Linnaeus, 1758)}
+			Petit mars changeant
+				{Apatura ilia (Denis & Schiffermuller, 1775)}
+		Charaxinae
+			Nymphale de l'arbousier
+				{Charaxes jasius (Linnaeus, 1767)}
+		Heliconiinae
+			Cardinal
+				{Argynnis pandora (Denis & Schiffermüller, 1775)}
+			Grand collier argenté
+				{Clossiana euphrosyne (Linnaeus, 1758)}
+			Grand nacré
+				{Speyeria aglaja (Linnaeus, 1758)}
+			Grande violette
+				{Brenthis ino (Rottemburg, 1775)}
+				{Nacré de la Sanguisorbe}
+			Le Chiffre
+				{Fabriciana niobe (Linneaus, 1758)}
+			Moyen nacré
+				{Fabriciana adippe (Denis & Schiffermüller, 1775)}
+			Nacré de la bistorte
+				{Proclossiana eunomia (Esper, 1799)}
+			Nacré de la canneberge
+				{Boloria aquilonaris (Stichel, 1908)}
+			Nacré de la filipendule
+				{Brenthis hecate (Denis & Schiffermüller, 1775)}
+			Nacré de la ronce
+				{Brenthis daphne (Denis & Schiffermüller, 1775)}
+			Nacré des Balkans
+				{Boloria graeca (Staudinger, 1870)}
+			Nacré des renouées
+				{Boloria napaea (Hoffmannsegg, 1804)}
+			Nacré noirâtre
+				{Clossiana thore (Hübner, 1806)}
+			Nacré porphyrin
+				{Clossiana titania (Esper, 1793)}
+			Nacré subalpin
+				{Boloria pales (Denis et Schiffermüller, 1775)}
+			Nacré tyrrhénien
+				{Fabriciana elisa (Godart, 1824)}
+			Petit collier argenté
+				{Clossiana selene (Denis et Schiffermüller, 1775)}
+			Petit nacré
+				{Issoria lathonia (Linneaus, 1758)}
+			Petite violette
+				{Clossiana dia (Linnaeus, 1767)}
+			Tabac d'Espagne
+				{Argynnis paphia (Linnaeus, 1758)}
+		Libytheinae
+			Échancré
+				{Libythea celtis (Laicharting, 1782)}
+		Limenitidinae
+			Grand sylvain
+				{Limenitis populi (Linnaeus, 1758)}
+			Petit sylvain
+				{Limenitis camilla (Linnaeus, 1764)}
+			Sylvain azuré
+				{Limenitis reducta (Staudinger, 1901)}
+		Nymphalinae
+			Belle-Dame
+				{Vanessa cardui (Linnaeus, 1758)}
+			Carte géographique
+				{Araschnia levana (Linnaeus, 1758)}
+			Damier de l'alchémille
+				{Euphydryas cynthia (Denis & Schiffermuller, 1775)}
+			Damier de la succise
+				{Euphydryas aurinia(Rottemburg, 1775)}
+			Damier des knauties
+				{Euphydryas desfontainii (Godart, 1819)}
+			Damier du chèvrefeuille
+				{Euphydryas intermedia (Menetries, 1859)}
+			Damier du frêne
+				{Euphydryas maturna(Linnaeus, 1758}
+			Grande tortue
+				{Nymphalis polychloros (Linnaeus, 1758)}
+			Mélitée de la gentiane
+				{Mellicta varia (Meyer-Dur, 1851)}
+			Mélitée des centaurées
+				{Melitaea phoebe (Denis et Schiffermüller, 1775)}
+			Mélitée des digitales
+				{Mellicta aurelia (Nickerl, 1850)}
+			Mélitée des linaires
+				{Mellicta deione (Geyer, 1832)}
+			Mélitée des scabieuses
+				{Mellicta parthenoides (Keferstein, 1851)}
+			Mélitée du mélampyre
+				{Mellicta athalia (Rottemburg, 1775)}
+			Mélitée du plantain
+				{Melitaea cinxia (Linnaeus, 1758)}
+			Mélitée noirâtre
+				{Melitaea diamina (Lang, 1789)}
+			Mélitée orangée
+				{Melitaea didyma (Esper, 1778)}
+			Morio
+				{Nymphalis antiopa (Linnaeus, 1758)}
+			Paon du jour
+				{Nymphalis io (Linnaeus, 1758)}
+				{Inachis io}
+			Petite tortue
+				{Aglais urticae (Linnaeus, 1758)}
+			Robert-le-Diable
+				{Polygonia c-album (Linnaeus, 1758)}
+			Silène
+				{Brintesia circe (Fabricius, 1775)}
+			Vanesse des pariétaires
+				{Polygonia egea (Cramer, 1775)}
+			Vulcain
+				{Vanessa atalanta (Linnaeus, 1758)}
+		Satyrinae
+			Agreste
+				{Hipparchia semele (Linnaeus, 1758)}
+			Agreste flamboyant
+				{Hipparchia aristaeus (Bonelli, 1826)}
+			Amaryllis
+				{Pyronia tithonus (Linnaeus, 1758)}
+			Bacchante
+				{Lopinga achine (Scopoli, 1763)}
+			Céphale
+				{Coenonympha arcania (Linnaeus, 1761)}
+			Céphalion
+				{Coenonympha darwiniana (Staudinger, 1871)}
+			Chamoisé des glaciers
+				{Oeneis glacialis (Moll, 1785)}
+			Chevron blanc
+				{Hipparchia fidia (Linnaeus, 1767)}
+			Demi-deuil
+				{Melanargia galathea (Linnaeus, 1758)}
+			Echiquier de l'Ibérie
+				{Échiquier de l'Ibérie}
+				{Melanargia lachesis (Hubner, 1790)}
+			Echiquier de l'Occitanie
+				{Échiquier de l'Occitanie}
+				{Melanargia occitanica (Esper, 1793)}
+			Echiquier de Russie
+				{Échiquier de Russie}
+				{Melanargia russiae (Esper, 1783)}
+			Fadet commun
+				{Procris}
+				{Coenonympha pamphilus (Linnaeus, 1758)}
+			Fadet de la mélique
+				{Coenonympha glycerion (Borkhausen, 1788)}
+			Fadet des garrigues
+				{Coenonympha dorus (Esper, 1782)}
+			Fadet des laîches
+				{Coenonympha oedippus (Fabricius, 1787)}
+			Fadet des tourbières
+				{Coenonympha tullia (Muller, 1764)}
+			Fadet tyrrhénien
+				{Coenonympha corinna(Hubner, 1804)}
+			Faune
+				{Hipparchia statilinus (Hufnagel, 1766)}
+			Gorgone
+				{Lasiommata petropolitana (Fabricius, 1787)}
+			Grand nègre des bois
+				{Minois dryas (Scopoli, 1763)}
+			Grande coronide
+				{Satyrus ferula (Fabricius, 1793)}
+			Hermite
+				{Chazara briseis (Linnaeus, 1764)}
+			Louvet
+				{Hyponephele lupina (Costa, 1836)}
+			Mercure tyrrhénien
+				{Hipparchia neomiris (Godart, 1822)}
+			Misis ou Lycaon
+				{Hyponephele lycaon (Kühn, 1774)}
+			Moiré automnal
+				{Erebia neoridas (Boisduval, 1828)}
+			Moiré aveuglé
+				{Erebia pharte (Hübner, 1804)}
+			Moiré bavarois
+				{Erebia eriphyle (Freyer, 1839)}
+			Moiré blanc-fascié
+				{Erebia ligea (Linnaeus, 1758)}
+			Moiré cantabrique
+				{Erebia lefebvrei (Boisduval, 1828)}
+			Moiré cauterésien
+				{Erebia serotina (Descimon & de Lesse, 1953)}
+			Moiré cendré
+				{Erebia pandrose (Borkhausen, 1788)}
+			Moiré chamoisé
+				{Erebia gorge (Hübner, 1804)}
+			Moiré de la canche
+				{Erebia epiphron (Knoch, 1783)}
+			Moiré des fétuques
+				{Erebia meolans (Prunner, 1798)}
+			Moiré des Ibères
+				{Erebia hispania (Butler, 1868)}
+			Moiré des luzules
+				{Erebia oeme (Hübner, 1804)}
+			Moiré des pâturins
+				{Erebia melampus (Fuessli, 1775)}
+			Moiré des pierriers
+				{Erebia scipio (Boisduval, 1832)}
+			Moiré fauve
+				{Erebia mnestra (Hübner, 1804)}
+			Moiré fontinal
+				{Erebia pronoe (Esper, 1780)}
+			Moiré franconien
+				{Erebia medusa (Denis & Schiffermüller, 1775)}
+			Moiré frange-pie
+				{Erebia euryale (Esper, 1805)}
+			Moiré lancéolé
+				{Erebia alberganus (Prunner, 1798)}
+			Moiré lustré
+				{Erebia cassioides (Reiner & Hohenwarth, 1792)}
+			Moiré ottoman
+				{Erebia ottomana (Herrich-Schäffer, 1847)}
+			Moiré piémontais
+				{Erebia aethiopella (Hoffmannsegg, 1806)}
+			Moiré printanier
+				{Erebia triarius (Prunner, 1798)}
+			Moiré provençal
+				{Erebia epistygne (Hübner, 1819)}
+			Moiré pyrénéen
+				{Erebia gorgone (Boisduval, 1832)}
+			Moiré striolé
+				{Erebia montana (Prunner, 1798)}
+			Moiré sylvicole
+				{Erebia aethiops (Esper, 1777)}
+			Moiré variable
+				{Erebia manto (Denis & Schiffermüller, 1775)}
+			Moiré velouté
+				{Erebia pluto (de Prunner, 1798)}
+			Myrtil
+				{Maniola jurtina (Linnaeus, 1758)}
+			Mélibée
+				{Coenonympha hero (Linnaeus, 1761)}
+				{Fadet de l'élyme}
+			Némusien ou Ariane
+				{Lasiommata maera (Linnaeus, 1758)}
+			Ocellé de la canche
+				{Pyronia cecilia (Vallantin, 1894)}
+			Ocellé rubané
+				{Pyronia bathseba (Fabricius, 1793)}
+			Petit agreste
+				{Arethusana arethusa (Denis et Schiffermuller 1775)}
+			Petit sylvandre
+				{Hipparchia alcyone (Denis & Schiffermüller, 1775)}
+			Petite coronide
+				{Satyrus actaea (Fabricius, 1793)}
+			Satyre (mâle) ou Mégère (femelle)
+				{Lasiommata megera (Linnaeus, 1767)}
+			Satyre (mâle) ou Mégère (femelle) - en Corse
+				{Lasiommata megera paramegaera (Hubner, 1824)}
+			Satyrion
+				{Coenonympha gardetta (de Prunner, 1798)}
+				{le Procris alpin}
+			Sylvandre
+				{Hipparchia fagi (Scopoli, 1763)}
+			Tircis
+				{Pararge aegeria (Linnaeus, 1758)}
+			Tristan
+				{Aphantopus hyperantus (Linnaeus, 1758)}
+	Papilionidae
+		Papilioninae
+			Diane
+				{Zerynthia polyxena (Denis et Schiffermüller, 1775)}
+			Proserpine
+				{Zerynthia rumina (Linnaeus, 1758)}
+			Flambé
+				{Iphiclides podalirius (Linnaeus, 1758)}
+			Machaon
+				{Papilio machaon (Linnaeus, 1758)}
+			Alexanor
+				{Papilio alexanor (Esper, 1799)}
+			Porte-queue de Corse
+				{Papilio hospiton (Guénée, 1839)}
+		Parnassiinae
+			Apollon
+				{Parnassius apollo (Linnaeus, 1758)}
+			Petit Apollon
+				{Parnassius phoebus (Fabricius, 1793)}
+			Semi-Apollon
+				{Parnassius mnemosyne (Linnaeus, 1758)}
+	Pieridae
+		Coliadinae
+			Candide
+				{Colias phicomone (Esper, 1780)}
+			Citron
+				{Gonepteryx rhamni (Linnaeus, 1758)}
+			Citron de Provence
+				{Gonepteryx cleopatra (Linnaeus, 1767)}
+			Fluoré
+				{Colias alfacariensis (Ribbe, 1905)}
+			Solitaire
+				{Colias palaeno (Linnaeus, 1761)}
+			Souci
+				{Colias croceus (Geoffroy in Fourcroy, 1785)}
+			Soufré
+				{Colias hyale (Linnaeus, 1758)}
+		Dismorphiinae
+			Piéride de la moutarde
+				{Leptidea sinapis (Linnaeus, 1758)}
+			Piéride de Réal
+				{Leptidea reali (Reissinger, 1990)}
+			Piéride du sainfoin
+				{Leptidea duponcheli (Staudinger, 1871)}
+		Pierinae
+			Aurore
+				{Anthocharis cardamines (Linnaeus, 1758)}
+			Aurore de Provence
+				{Anthocharis euphenoides (Staudinger, 1869)}
+			Gazé
+				{Aporia crataegi (Linnaeus 1758)}
+			Marbré de Fabricius
+				{Pontia edusa (Linnaeus, 1908)}
+			Marbré de Lusitanie
+				{Euchloe tagis (Hübner, [1803-1804])}
+			Piéride de l'Ibéride
+				{Pieris mannii (Mayer,1851)}
+			Piéride de l'aethionème
+				{Pieris ergane (Geyer, 1828)}
+			Piéride de la bryone
+				{Pieris bryoniae (Hubner, 1806)}
+			Piéride de la rave
+				{Pieris rapae (Linnaeus, 1758)}
+			Piéride de la roquette
+				{Euchloe ausonia (Hubner, 1804)}
+			Piéride de réséda
+				{Pontia daplidice (Linnaeus, 1908)}
+			Piéride des biscutelles
+				{Euchloe simplonia (Freyer, 1829)}
+			Piéride du chou
+				{Pieris brassicae (Linnaeus, 1758)}
+			Piéride du navet
+				{Pieris napi (Linnaeus, 1758)}
+			Piéride du vélar
+				{Pontia callidice (Hubner, 1800)}
+			Piéride tyrrhénienne
+				{Euchloe insularis (Staudinger, 1861)}

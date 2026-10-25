@@ -350,10 +350,15 @@
     label.textContent = "Mise à jour…";
     try {
       const data = await api("/api/sync-database", { method: "POST" });
-      const parts = [`${data.added} lien(s) ajouté(s)`];
-      if (data.removed) parts.push(`${data.removed} retiré(s)`);
-      if (data.unknown?.length) parts.push(`${data.unknown.length} nom(s) inconnu(s)`);
-      notice(`photos.db : ${parts.join(", ")} · ${data.photos} photo(s) examinée(s).`);
+      const parts = [
+        `${data.photos} photo(s)`,
+        `${data.keyword_links} mot(s)-clé(s)`,
+        `${data.taxa_links} taxon(s)`,
+      ];
+      if (data.errors) parts.push(`${data.errors} erreur(s)`);
+      if (data.pruned_photos) parts.push(`${data.pruned_photos} photo(s) retirée(s)`);
+      const scope = data.scope ? ` · ${data.scope}` : "";
+      notice(`photos.db : ${parts.join(", ")}${scope} · ${data.total_photos} photo(s) en base.`);
     } catch (error) {
       notice(`photos.db : ${error.message}`, true);
     } finally {

@@ -4,6 +4,9 @@ Une seule fenêtre pour les quatre applications du fonds photo :
 
 **Géotag · Faune · Visages · Mots-clés**
 
+L'application **Sélection** est désormais autonome : elle se lance séparément
+et ne fait plus partie de cette fenêtre.
+
 La barre du haut permet de passer de l'une à l'autre sans quitter la page et
 **sans changer de dossier** : les quatre apps travaillent toujours sur le même
 répertoire de photos.
@@ -34,9 +37,8 @@ secondes (modèle de visages, index TAXREF) ; les suivants sont instantanés.
 - **Ouvrir dans un onglet** : le bouton ↗ ouvre l'app active seule, en plein
   écran, dans un nouvel onglet.
 - **Raccourcis** : `⌥1` à `⌥4` (ou `⌘1` à `⌘4`) pour changer d'app.
-- **photos.db** : le bouton « photos.db » reporte dans la base du site les noms
-  de personnes écrits dans les photos (XMP). Il est additif : aucun lien
-  existant n'est retiré. Le résultat s'affiche en bas de la fenêtre.
+- **photos.db** : le bouton « photos.db » met à jour la base pour le dossier courant
+  (personnes, mots-clés, taxons, lieux) avec `dataBase.sync update`. Le résultat s'affiche en bas de la fenêtre.
 - **Panneaux** : dans Géotag et Visages, la poignée entre les deux panneaux se
   glisse à la souris (ou avec ←/→) ; un double-clic rétablit la taille par
   défaut. Le réglage est mémorisé dans le navigateur.
@@ -46,8 +48,8 @@ espèce, un visage ou des mots-clés fonctionne exactement comme avant.
 
 ## Environnement (chemins de la machine)
 
-Tout ce qui dépend de la machine est décrit dans `annotations/preferences.json`,
-section `environment` :
+Tout ce qui dépend de la machine est décrit une seule fois dans le
+`preferences.json` **à la racine du projet**, section `environment` :
 
 ```json
 "environment": {
@@ -56,8 +58,9 @@ section `environment` :
   "photos_db": "/Volumes/WD/PHOTOS/_DATA/photos.db",
   "face_db": "/Volumes/WD/PHOTOS/_DATA/face.db",
   "previews_dir": "/Volumes/WD/PHOTOS/_DATA/previews",
-  "thesaurus_dir": "/Volumes/WD/PHOTOS/_DATA/Thesaurus",
+  "thesaurus_dir": "/Users/pc/DVPT/photos/faune/Thesaurus",
   "taxref_dir": "/Users/pc/DVPT/photos/faune/TAXREF",
+  "legacy_photo_roots": ["/Users/pc/PHOTOS"],
   "exiftool": "",
   "geocoding": "nominatim"
 }
@@ -65,30 +68,56 @@ section `environment` :
 
 - `photos_root` : racine du fonds photo (les bases stockent des chemins relatifs).
 - `data_dir` : dossier des bases et index (`_DATA`).
-- `photos_db` : base du site de sélection ; `face_db` : index des visages.
-- `previews_dir` : cache des aperçus ; `thesaurus_dir` : thésaurus du site.
+- `photos_db` : base du sélecteur ; `face_db` : index des visages.
+- `previews_dir` : cache des aperçus ; `thesaurus_dir` : thésaurus naturalistes
+  (déplacés dans `faune/Thesaurus`, à côté de TAXREF).
 - `taxref_dir` : dossier (ou fichier) TAXREF utilisé par Faune.
+- `legacy_photo_roots` : anciennes racines présentes dans `photos.db`, utilisées
+  pour retrouver les photos après un déménagement du fonds.
 - `exiftool` : chemin absolu facultatif ; vide = ExifTool du `PATH` (fourni par Pixi).
 - `geocoding` : `nominatim` (défaut) ou `off` pour couper l'envoi de coordonnées
   et de texte à OpenStreetMap (voir Confidentialité).
 
 Un champ vide est déduit du précédent (`data_dir` de `photos_root`, `photos_db`
 de `data_dir`, etc.). Les variables `PHOTOS_ROOT`, `PHOTOS_DATA_DIR`,
-`PHOTOS_DB`, `PHOTOS_FACE_DB`, `PHOTOS_PREVIEWS_DIR`, `PHOTOS_TAXREF` et
-`EXIFTOOL` restent prioritaires (tests, lancements ponctuels). Après une
-modification, relancer l'application : les chemins sont lus au démarrage.
+`PHOTOS_DB`, `PHOTOS_FACE_DB`, `PHOTOS_PREVIEWS_DIR`, `PHOTOS_THESAURUS_DIR`,
+`PHOTOS_TAXREF` et `EXIFTOOL` restent prioritaires (tests, lancements
+ponctuels). Après une modification, relancer l'application : les chemins sont
+lus au démarrage.
+
+Le reste du fichier est partagé par les applications :
+
+```json
+{
+  "initial_directory": "/Volumes/WD/PHOTOS/2026/DIVERS/PSD",
+  "active_app": "faune",
+  "environment": { "...": "..." },
+  "apps": {
+    "motscles": {"default_author": "Pierre", "default_rating": 3}
+  }
+}
+```
+
+`tools/preferences.py` centralise lecture et écriture (verrou inter-processus,
+remplacement atomique). Chaque app ne modifie que sa section `apps.<id>` ; le
+dossier courant est commun.
 
 ## Architecture
 
 ```
+preferences.json               préférences communes + chemins de la machine
 annotations/
 ├── server.py                  orchestration + coquille (barre + cadres)
 ├── index.html, app.js, styles.css
 ├── Annotations.app            lanceur macOS
 ├── Lancer Annotations.command lanceur Terminal
 ├── AppIcon.svg                source de l’icône
-├── preferences.json           dossier, app active, chemins de la machine
 └── logs/                      journaux des quatre serveurs
+
+dataBase/
+├── photos_db.py               accès lecture/écriture à photos.db
+├── face_db.py                 accès à face.db (index des visages)
+└── export.py                  DataFrames + export CSV
 ```
 
 Le principe : **ne rien réimplémenter**. Chaque application reste autonome,
@@ -115,15 +144,17 @@ préférences). Les routes existantes, dont `/api/change-directory` (dialogue
 macOS), ne changent pas : les apps restent utilisables seules.
 
 Le bouton « photos.db » appelle `POST /api/sync-database` : le serveur exécute
-`face/sync_photos_db.py` dans l'environnement de Visages (même ExifTool) et
-renvoie les compteurs affichés en bas de la fenêtre.
+`python -m dataBase.sync update <dossier courant> --json` dans l'environnement
+racine (pandas + ExifTool) et renvoie les compteurs affichés en bas de la
+fenêtre. La synchronisation est limitée au dossier courant ; pour tout
+reparcourir, se placer à la racine. Un reset complet se fait avec
+`python -m dataBase.sync reset`. Les écritures passent par
+`dataBase/photos_db.py`.
 
-Le dossier global et l'app active sont retenus dans
-`annotations/preferences.json`. À chaque changement de dossier, le programme
-met aussi à jour le champ `initial_directory` du `preferences.json` de chaque
-app : le sélecteur de dossier de chaque app s'ouvre au bon endroit, et une app
-relancée seule retrouve le même dossier. Au démarrage, les préférences
-propres aux apps ne sont pas modifiées.
+Le dossier global et l'app active sont retenus dans le `preferences.json`
+commun. Une app qui change de dossier écrit `initial_directory` ; la
+surveillance d'Annotations le voit et aligne les autres apps. Une app relancée
+seule retrouve le même dossier.
 
 ## Ajouter une application
 

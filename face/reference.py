@@ -20,11 +20,15 @@ import argparse
 import json
 import sys
 from collections import Counter, defaultdict
+from pathlib import Path
 
 import numpy as np
 
-import face_db
-import people as people_module
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from dataBase import face_db, photos_db  # noqa: E402
 
 DEFAULT_MIN_IOU = 0.30
 DEFAULT_MIN_DET = 0.60
@@ -36,15 +40,7 @@ SUGGESTION_OFFSET = 0.10     # seuil « à vérifier » = seuil retenu - cet éc
 
 
 def load_labelled(conn, min_iou: float, min_det: float, min_face: float):
-    rows = conn.execute(
-        """
-        SELECT f.relpath, f.y1, f.y2, f.det_score, f.embedding,
-               l.id_people, l.name, l.score, l.source
-        FROM Face f
-        JOIN FaceLabel l ON l.id_face = f.id
-        WHERE l.source IN ('xmp', 'manuel')
-        """
-    ).fetchall()
+    rows = face_db.labelled_faces(conn)
     kept, filtered = [], Counter()
     for row in rows:
         if float(row["score"] or 0) < min_iou:
@@ -213,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
 
     counts = Counter(people)
     people_info = {
-        person["id_people"]: person for person in people_module.load_people(args.photos_db)
+        person["id_people"]: person for person in photos_db.load_people(args.photos_db)
     }
     weak = sorted(
         (counts[id_people], people_info.get(id_people, {}).get("label", str(id_people)))
@@ -222,61 +218,48 @@ def main(argv: list[str] | None = None) -> int:
     )
     ignored = [person for person in ids if counts[person] < args.min_faces]
 
-    with conn:
-        conn.execute("DELETE FROM RefFace")
-        conn.execute("DELETE FROM RefPerson")
-        written = 0
-        written_ids: set[int] = set()
-        for id_people in ids:
-            count = counts[id_people]
-            if count < args.min_faces:
-                continue
-            subset = vectors[people == id_people]
-            conn.execute(
-                """
-                INSERT INTO RefPerson(id_people, name, n_faces, centroid, seuil, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    int(id_people),
-                    people_info.get(int(id_people), {}).get("label", str(id_people)),
-                    int(count),
-                    face_db.pack(subset.mean(axis=0)),
-                    float(result["threshold"]),
-                    face_db.now(),
-                ),
+    people_rows: list[tuple] = []
+    face_rows: list[tuple] = []
+    written_ids: set[int] = set()
+    for id_people in ids:
+        count = counts[id_people]
+        if count < args.min_faces:
+            continue
+        subset = vectors[people == id_people]
+        people_rows.append(
+            (
+                int(id_people),
+                people_info.get(int(id_people), {}).get("label", str(id_people)),
+                int(count),
+                face_db.pack(subset.mean(axis=0)),
+                float(result["threshold"]),
+                face_db.now(),
             )
-            for row in (row for row, person in zip(rows, people) if person == id_people):
-                pass
-            written += 1
-            written_ids.add(int(id_people))
-        # Exemplaires : on insère les visages retenus par le nettoyage.
-        for position, offset in enumerate(keep):
-            id_people = int(people[position])
-            if id_people not in written_ids:
-                continue
-            conn.execute(
-                "INSERT INTO RefFace(id_people, relpath, embedding) VALUES (?, ?, ?)",
-                (id_people, rows[offset]["relpath"], rows[offset]["embedding"]),
-            )
-        stats = {
-            "seuil": result["threshold"],
-            "rappel": result["recall"],
-            "precision": result["precision"],
-            "top1": round(result["top1"], 4),
-            "visages_reference": len(vectors),
-            "calibre_le": face_db.now(),
-        }
-        for key, value in {
-            "reference_threshold": f"{result['threshold']:.4f}",
-            "reference_suggestion": f"{max(0.2, result['threshold'] - SUGGESTION_OFFSET):.4f}",
-            "reference_stats": json.dumps(stats, ensure_ascii=False),
-        }.items():
-            conn.execute(
-                "INSERT INTO Meta(key, value) VALUES(?, ?) "
-                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                (key, value),
-            )
+        )
+        written_ids.add(int(id_people))
+    # Exemplaires : on insère les visages retenus par le nettoyage.
+    for position, offset in enumerate(keep):
+        id_people = int(people[position])
+        if id_people not in written_ids:
+            continue
+        face_rows.append(
+            (id_people, rows[offset]["relpath"], rows[offset]["embedding"])
+        )
+    stats = {
+        "seuil": result["threshold"],
+        "rappel": result["recall"],
+        "precision": result["precision"],
+        "top1": round(result["top1"], 4),
+        "visages_reference": len(vectors),
+        "calibre_le": face_db.now(),
+    }
+    metadata = {
+        "reference_threshold": f"{result['threshold']:.4f}",
+        "reference_suggestion": f"{max(0.2, result['threshold'] - SUGGESTION_OFFSET):.4f}",
+        "reference_stats": json.dumps(stats, ensure_ascii=False),
+    }
+    face_db.replace_reference(conn, people_rows, face_rows, metadata)
+    written = len(people_rows)
 
     print(f"\nGalerie de référence : {written} personne(s) enregistrée(s).")
     if ignored:

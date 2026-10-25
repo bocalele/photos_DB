@@ -1,0 +1,24 @@
+{
+  "initial_directory": "/Volumes/WD/PHOTOS/2026/Angleterre/PSD",
+  "active_app": "motscles",
+  "environment": {
+    "photos_root": "/Volumes/WD/PHOTOS",
+    "data_dir": "/Volumes/WD/PHOTOS/_DATA",
+    "photos_db": "/Volumes/WD/PHOTOS/_DATA/photos.db",
+    "face_db": "/Volumes/WD/PHOTOS/_DATA/face.db",
+    "previews_dir": "/Volumes/WD/PHOTOS/_DATA/previews",
+    "taxref_dir": "/Users/pc/DVPT/photos/faune/TAXREF",
+    "thesaurus_dir": "/Users/pc/DVPT/photos/faune/Thesaurus",
+    "legacy_photo_roots": [
+      "/Users/pc/PHOTOS"
+    ],
+    "exiftool": "",
+    "geocoding": "nominatim"
+  },
+  "apps": {
+    "motscles": {
+      "default_author": "Pierre",
+      "default_rating": 3
+    }
+  }
+}

@@ -10,32 +10,29 @@ meilleure similarité donne une proposition, classée en trois états :
     inconnu      en dessous
 
 Exemples :
-    pixi run python face/recognize.py "/Volumes/WD/PHOTOS/2015/Queyras"
+    pixi run python face/recognize.py "/chemin/vers/le/dossier-de-photos"
     pixi run python face/recognize.py --from-db --limit 50
 """
 
 from __future__ import annotations
 
 import argparse
-import sqlite3
 import sys
 from pathlib import Path
 
 import numpy as np
 
-import face_db
-import index
-import metadata
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+from dataBase import face_db  # noqa: E402
+import index  # noqa: E402
+import metadata  # noqa: E402
 
 
 def load_reference(conn) -> tuple[list[int], list[str], np.ndarray]:
-    rows = conn.execute(
-        """
-        SELECT r.id_people, r.name, f.embedding
-        FROM RefFace f JOIN RefPerson r ON r.id_people = f.id_people
-        ORDER BY r.id_people
-        """
-    ).fetchall()
+    rows = face_db.reference_rows(conn)
     if not rows:
         raise SystemExit(
             "Galerie vide. Lancez d'abord : pixi run python face/reference.py"
@@ -57,12 +54,9 @@ def scores_for(embedding, ids, by_person) -> np.ndarray:
 
 
 def thresholds(conn, args) -> tuple[float, float]:
-    values = {
-        row["key"]: row["value"]
-        for row in conn.execute(
-            "SELECT key, value FROM Meta WHERE key IN ('reference_threshold', 'reference_suggestion')"
-        )
-    }
+    values = face_db.meta_values(
+        conn, ["reference_threshold", "reference_suggestion"]
+    )
     validated = float(values.get("reference_threshold", args.threshold))
     suggestion = float(values.get("reference_suggestion", args.suggestion))
     return (args.threshold if args.threshold is not None else validated,

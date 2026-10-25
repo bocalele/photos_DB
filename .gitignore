@@ -172,7 +172,6 @@ venv.bak/
 .ropeproject
 
 # mkdocs/Zensical documentation
-/site
 
 # mypy
 .mypy_cache/
@@ -226,3 +225,10 @@ __marimo__/
 
 # Journaux de l'application globale d'annotation
 annotations/logs/
+
+# Données locales de l'ancien sélecteur, non utilisées par l'app `select`
+/select/geolocation/
+/select/thesaurus/
+
+# Verrou du fichier de préférences partagé
+preferences.json.lock

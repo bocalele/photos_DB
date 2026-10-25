@@ -29,7 +29,8 @@ from classify_photo import (
     load_photo,
     prediction_details,
 )
-from tools import environment
+from dataBase import annotations, photos_db
+from tools import environment, preferences
 from tools.getMetaData import get_metadata_many
 from tools.setMetaData import set_metadata
 
@@ -76,11 +77,18 @@ def metadata_values(*values) -> list[str]:
 def photo_taxonomy(metadata: dict, taxref: TaxrefIndex) -> dict:
     iptc = metadata.get("IPTC", {})
     xmp = metadata.get("XMP", {})
-    keywords = metadata_values(
+    keywords = []
+    seen_keywords = set()
+    for value in (
         iptc.get("Keywords"),
         xmp.get("dc.subject"),
         xmp.get("Subject"),
-    )
+    ):
+        for keyword in annotations.keyword_values(value):
+            key = keyword.casefold()
+            if key not in seen_keywords:
+                seen_keywords.add(key)
+                keywords.append(keyword)
     hierarchical_keywords = metadata_values(
         xmp.get("lr.hierarchicalSubject"),
         xmp.get("HierarchicalSubject"),
@@ -121,7 +129,8 @@ def photo_taxonomy(metadata: dict, taxref: TaxrefIndex) -> dict:
 
 
 def write_photo_taxon(
-    path: Path, taxon: dict, validated: bool, taxref: TaxrefIndex
+    path: Path, taxon: dict, validated: bool, taxref: TaxrefIndex,
+    root: Path | None = None,
 ) -> dict:
     records = get_metadata_many([str(path)], tags=CLASSIFICATION_METADATA_TAGS)
     metadata = records.get(str(path))
@@ -178,6 +187,11 @@ def write_photo_taxon(
             },
         },
     )
+    if root is not None:
+        try:
+            photos_db.record_taxon_for_path(root, path, taxon, validated)
+        except Exception as error:
+            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
     updated_records = get_metadata_many([str(path)], tags=CLASSIFICATION_METADATA_TAGS)
     updated = updated_records.get(str(path))
     if updated is None:
@@ -247,28 +261,10 @@ def extract_preview(path: Path) -> bytes:
 
 
 def initial_directory_from_preferences() -> Path:
-    preferences_path = APP_DIR / "preferences.json"
-    try:
-        preferences = json.loads(preferences_path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
+    configured = preferences.value("initial_directory")
+    if not isinstance(configured, str) or not configured.strip():
         return Path.home()
-    except (OSError, json.JSONDecodeError) as error:
-        print(
-            f"Préférences illisibles ({preferences_path}) : {error}. "
-            "Utilisation du dossier personnel.",
-            flush=True,
-        )
-        return Path.home()
-
-    configured_path = preferences.get("initial_directory") if isinstance(preferences, dict) else None
-    if not isinstance(configured_path, str) or not configured_path.strip():
-        print(
-            f"Préférences invalides ({preferences_path}) : initial_directory est requis. "
-            "Utilisation du dossier personnel.",
-            flush=True,
-        )
-        return Path.home()
-    initial_directory = Path(configured_path).expanduser()
+    initial_directory = Path(configured).expanduser()
     if not initial_directory.is_dir():
         print(
             f"Le dossier initial configuré n’existe pas ({initial_directory}). "
@@ -475,9 +471,7 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             return Path(selected).expanduser().resolve()
 
     def update_preferences(self, new_dir):
-        preferences_path = APP_DIR / "preferences.json"
-        preferences = {"initial_directory": str(new_dir)}
-        preferences_path.write_text(json.dumps(preferences, ensure_ascii=False, indent=2), encoding="utf-8")
+        preferences.set_initial_directory(new_dir)
 
     def read_request_json(self) -> dict:
         content_length = int(self.headers.get("Content-Length", "0"))
@@ -589,7 +583,7 @@ class ClassifierHandler(BaseHTTPRequestHandler):
         if taxon is None:
             raise ValueError("Cette espèce est absente de la taxonomie TAXREF.")
         metadata = write_photo_taxon(
-            self.photo_path(filename), taxon, validated, self.taxref
+            self.photo_path(filename), taxon, validated, self.taxref, environment.photos_root()
         )
         self.send_json({"taxon": taxon, "validated": validated, "metadata": metadata})
 
@@ -743,7 +737,9 @@ def main():
             taxref_path = configured_taxref
         else:
             taxref_path = find_taxref_path(configured_taxref)
-        ClassifierHandler.taxref = TaxrefIndex(taxref_path)
+        ClassifierHandler.taxref = TaxrefIndex(
+            taxref_path, environment.thesaurus_dir()
+        )
     except (FileNotFoundError, OSError, ValueError) as error:
         parser.error(str(error))
     ClassifierHandler.photos_dir = photos_dir
