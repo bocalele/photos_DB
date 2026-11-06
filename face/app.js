@@ -13,6 +13,8 @@
     people: [],
     photo: null,
     selectedFace: null,
+    selected: new Set(),
+    lastSelectedIndex: -1,
     saving: false,
     loaded: false,
   };
@@ -24,6 +26,7 @@
   let pendingToken = 0;
   let saveTimer;
   let saveQueued = false;
+  let pendingReload = false;
 
   async function api(url, options) {
     const response = await fetch(url, options);
@@ -62,6 +65,7 @@
     state.loaded = false;
     state.photos = [];
     state.total = 0;
+    clearSelection();
     byId("photo-grid").replaceChildren(message("Chargement des photos…"));
     try {
       let offset = 0;
@@ -99,20 +103,112 @@
     byId("photo-count").style.color = isError ? "var(--danger)" : "";
   }
 
+  function updateSelectionControls() {
+    byId("select-all").disabled = state.mode !== "photos" || !state.photos.length;
+    byId("deselect-photos").disabled = state.selected.size === 0;
+    byId("analyze-selection").disabled = state.selected.size === 0;
+  }
+
+  function clearSelection() {
+    state.selected.clear();
+    state.lastSelectedIndex = -1;
+    updateSelectionControls();
+  }
+
+  function updateCardSelection(name) {
+    const card = cardByName.get(name);
+    if (!card) return;
+    const selected = state.selected.has(name);
+    card.classList.toggle("selected", selected);
+    const checkbox = card.querySelector(".photo-checkbox");
+    if (checkbox) checkbox.checked = selected;
+  }
+
+  function toggleSelection(name, index) {
+    if (state.selected.has(name)) state.selected.delete(name);
+    else state.selected.add(name);
+    state.lastSelectedIndex = index;
+    updateCardSelection(name);
+    updateSelectionControls();
+  }
+
+  function selectPhotoRange(index) {
+    if (state.lastSelectedIndex < 0) {
+      const photo = state.photos[index];
+      if (photo) state.selected.add(photo.name);
+    } else {
+      const start = Math.min(state.lastSelectedIndex, index);
+      const end = Math.max(state.lastSelectedIndex, index);
+      for (let position = start; position <= end; position++) {
+        const photo = state.photos[position];
+        if (photo) state.selected.add(photo.name);
+      }
+    }
+    state.lastSelectedIndex = index;
+    for (const photo of state.photos) updateCardSelection(photo.name);
+    updateSelectionControls();
+  }
+
+  function handlePhotoClick(name, index, event) {
+    if (event.shiftKey) {
+      selectPhotoRange(index);
+      return;
+    }
+    if (event.metaKey || event.ctrlKey) {
+      toggleSelection(name, index);
+      return;
+    }
+    openPhoto(name);
+  }
+
+  function selectAllPhotos() {
+    for (const photo of state.photos) state.selected.add(photo.name);
+    state.lastSelectedIndex = state.photos.length - 1;
+    for (const photo of state.photos) updateCardSelection(photo.name);
+    updateSelectionControls();
+  }
+
   // --- galerie ------------------------------------------------------------
 
   function badgeFor(photo) {
     if (photo.error) return { text: "erreur", className: "error", title: photo.error };
     if (!photo.indexed) return { text: "non analysée", className: "missing", title: "Aucune analyse de visages pour cette photo." };
-    if (!photo.nFaces) return { text: "0 visage", className: "missing", title: "Aucun visage détecté." };
-    if (photo.nNamed >= photo.nFaces) {
-      return { text: `${photo.nFaces} ✓`, className: "present", title: "Tous les visages sont nommés." };
+    const invalid = photo.nInvalid || 0;
+    const invalidNote = invalid
+      ? ` ${invalid} détection(s) invalidée(s).`
+      : "";
+    if (!photo.nFaces) {
+      return {
+        text: "0 visage",
+        className: "missing",
+        title: invalid
+          ? `Aucun visage valide.${invalidNote}`
+          : "Aucun visage détecté.",
+      };
     }
-    const missing = photo.nFaces - photo.nNamed;
+    const ignored = photo.nIgnored || 0;
+    const resolved = photo.nResolved ?? (photo.nNamed + ignored);
+    if (resolved >= photo.nFaces) {
+      if (!photo.nNamed) {
+        return {
+          text: "0 nom ✓",
+          className: "present",
+          title: `Tous les visages sont validés sans nom.${invalidNote}`,
+        };
+      }
+      return {
+        text: ignored ? `${photo.nNamed} nom(s) ✓` : `${photo.nFaces} ✓`,
+        className: "present",
+        title: (ignored
+          ? `${photo.nNamed} visage(s) nommé(s), ${ignored} validé(s) sans nom.`
+          : "Tous les visages sont nommés.") + invalidNote,
+      };
+    }
+    const missing = photo.nFaces - resolved;
     return {
-      text: `${photo.nNamed}/${photo.nFaces}`,
+      text: `${resolved}/${photo.nFaces}`,
       className: "unknown",
-      title: `${missing} visage(s) sans nom.`,
+      title: `${photo.nNamed} nommé(s), ${ignored} sans nom, ${missing} à décider.${invalidNote}`,
     };
   }
 
@@ -147,9 +243,11 @@
     if (state.loaded) {
       byId("photo-count").textContent =
         `${state.photos.length} photo(s) · ${named} entièrement nommée(s)` +
+        (state.selected.size ? ` · ${state.selected.size} sélectionnée(s)` : "") +
         (state.filter === "all" ? "" : " (filtrées)");
       byId("photo-count").style.color = "";
     }
+    updateSelectionControls();
 
     grid.replaceChildren();
     if (!state.photos.length) {
@@ -159,17 +257,25 @@
       return;
     }
 
-    for (const photo of state.photos) {
+    for (const [index, photo] of state.photos.entries()) {
       const card = document.createElement("figure");
-      card.className = "photo-card";
+      const selected = state.selected.has(photo.name);
+      card.className = `photo-card${selected ? " selected" : ""}`;
       card.dataset.name = photo.name;
-      card.title = photo.name;
+      card.title = `${photo.name}\nMaj + clic : sélectionner une plage`;
 
       const info = badgeFor(photo);
       const badge = document.createElement("span");
       badge.className = `photo-badge ${info.className}`;
       badge.textContent = info.text;
       badge.title = info.title;
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "photo-checkbox";
+      checkbox.checked = selected;
+      checkbox.setAttribute("aria-label", `Sélectionner ${photo.displayName}`);
+      checkbox.addEventListener("change", () => toggleSelection(photo.name, index));
 
       const image = document.createElement("img");
       image.dataset.src = photo.thumbnail;
@@ -188,8 +294,11 @@
       relative.className = "photo-relative";
       relative.textContent = photo.relative || "";
 
-      card.append(badge, image, caption, relative);
-      card.addEventListener("click", () => openPhoto(photo.name));
+      card.append(checkbox, badge, image, caption, relative);
+      card.addEventListener("click", event => {
+        if (event.target === checkbox) return;
+        handlePhotoClick(photo.name, index, event);
+      });
       grid.appendChild(card);
       cardByName.set(photo.name, card);
       if (thumbnailObserver) thumbnailObserver.observe(image);
@@ -201,14 +310,17 @@
 
   async function loadPending() {
     const token = ++pendingToken;
+    clearSelection();
     const grid = byId("photo-grid");
-    grid.replaceChildren(message("Recherche des visages à vérifier…"));
+    grid.replaceChildren(message("Recherche des visages à décider…"));
     try {
       const data = await api("/api/pending?limit=600");
       if (token !== pendingToken) return;
       state.pending = data.faces;
       byId("pending-count").textContent = String(data.total);
-      byId("photo-count").textContent = `${data.total} visage(s) à vérifier, du plus douteux au plus sûr`;
+      byId("photo-count").textContent = data.total
+        ? `${data.total} visage(s) à décider, du plus incertain au plus sûr`
+        : "Aucun visage à décider dans ce dossier.";
       byId("photo-count").style.color = "";
       renderPending();
     } catch (error) {
@@ -237,7 +349,7 @@
     grid.replaceChildren();
     if (!state.pending.length) {
       grid.appendChild(
-        message("Aucun visage à vérifier dans ce dossier : tout est nommé.")
+        message("Aucun visage à décider dans ce dossier : tout est nommé ou validé sans nom.")
       );
       return;
     }
@@ -246,10 +358,12 @@
       const key = `${item.name}#${item.faceIndex}`;
       const card = document.createElement("figure");
       card.className = "face-card";
-      card.title = `${item.name} · confiance ${(item.score * 100).toFixed(0)} %`;
+      card.title = item.hasProposal
+        ? `${item.name} · proposition ${item.person} · confiance ${(item.score * 100).toFixed(0)} %`
+        : `${item.name} · aucune proposition fiable`;
 
       const image = document.createElement("img");
-      image.alt = item.person;
+      image.alt = item.person || "Visage sans proposition";
       image.decoding = "async";
       if (pendingObserver) {
         image.dataset.src = item.crop;
@@ -262,14 +376,17 @@
       body.className = "face-card-body";
       const name = document.createElement("div");
       name.className = "face-card-name";
-      name.textContent = item.person;
+      name.textContent = item.hasProposal ? item.person : "Aucune proposition";
+      if (!item.hasProposal) name.classList.add("no-proposal");
       const meta = document.createElement("div");
       meta.className = "face-card-meta";
       const file = document.createElement("span");
       file.textContent = item.name.split("/").pop();
       const score = document.createElement("span");
       score.className = "face-card-score";
-      score.textContent = item.score.toFixed(2).replace(".", ",");
+      score.textContent = item.hasProposal
+        ? item.score.toFixed(2).replace(".", ",")
+        : "—";
       meta.append(file, score);
       body.append(name, meta);
       card.append(image, body);
@@ -289,27 +406,70 @@
       item => !(item.name === name && item.faceIndex === faceIndex)
     );
     byId("pending-count").textContent = String(state.pending.length);
-    byId("photo-count").textContent = `${state.pending.length} visage(s) à vérifier, du plus douteux au plus sûr`;
+    byId("photo-count").textContent = state.pending.length
+      ? `${state.pending.length} visage(s) à décider, du plus incertain au plus sûr`
+      : "Aucun visage à décider dans ce dossier.";
   }
 
   function setMode(mode) {
     state.mode = mode;
+    clearSelection();
     document.querySelectorAll(".mode").forEach(button =>
       button.classList.toggle("active", button.dataset.mode === mode)
     );
     byId("photo-filters").hidden = mode !== "photos";
     byId("photo-grid").classList.toggle("faces-mode", mode === "faces");
+    updateSelectionControls();
     if (mode === "faces") loadPending();
     else loadPhotos();
   }
 
   // --- photo --------------------------------------------------------------
 
+  // Les détecteurs peuvent renvoyer une boîte qui dépasse l'image. On la ramène
+  // légèrement à l'intérieur pour qu'elle reste cliquable et validable, même
+  // avec un serveur qui n'aurait pas encore été redémarré.
+  function clampFaceBox(bbox) {
+    if (!Array.isArray(bbox) || bbox.length !== 4) return bbox;
+    const values = bbox.map(Number);
+    if (!values.every(Number.isFinite)) return bbox;
+    let [x1, y1, x2, y2] = values;
+    [x1, x2] = [Math.min(x1, x2), Math.max(x1, x2)];
+    [y1, y2] = [Math.min(y1, y2), Math.max(y1, y2)];
+    if (x1 >= 0 && y1 >= 0 && x2 <= 1 && y2 <= 1) return [x1, y1, x2, y2];
+    const inset = 0.002;
+    const minimum = 0.004;
+    const low = inset;
+    const high = 1 - inset;
+    x1 = Math.min(Math.max(x1, low), high);
+    y1 = Math.min(Math.max(y1, low), high);
+    x2 = Math.min(Math.max(x2, low), high);
+    y2 = Math.min(Math.max(y2, low), high);
+    if (x2 - x1 < minimum) {
+      const center = Math.min(Math.max((x1 + x2) / 2, low + minimum / 2), high - minimum / 2);
+      x1 = center - minimum / 2;
+      x2 = center + minimum / 2;
+    }
+    if (y2 - y1 < minimum) {
+      const center = Math.min(Math.max((y1 + y2) / 2, low + minimum / 2), high - minimum / 2);
+      y1 = center - minimum / 2;
+      y2 = center + minimum / 2;
+    }
+    return [x1, y1, x2, y2];
+  }
+
   function hydratePhoto(data) {
     for (const face of data.faces) {
+      face.bbox = clampFaceBox(face.bbox);
       face.current = face.existing
         ? { id_people: face.existing.id_people, name: face.existing.name }
         : null;
+      face.ignored = Boolean(face.ignored) && !face.current;
+      face.invalid = Boolean(face.invalid);
+      if (face.invalid) {
+        face.current = null;
+        face.ignored = false;
+      }
       face.dirty = false;
     }
     state.photo = data;
@@ -332,7 +492,9 @@
       const preferred = Number.isInteger(faceIndex)
         ? data.faces.find(face => face.index === faceIndex)
         : null;
-      const unnamed = data.faces.find(face => !face.current);
+      const unnamed = data.faces.find(
+        face => !face.invalid && !face.current && !face.ignored
+      );
       state.selectedFace = preferred
         ? preferred.index
         : unnamed
@@ -347,15 +509,24 @@
   function renderViewer() {
     const data = state.photo;
     if (!data) return;
-    const named = data.faces.filter(face => face.current).length;
+    const validFaces = data.faces.filter(face => !face.invalid);
+    const invalid = data.faces.length - validFaces.length;
+    const named = validFaces.filter(face => face.current).length;
+    const ignored = validFaces.filter(face => face.ignored).length;
+    const pending = validFaces.length - named - ignored;
     const orphanNote = data.orphans?.length
       ? ` · ${data.orphans.length} nom(s) déjà présent(s) hors détection`
       : "";
+    const invalidNote = invalid
+      ? ` · ${invalid} détection(s) invalidée(s)`
+      : "";
     byId("viewer-title").textContent = data.displayName;
     byId("viewer-subtitle").textContent =
-      `${data.faces.length} visage(s) · ${named} nommé(s)${orphanNote}`;
+      `${validFaces.length} visage(s) · ${named} nommé(s) · ` +
+      `${ignored} sans nom · ${pending} à décider` +
+      `${invalidNote}${orphanNote}`;
     byId("validate-all").title =
-      `Nomme les visages reconnus avec un score ≥ ${Number(data.threshold).toFixed(2).replace(".", ",")}`;
+      `Accepte les propositions avec un score ≥ ${Number(data.threshold).toFixed(2).replace(".", ",")}`;
 
     const image = byId("viewer-image");
     if (image.dataset.name !== data.name || image.dataset.src !== data.image) {
@@ -389,7 +560,9 @@
   }
 
   function faceLabel(face) {
+    if (face.invalid) return { text: "pas un visage", score: "" };
     if (face.current) return { text: face.current.name, score: "" };
+    if (face.ignored) return { text: "sans nom", score: "" };
     if (face.proposal) {
       return {
         text: face.proposal.name,
@@ -406,7 +579,9 @@
     for (const face of state.photo.faces) {
       const box = document.createElement("div");
       box.className = "face-box";
-      if (face.current) box.classList.add("named");
+      if (face.invalid) box.classList.add("invalid");
+      else if (face.current) box.classList.add("named");
+      else if (face.ignored) box.classList.add("ignored");
       else if (face.proposal) box.classList.add("proposal");
       else box.classList.add("unknown");
       if (face.index === state.selectedFace) box.classList.add("selected");
@@ -414,11 +589,15 @@
       box.style.top = `${face.bbox[1] * 100}%`;
       box.style.width = `${(face.bbox[2] - face.bbox[0]) * 100}%`;
       box.style.height = `${(face.bbox[3] - face.bbox[1]) * 100}%`;
-      box.title = face.current
-        ? `Nommé : ${face.current.name}`
-        : face.proposal
-          ? `Proposition : ${face.proposal.name} (${face.proposal.score.toFixed(2)})`
-          : "Visage sans proposition";
+      box.title = face.invalid
+        ? "Détection invalidée : ce n'est pas un visage"
+        : face.current
+          ? `Nommé : ${face.current.name}`
+          : face.ignored
+            ? "Validé sans nom"
+            : face.proposal
+              ? `Proposition : ${face.proposal.name} (${face.proposal.score.toFixed(2)})`
+              : "Visage sans proposition";
 
       const label = faceLabel(face);
       const chip = document.createElement("span");
@@ -446,6 +625,34 @@
     return state.photo.faces.find(face => face.index === state.selectedFace) || null;
   }
 
+  function photoNavigationOrder() {
+    const items = state.mode === "faces" && state.pending.length
+      ? state.pending.map(item => item.name)
+      : state.photos.map(photo => photo.name);
+    const names = [];
+    const seen = new Set();
+    for (const name of items) {
+      if (seen.has(name)) continue;
+      seen.add(name);
+      names.push(name);
+    }
+    return names;
+  }
+
+  async function navigatePhoto(step) {
+    const names = photoNavigationOrder();
+    if (!names.length) return;
+    const current = state.photo?.name;
+    const position = names.indexOf(current);
+    let next;
+    if (position === -1) {
+      next = step > 0 ? names[0] : names[names.length - 1];
+    } else {
+      next = names[(position + step + names.length) % names.length];
+    }
+    if (next && next !== current) await openPhoto(next);
+  }
+
   function renderEditor() {
     const face = selectedFace();
     const empty = byId("editor-empty");
@@ -454,6 +661,7 @@
       empty.hidden = false;
       empty.textContent = "Aucun visage détecté sur cette photo.";
       body.hidden = true;
+      byId("validate-without-names").disabled = true;
       return;
     }
     empty.hidden = true;
@@ -468,9 +676,15 @@
     if (!face) {
       status.textContent = "Sélectionnez un visage sur la photo.";
       status.className = "editor-status none";
+    } else if (face.invalid) {
+      status.textContent = "Détection invalidée : ce n'est pas un visage.";
+      status.className = "editor-status invalid";
     } else if (face.current) {
       status.textContent = `Nommé : ${face.current.name}`;
       status.className = "editor-status named";
+    } else if (face.ignored) {
+      status.textContent = "Validé sans nom";
+      status.className = "editor-status ignored";
     } else if (face.proposal) {
       status.textContent = `Proposition : ${face.proposal.name} (${face.proposal.score.toFixed(2).replace(".", ",")})`;
       status.className = "editor-status proposed";
@@ -496,7 +710,29 @@
       alternatives.appendChild(button);
     }
 
-    byId("ignore-face").disabled = !face?.current;
+    const ignoreButton = byId("ignore-face");
+    ignoreButton.disabled = !face;
+    if (face?.ignored) {
+      ignoreButton.textContent = "Sans nom ✓";
+      ignoreButton.title = "Cliquer pour remettre ce visage à décider";
+    } else {
+      ignoreButton.textContent = "Sans nom";
+      ignoreButton.title = face?.current
+        ? "Retirer le nom et valider ce visage sans nom"
+        : "Valider ce visage sans nom";
+    }
+    const invalidateButton = byId("invalidate-face");
+    invalidateButton.disabled = !face;
+    if (face?.invalid) {
+      invalidateButton.textContent = "Pas un visage ✓";
+      invalidateButton.title = "Réactiver cette détection comme visage";
+    } else {
+      invalidateButton.textContent = "Pas un visage";
+      invalidateButton.title = "Ignorer définitivement cette fausse détection";
+    }
+    byId("validate-without-names").disabled = !state.photo.faces.some(
+      item => !item.invalid && !item.current && !item.ignored
+    );
     byId("save-status").classList.remove("error");
   }
 
@@ -505,11 +741,13 @@
   function assign(face, person) {
     if (!face || !person) return;
     face.current = { id_people: person.id_people, name: person.name };
+    face.ignored = false;
+    face.invalid = false;
     face.dirty = true;
     const faces = state.photo.faces;
     const position = faces.findIndex(item => item.index === face.index);
     const next = [...faces.slice(position + 1), ...faces.slice(0, position)].find(
-      item => !item.current
+      item => !item.invalid && !item.current && !item.ignored
     );
     if (next) state.selectedFace = next.index;
     byId("person-search").value = "";
@@ -520,11 +758,63 @@
     scheduleSave();
   }
 
+  function clearFaceName() {
+    const face = selectedFace();
+    if (!face?.current) return;
+    face.current = null;
+    face.ignored = false;
+    face.dirty = true;
+    pendingReload = true;
+    renderFaces();
+    renderEditor();
+    scheduleSave();
+  }
+
   function ignoreFace() {
     const face = selectedFace();
     if (!face) return;
-    face.current = null;
+    face.invalid = false;
+    if (face.ignored) {
+      // Annule la validation « sans nom » : le visage redevient à décider.
+      face.ignored = false;
+      face.current = null;
+      pendingReload = true;
+    } else {
+      face.current = null;
+      face.ignored = true;
+    }
     face.dirty = true;
+    renderFaces();
+    renderEditor();
+    scheduleSave();
+  }
+
+  function invalidateFace() {
+    const face = selectedFace();
+    if (!face) return;
+    face.invalid = !face.invalid;
+    face.current = null;
+    face.ignored = false;
+    face.dirty = true;
+    pendingReload = true;
+    renderFaces();
+    renderEditor();
+    scheduleSave();
+  }
+
+  function validateWithoutNames() {
+    if (!state.photo) return;
+    let count = 0;
+    for (const face of state.photo.faces) {
+      if (face.invalid || face.current || face.ignored) continue;
+      face.ignored = true;
+      face.dirty = true;
+      count += 1;
+    }
+    if (!count) {
+      byId("save-status").textContent = "Tous les visages ont déjà une décision.";
+      return;
+    }
     renderFaces();
     renderEditor();
     scheduleSave();
@@ -536,9 +826,16 @@
     let count = 0;
     for (const face of state.photo.faces) {
       // On ne valide en série que les propositions au-dessus du seuil calibré :
-      // les scores plus bas restent à confirmer un par un.
-      if (!face.current && face.proposal && face.proposal.score >= threshold) {
+      // les scores plus bas, et les visages « sans nom », restent inchangés.
+      if (
+        !face.invalid
+        && !face.current
+        && !face.ignored
+        && face.proposal
+        && face.proposal.score >= threshold
+      ) {
         face.current = { id_people: face.proposal.id_people, name: face.proposal.name };
+        face.ignored = false;
         face.dirty = true;
         count += 1;
       }
@@ -574,8 +871,11 @@
       const payload = {
         name: state.photo.name,
         faces: state.photo.faces.map(face => ({
+          index: face.index,
           bbox: face.bbox,
           id_people: face.current?.id_people ?? null,
+          ignored: Boolean(face.ignored),
+          invalid: Boolean(face.invalid),
           apply: Boolean(face.dirty),
         })),
       };
@@ -591,12 +891,16 @@
       updateCard(data);
       if (state.mode === "faces") {
         for (const face of data.faces) {
-          if (face.existing) removePendingCard(data.name, face.index);
+          if (face.existing || face.ignored || face.invalid) {
+            removePendingCard(data.name, face.index);
+          }
         }
+        if (pendingReload) await loadPending();
       }
-      status.textContent = "Enregistré dans les métadonnées de la photo.";
+      pendingReload = false;
+      status.textContent = "Enregistré.";
       setTimeout(() => {
-        if (status.textContent === "Enregistré dans les métadonnées de la photo.") {
+        if (status.textContent === "Enregistré.") {
           status.textContent = "";
         }
       }, 3000);
@@ -616,8 +920,14 @@
     const entry = state.photos.find(photo => photo.name === data.name);
     if (!entry) return;
     entry.indexed = true;
-    entry.nFaces = data.faces.length;
-    entry.nNamed = data.faces.filter(face => face.existing).length;
+    const validFaces = data.faces.filter(face => !face.invalid);
+    entry.nFaces = validFaces.length;
+    entry.nNamed = validFaces.filter(face => face.existing).length;
+    entry.nIgnored = validFaces.filter(face => face.ignored).length;
+    entry.nInvalid = data.faces.length - validFaces.length;
+    entry.nResolved = validFaces.filter(
+      face => face.existing || face.ignored
+    ).length;
     const card = cardByName.get(data.name);
     if (card) setBadge(card, entry);
   }
@@ -708,20 +1018,25 @@
 
   // --- analyse ------------------------------------------------------------
 
-  async function analyzeDirectory() {
-    const button = byId("analyze");
+  async function analyzePhotos(selectionOnly = false) {
+    const button = selectionOnly ? byId("analyze-selection") : byId("analyze");
     const status = byId("analyze-status");
     const bar = byId("analyze-bar");
     const text = byId("analyze-text");
+    const names = selectionOnly ? [...state.selected] : [];
     button.disabled = true;
+    byId("analyze").disabled = true;
+    byId("analyze-selection").disabled = true;
     status.hidden = false;
     bar.removeAttribute("value");
-    text.textContent = "Préparation de l’analyse…";
+    text.textContent = selectionOnly
+      ? `Préparation de l’analyse de ${names.length} photo(s)…`
+      : "Préparation de l’analyse…";
     try {
       const { jobId } = await api("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: "{}",
+        body: JSON.stringify(selectionOnly ? { names } : {}),
       });
       let job;
       do {
@@ -747,7 +1062,8 @@
     } catch (error) {
       text.textContent = error.message;
     } finally {
-      button.disabled = false;
+      byId("analyze").disabled = false;
+      updateSelectionControls();
     }
   }
 
@@ -790,9 +1106,14 @@
     });
   });
 
-  byId("analyze").addEventListener("click", analyzeDirectory);
+  byId("select-all").addEventListener("click", selectAllPhotos);
+  byId("deselect-photos").addEventListener("click", clearSelection);
+  byId("analyze").addEventListener("click", () => analyzePhotos(false));
+  byId("analyze-selection").addEventListener("click", () => analyzePhotos(true));
   byId("validate-all").addEventListener("click", validateAll);
+  byId("validate-without-names").addEventListener("click", validateWithoutNames);
   byId("ignore-face").addEventListener("click", ignoreFace);
+  byId("invalidate-face").addEventListener("click", invalidateFace);
   byId("person-search").addEventListener("input", searchPeople);
   byId("person-search").addEventListener("keydown", event => {
     if (!searchItems.length) return;
@@ -821,7 +1142,21 @@
   document.addEventListener("keydown", event => {
     if (!state.photo || byId("viewer-body").hidden) return;
     const target = event.target;
-    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+    if (
+      target instanceof HTMLInputElement
+      || target instanceof HTMLTextAreaElement
+      || target instanceof HTMLSelectElement
+    ) return;
+
+    if (
+      (event.ctrlKey || event.metaKey)
+      && (event.key === "ArrowRight" || event.key === "ArrowLeft")
+    ) {
+      event.preventDefault();
+      navigatePhoto(event.key === "ArrowRight" ? 1 : -1);
+      return;
+    }
+
     const face = selectedFace();
     const faces = state.photo.faces;
     if (!faces.length) return;
@@ -853,7 +1188,7 @@
     if (event.key === "Backspace" || event.key === "Delete") {
       if (face.current) {
         event.preventDefault();
-        ignoreFace();
+        clearFaceName();
       }
     }
   });
@@ -923,6 +1258,28 @@
     });
   })();
 
+  async function exitApplication() {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "photos-exit" }, "*");
+      return;
+    }
+    try {
+      await fetch("/api/shutdown", { method: "POST", keepalive: true });
+    } catch (_) {
+      // Le serveur peut déjà être arrêté.
+    }
+    window.open("", "_self");
+    window.close();
+    setTimeout(() => {
+      document.body.innerHTML =
+        '<main style="display:grid;place-items:center;height:100vh;font-family:sans-serif;background:#171a27;color:#edf0f7">' +
+        '<div style="text-align:center"><h1>Serveur arrêté</h1><p>Vous pouvez fermer cette fenêtre.</p></div></main>';
+    }, 250);
+  }
+
+  byId("exit-app")?.addEventListener("click", exitApplication);
+
+  updateSelectionControls();
   loadState();
   loadPeople();
   loadPhotos();

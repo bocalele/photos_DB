@@ -1,44 +1,62 @@
 # Application globale d'annotation
 
-Une seule fenêtre pour les quatre applications du fonds photo :
+Une seule fenêtre pour les cinq applications du fonds photo :
 
-**Géotag · Faune · Visages · Mots-clés**
+**Classement · Géotag · Faune · Visages · Mots-clés**
 
 L'application **Sélection** est désormais autonome : elle se lance séparément
 et ne fait plus partie de cette fenêtre.
 
 La barre du haut permet de passer de l'une à l'autre sans quitter la page et
-**sans changer de dossier** : les quatre apps travaillent toujours sur le même
+**sans changer de dossier** : les cinq apps travaillent toujours sur le même
 répertoire de photos.
 
 ## Lancement
 
-Double-cliquer sur `Annotations.app`, ou lancer `Lancer Annotations.command`.
-Le lanceur ouvre le Terminal, trouve un port libre à partir de 8000, démarre le
-serveur puis ouvre l'interface dans le navigateur.
+Double-cliquer sur `Annotations.app`. Le lanceur démarre le serveur en
+arrière-plan, **sans ouvrir de Terminal**, trouve un port libre à partir de
+8000 puis ouvre l'interface dans le navigateur. L'icône du Dock sert de
+lanceur : elle ne reste pas active pendant que le serveur tourne ; un nouveau
+clic rouvre l'interface déjà démarrée. `Lancer Annotations.command` reste
+disponible pour un lancement manuel avec Terminal.
 
-Les quatre applications sont démarrées automatiquement, chacune dans son
-environnement Pixi, sur des ports locaux. Le premier affichage prend quelques
-secondes (modèle de visages, index TAXREF) ; les suivants sont instantanés.
+Le bouton **Quitter** de la barre globale arrête les cinq serveurs et ferme
+la fenêtre du navigateur. Si `photos.db` n’est plus à jour par rapport aux
+métadonnées, une fenêtre propose de la synchroniser avant l'arrêt. La
+synchronisation est aussi refusée tant que Faune contient des déterminations
+choisies mais non validées ou non supprimées.
+
+Les cinq applications sont démarrées automatiquement, chacune dans son
+environnement Pixi, sur des ports locaux. Le premier affichage peut prendre
+quelques secondes (modèle de visages, index TAXREF) ; les suivants sont
+instantanés. L'index TAXREF de Faune est mis en cache après le premier
+lancement.
 
 ## Utilisation
 
-- **Icônes en haut** : Géotag, Faune, Visages, Mots-clés. Un clic change d'app.
-  Chaque app reste chargée en arrière-plan : on retrouve son état (photo
-  affichée, recherche en cours, etc.) en revenant dessus.
+- **Icônes en haut** : Classement, Géotag, Faune, Visages, Mots-clés. Un clic change d'app.
+  Chaque app reste chargée en arrière-plan ; si une autre app a modifié des
+  métadonnées entre-temps, sa vue est rechargée automatiquement pour éviter
+  d'afficher des informations obsolètes.
 - **Dossier** : le chemin courant est affiché à droite. « Changer de dossier »
-  ouvre le sélecteur macOS puis propage le dossier aux quatre apps, sans les
+  ouvre le sélecteur macOS puis propage le dossier aux cinq apps, sans les
   redémarrer.
-- **Changement depuis une app** : si vous utilisez le bouton « Changer de
-  dossier » à l'intérieur d'une app, les autres suivent automatiquement.
+- **Changement depuis une app** : si vous changez de dossier à l'intérieur
+  d'une app, l'app active reste affichée sans rechargement complet. Les autres
+  apps reprennent le nouveau dossier à leur prochaine activation.
 - **Pastille d'état** : verte (prête), orange (démarrage), rouge (arrêt ou
   erreur). En cas d'erreur, un panneau propose « Relancer l'application » et
   « Voir le journal ».
 - **Ouvrir dans un onglet** : le bouton ↗ ouvre l'app active seule, en plein
   écran, dans un nouvel onglet.
 - **Raccourcis** : `⌥1` à `⌥4` (ou `⌘1` à `⌘4`) pour changer d'app.
-- **photos.db** : le bouton « photos.db » met à jour la base pour le dossier courant
-  (personnes, mots-clés, taxons, lieux) avec `dataBase.sync update`. Le résultat s'affiche en bas de la fenêtre.
+- **photos.db** : les applications écrivent les métadonnées dans les fichiers ;
+  le bouton « photos.db » reconstruit ensuite la base du dossier courant
+  (personnes, mots-clés, taxons, lieux) avec `dataBase.sync update`. Une
+  pastille orange indique que la base doit être mise à jour, une pastille verte
+  qu’elle est à jour. Le résultat s'affiche en bas de la fenêtre. Seule la
+  création d’une personne dans Visages écrit directement le catalogue `people`,
+  qui ne se déduit pas des métadonnées des photos.
 - **Panneaux** : dans Géotag et Visages, la poignée entre les deux panneaux se
   glisse à la souris (ou avec ←/→) ; un double-clic rétablit la taille par
   défaut. Le réglage est mémorisé dans le navigateur.
@@ -91,12 +109,25 @@ Le reste du fichier est partagé par les applications :
 {
   "initial_directory": "/Volumes/WD/PHOTOS/2026/DIVERS/PSD",
   "active_app": "faune",
+  "default_active_app": "faune",
+  "default_select_app": "faune",
+  "metadata_revision": 12,
   "environment": { "...": "..." },
   "apps": {
     "motscles": {"default_author": "Pierre", "default_rating": 3}
   }
 }
 ```
+
+- `default_active_app` : onglet ouvert **au lancement** d'Annotations (`geotag`,
+  `faune`, `face` ou `motscles`). Modifiez cette valeur pour changer l'écran
+  d'accueil.
+- `default_select_app` : outil ouvert **au lancement** de l'application
+  Sélection (mêmes valeurs). Il est indépendant du réglage d'Annotations.
+- `active_app` : dernier onglet utilisé, mis à jour automatiquement.
+- `metadata_revision` : compteur interne incrémenté à chaque écriture de
+  métadonnées. Il sert à rafraîchir les vues et à proposer la sauvegarde de
+  `photos.db` avant l'arrêt.
 
 `tools/preferences.py` centralise lecture et écriture (verrou inter-processus,
 remplacement atomique). Chaque app ne modifie que sa section `apps.<id>` ; le
@@ -112,7 +143,7 @@ annotations/
 ├── Annotations.app            lanceur macOS
 ├── Lancer Annotations.command lanceur Terminal
 ├── AppIcon.svg                source de l’icône
-└── logs/                      journaux des quatre serveurs
+└── logs/                      journaux des cinq serveurs
 
 dataBase/
 ├── photos_db.py               accès lecture/écriture à photos.db
@@ -124,7 +155,7 @@ Le principe : **ne rien réimplémenter**. Chaque application reste autonome,
 avec son `server.py`, son interface, son environnement Pixi et son README. Le
 serveur d'annotations :
 
-1. démarre les quatre `server.py` en sous-processus, sur des ports libres en
+1. démarre les cinq `server.py` en sous-processus, sur des ports libres en
    `127.0.0.1`, en leur passant **le même dossier de photos** ;
 2. affiche leur page dans un cadre (`iframe`) sous la barre globale ;
 3. propage le dossier courant à toutes les apps quand il change.
@@ -144,17 +175,32 @@ préférences). Les routes existantes, dont `/api/change-directory` (dialogue
 macOS), ne changent pas : les apps restent utilisables seules.
 
 Le bouton « photos.db » appelle `POST /api/sync-database` : le serveur exécute
-`python -m dataBase.sync update <dossier courant> --json` dans l'environnement
-racine (pandas + ExifTool) et renvoie les compteurs affichés en bas de la
-fenêtre. La synchronisation est limitée au dossier courant ; pour tout
-reparcourir, se placer à la racine. Un reset complet se fait avec
+`python -m dataBase.sync update <dossier courant> --prune --json` dans
+l'environnement racine (pandas + ExifTool) et renvoie les compteurs affichés en
+bas de la fenêtre. `--prune` retire de la base les photos qui ne sont plus sur
+le disque dans ce dossier. La synchronisation est limitée au dossier courant ;
+pour tout reparcourir, se placer à la racine. Un reset complet se fait avec
 `python -m dataBase.sync reset`. Les écritures passent par
 `dataBase/photos_db.py`.
 
-Le dossier global et l'app active sont retenus dans le `preferences.json`
-commun. Une app qui change de dossier écrit `initial_directory` ; la
-surveillance d'Annotations le voit et aligne les autres apps. Une app relancée
-seule retrouve le même dossier.
+Après une synchronisation réussie, le cadre actif de **Classement** est
+prévenu par `postMessage` et relit immédiatement l'arborescence et les statuts,
+sans recharger la page. Les autres cadres sont marqués obsolètes et rechargés à
+leur prochaine activation.
+
+La synchronisation enregistre dans la table `meta` de `photos.db` la révision
+des métadonnées (`synced_revision`), la portée traitée (`synced_scope`) et le
+résultat (`sync_complete`, `sync_errors`). L’état global compare ces valeurs à
+`metadata_revision` et au dossier courant : la base est signalée « à mettre à
+jour » si une écriture est arrivée depuis, si le dossier n’a pas été
+synchronisé, ou si la dernière synchronisation a rencontré une erreur. Une
+synchronisation incomplète ne peut donc pas être présentée comme réussie.
+
+Le dossier global, le dernier onglet (`active_app`) et l'onglet de démarrage
+(`default_active_app`) sont retenus dans le `preferences.json` commun. Une app
+qui change de dossier écrit `initial_directory` ; la surveillance d'Annotations
+le voit et aligne les autres apps. Une app relancée seule retrouve le même
+dossier.
 
 ## Ajouter une application
 
@@ -172,7 +218,7 @@ seule retrouve le même dossier.
    ```
 
 2. Ajouter son icône et sa couleur dans `app.js` (`ICONS`, `COLORS`).
-3. Ajouter la route `/api/directory` à son `server.py` (voir les quatre apps
+3. Ajouter la route `/api/directory` à son `server.py` (voir les cinq apps
    existantes : quelques lignes).
 4. Vérifier que son serveur accepte `dossier`, `--host` et `--port`.
 
@@ -183,15 +229,16 @@ seule retrouve le même dossier.
   Fermer les apps autonomes évite de doubler la mémoire, en particulier pour
   Visages (modèle InsightFace, environ 1 Go).
 - **Deux barres** : la barre globale reste au-dessus de celle de chaque app.
-  Quand une app est affichée dans Annotations, son propre bouton « Changer de
-  dossier » est masqué (l'URL contient `?embed=1`) : il ne reste que celui de la
-  barre globale. Ouverte seule, l'app conserve le sien.
+  Quand une app est affichée dans Annotations, ses propres boutons « Changer
+  de dossier » et « Quitter » sont masqués (l'URL contient `?embed=1`) : il ne
+  reste que ceux de la barre globale. Ouverte seule, l'app conserve les siens.
 - **Ports** : le port de la coquille est choisi par le lanceur ; ceux des apps
   sont éphémères et changent à chaque lancement. Rien à configurer.
 - **Journaux** : `annotations/logs/<app>.log`. Ils sont complétés à chaque
   démarrage et accessibles depuis le panneau d'erreur.
-- **Arrêt** : fermer le Terminal (ou `Ctrl-C`) arrête la coquille et les quatre
-  apps qu'elle a lancées.
+- **Arrêt** : le bouton **Quitter** arrête la coquille et les cinq apps
+  qu'elle a lancées, puis ferme la fenêtre du navigateur. En lancement manuel
+  avec Terminal, `Ctrl-C` produit le même arrêt.
 
 ## Confidentialité et connexions réseau
 
@@ -219,8 +266,8 @@ consultée, jamais la photo.
 - « L'application ne répond pas » : ouvrir « Voir le journal » dans le panneau.
   Le plus souvent, l'environnement Pixi de l'app n'est pas installé
   (`cd app && pixi install`).
-- Le sélecteur de dossier ne s'ouvre pas : autoriser le Terminal à contrôler
-  les dialogues dans Réglages Système > Confidentialité et sécurité >
-  Automatisation.
+- Le sélecteur de dossier ne s'ouvre pas : autoriser l'application (ou le
+  Terminal en lancement manuel) à contrôler les dialogues dans Réglages
+  Système > Confidentialité et sécurité > Automatisation.
 - Un dossier a disparu (disque externe débranché) : rebrancher le disque puis
   choisir à nouveau le dossier depuis la barre globale.

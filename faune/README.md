@@ -5,10 +5,12 @@
 L’application est indépendante de Geotag et du sélecteur relié à la base de
 données. Ouvrir `Faune.app` depuis Finder, puis la glisser dans le Dock
 pour la conserver. Le bundle doit rester dans le dossier `faune`, à côté
-de `Lancer Faune.command`. L’application ouvre un Terminal dédié ; un
-sélecteur macOS permet de choisir le dossier de photos et ouvre ensuite
-l’interface dans le navigateur. On peut aussi lancer directement
-`Lancer Faune.command` ou démarrer l’application depuis un terminal :
+de `Lancer Faune.command`. L’icône du Dock sert de lanceur : le serveur est
+détaché du bundle, donc l’icône ne clignote plus pendant le démarrage et un
+nouveau clic rouvre l’interface déjà lancée. Un sélecteur macOS permet de
+choisir le dossier de photos et ouvre ensuite l’interface dans le navigateur.
+On peut aussi lancer directement `Lancer Faune.command` ou démarrer
+l’application depuis un terminal :
 
 ```bash
 cd faune
@@ -26,18 +28,37 @@ Les photos du dossier s’affichent sous forme de vignettes à taille réglable.
 Sélectionner les photos à traiter, puis cliquer sur **Classer les photos
 sélectionnées**. Choisir l’une des cinq propositions, ou chercher une autre
 espèce en saisissant son nom vernaculaire français **ou son nom scientifique**
-dans le menu des choix.
+dans le menu des choix. Si le nom saisi n’existe ni dans TAXREF ni dans les
+thésaurus, un bouton permet de créer le taxon ; à la validation, l’application
+demande à quelle grande classe le rattacher.
 Les informations taxonomiques s’affichent pour les photos sélectionnées, déjà
 classées ou dont l’espèce est déjà présente dans les métadonnées. La coche à
 côté du nom écrit ou retire les mots-clés IPTC/XMP directement dans la photo.
 Une bordure verte indique qu’un mot-clé d’espèce reconnu est présent.
+Le bouton **Supprimer les données Faune** (ou la croix rouge sous la coche
+verte d’une photo) efface le couple nom vernaculaire/nom scientifique et
+l’arborescence taxonomique `XMP-lr:HierarchicalSubject`. Les relations
+`photo_taxa` sont retirées à la prochaine synchronisation `photos.db`. Les
+autres mots-clés et les arborescences de personnes sont conservés.
+
+Faune n’écrit que dans les métadonnées des fichiers. `photos.db` reste un
+index dérivé : il est reconstruit par le bouton **photos.db** de l’application
+globale, ou proposé à la fermeture. Une détermination choisie mais non validée
+est signalée **À valider** et bloque la synchronisation tant qu’elle n’a pas
+été validée ou supprimée.
+
+Lorsqu’un taxon inconnu est créé, la classe proposée est une grande classe des
+thésaurus, comme dans le sélecteur : **Oiseaux**, **Plantes terrestres**,
+**Insectes s.l.**, etc. **Plantes terrestres** est sélectionnée par défaut.
 
 À l’ouverture, l’application lit les mots-clés IPTC et XMP ainsi que les
 arborescences XMP de chaque photo. Les indicateurs près de la case de sélection
 signalent si le mot-clé vernaculaire et l’arborescence correspondent à TAXREF.
 Cliquer sur l’indicateur du mot-clé lance l’affichage de cette espèce comme une
 proposition BioCLIP à 100 %. L’écriture conserve les mots-clés non taxonomiques
-déjà présents dans la photo.
+déjà présents dans la photo. Lorsqu’un taxon absent de TAXREF est remplacé
+manuellement, le nouveau taxon remplace aussi l’ancien sur toutes les photos
+qui le contiennent.
 
 ExifTool est installé dans l’environnement Pixi de `faune` et sert à
 extraire les aperçus intégrés aux fichiers PSD et RAW. Si aucun aperçu intégré
@@ -48,6 +69,11 @@ Le premier lancement peut télécharger et mettre en cache les poids BioCLIP 2
 ainsi que les embeddings taxonomiques nécessaires. Les classifications
 suivantes utilisent ces fichiers locaux ; le calcul des photos est effectué sur
 le Mac avec MPS.
+
+Au démarrage, l’index TAXREF est construit une première fois (quelques
+secondes), puis conservé dans `faune/.cache/`. Les lancements suivants chargent
+ce cache en moins d’une seconde. Le dossier `.cache/` est recréé
+automatiquement si TAXREF, TAXVERN ou les thésaurus changent.
 
 ## Classification d’une image en ligne de commande
 

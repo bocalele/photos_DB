@@ -289,6 +289,71 @@ def load_thesaurus(directory: Path | str | None):
     return module.ThesaurusIndex(directory)
 
 
+_TAXONOMY_CACHE: dict[tuple[str, str], object | None] = {}
+
+
+def load_taxonomy(
+    taxref_directory: Path | str | None,
+    thesaurus_directory: Path | str | None = None,
+):
+    """Charge TAXREF comme autorité taxonomique, avec le thésaurus en repli.
+
+    TAXREF est facultatif : si les fichiers sont absents, la classification
+    continue de fonctionner avec le seul thésaurus local.
+    """
+    if not taxref_directory:
+        return None
+    taxref_path = Path(taxref_directory).expanduser()
+    if not taxref_path.is_dir():
+        return None
+    thesaurus_path = (
+        str(Path(thesaurus_directory).expanduser())
+        if thesaurus_directory
+        else ""
+    )
+    key = (str(taxref_path), thesaurus_path)
+    if key in _TAXONOMY_CACHE:
+        return _TAXONOMY_CACHE[key]
+
+    module_path = PROJECT_DIR / "faune" / "classify_photo.py"
+    if not module_path.is_file():
+        _TAXONOMY_CACHE[key] = None
+        return None
+    faune_dir = str(module_path.parent)
+    added_path = False
+    if faune_dir not in sys.path:
+        sys.path.insert(0, faune_dir)
+        added_path = True
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "photos_faune_classify", module_path
+        )
+        if spec is None or spec.loader is None:
+            index = None
+        else:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = module
+            spec.loader.exec_module(module)
+            try:
+                source = module.find_taxref_path(taxref_path)
+                index = module.TaxrefIndex(
+                    source,
+                    thesaurus_directory or None,
+                )
+            except (FileNotFoundError, ValueError, OSError):
+                index = None
+    except (ImportError, OSError, ValueError):
+        index = None
+    finally:
+        if added_path:
+            try:
+                sys.path.remove(faune_dir)
+            except ValueError:
+                pass
+    _TAXONOMY_CACHE[key] = index
+    return index
+
+
 def choose_node(candidates):
     if not candidates:
         return None
@@ -314,7 +379,20 @@ def taxon_record(node) -> dict:
         "scientificName": node.scientific or None,
         "vernacularName": node.name,
         "lineage": node.lineage(),
+        "authority": "thesaurus",
     }
+
+
+def resolve_taxon_text(taxonomy, thesaurus, text: str) -> dict | None:
+    """Résout un libellé en taxon, TAXREF d'abord, thésaurus ensuite."""
+    if taxonomy is not None:
+        resolver = getattr(taxonomy, "resolve_taxon", None)
+        if resolver is not None:
+            taxon = resolver(text)
+            if taxon is not None:
+                return dict(taxon)
+    node = taxon_for_text(thesaurus, text)
+    return taxon_record(node) if node is not None else None
 
 
 def _thesaurus_keys(thesaurus) -> set[str]:
@@ -330,7 +408,11 @@ def _thesaurus_keys(thesaurus) -> set[str]:
     return keys
 
 
-def is_taxonomy_text(thesaurus, text: str) -> bool:
+def is_taxonomy_text(thesaurus, text: str, taxonomy=None) -> bool:
+    if taxonomy is not None:
+        resolver = getattr(taxonomy, "resolve_taxon", None)
+        if resolver is not None and resolver(text) is not None:
+            return True
     if thesaurus is None:
         return False
     key = normalize_name(text)
@@ -429,17 +511,44 @@ def hierarchy_values(value: Any, thesaurus=None) -> list[str]:
 
 
 def _most_specific(taxa: list[dict]) -> list[dict]:
-    kept: list[dict] = []
-    seen: set[tuple[str, ...]] = set()
+    # Une même espèce peut être décrite par TAXREF et par l'ancien thésaurus
+    # avec deux chemins différents (« Mouton domestique » / « Mouflon »).
+    # TAXREF gagne, puis on ne conserve que la lignée la plus précise.
+    unique: dict[tuple[str, ...], dict] = {}
     for taxon in taxa:
         lineage = tuple(taxon.get("lineage") or [])
-        if not lineage or lineage in seen:
+        if not lineage:
             continue
-        seen.add(lineage)
+        current = unique.get(lineage)
+        if current is None or (
+            taxon.get("authority") == "taxref"
+            and current.get("authority") != "taxref"
+        ):
+            unique[lineage] = taxon
+    values = list(unique.values())
+
+    taxref_scientific = {
+        normalize_name(taxon.get("scientificName"))
+        for taxon in values
+        if taxon.get("authority") == "taxref" and taxon.get("scientificName")
+    }
+    if taxref_scientific:
+        values = [
+            taxon
+            for taxon in values
+            if not (
+                taxon.get("authority") != "taxref"
+                and normalize_name(taxon.get("scientificName")) in taxref_scientific
+            )
+        ]
+
+    kept: list[dict] = []
+    for taxon in values:
+        lineage = tuple(taxon.get("lineage") or [])
         if any(
             len(other.get("lineage") or []) > len(lineage)
             and tuple((other.get("lineage") or [])[: len(lineage)]) == lineage
-            for other in taxa
+            for other in values
         ):
             continue
         kept.append(taxon)
@@ -451,17 +560,21 @@ def classify_keywords(
     hierarchies: Iterable[str],
     thesaurus,
     person_index: dict[str, int],
+    taxonomy=None,
 ) -> tuple[list[int], list[dict], list[str]]:
     """Sépare personnes, taxons et mots-clés non taxonomiques.
 
     Les personnes ne sont jamais dupliquées dans les mots-clés. Un libellé
-    trouvé dans le thésaurus (nom vernaculaire ou scientifique) est un taxon :
-    il ne doit pas apparaître dans ``keywords``.
+    trouvé dans TAXREF ou dans le thésaurus (nom vernaculaire ou scientifique)
+    est un taxon : il ne doit pas apparaître dans ``keywords``. TAXREF est
+    prioritaire pour éviter les anciens noms scientifiques du thésaurus.
     """
     person_ids: list[int] = []
     taxa: list[dict] = []
     labels: list[str] = []
     seen_labels: set[str] = set()
+    hierarchy_lineages: set[tuple[str, ...]] = set()
+    hierarchy_segments: set[str] = set()
 
     for raw_keyword in keywords:
         keyword = str(raw_keyword or "").strip()
@@ -471,11 +584,11 @@ def classify_keywords(
         if key in person_index:
             person_ids.append(person_index[key])
             continue
-        node = taxon_for_text(thesaurus, keyword)
-        if node is not None:
-            taxa.append(taxon_record(node))
+        taxon = resolve_taxon_text(taxonomy, thesaurus, keyword)
+        if taxon is not None:
+            taxa.append(taxon)
             continue
-        if is_taxonomy_text(thesaurus, keyword):
+        if is_taxonomy_text(thesaurus, keyword, taxonomy):
             continue
         if key and key not in seen_labels:
             seen_labels.add(key)
@@ -488,24 +601,54 @@ def classify_keywords(
         segments = [part.strip() for part in re.split(r"[|/>\\]+", text) if part.strip()]
         if len(segments) < 2:
             continue
+        taxon = None
+        if taxonomy is not None:
+            resolver = getattr(taxonomy, "resolve_hierarchy", None)
+            if resolver is not None:
+                taxon = resolver(text)
+        if taxon is not None:
+            taxon = dict(taxon)
+            taxa.append(taxon)
+            hierarchy_lineages.add(tuple(taxon.get("lineage") or []))
+            for segment in segments:
+                hierarchy_segments.add(normalize_name(segment))
+                hierarchy_segments.update(
+                    normalize_name(part)
+                    for part in re.split(r"[,;]", segment)
+                    if normalize_name(part)
+                )
+            continue
+
         node = None
         if thesaurus is not None:
             node = thesaurus.by_path.get(
                 tuple(normalize_search_text(segment) for segment in segments)
             )
         if node is not None and node.scientific:
-            taxa.append(taxon_record(node))
+            taxon = taxon_record(node)
+            taxa.append(taxon)
+            hierarchy_lineages.add(tuple(taxon.get("lineage") or []))
+            for segment in segments:
+                hierarchy_segments.add(normalize_name(segment))
+                hierarchy_segments.update(
+                    normalize_name(part)
+                    for part in re.split(r"[,;]", segment)
+                    if normalize_name(part)
+                )
             continue
 
         # Une hiérarchie qui contient au moins un taxon connu est une
         # hiérarchie taxonomique : ses niveaux supérieurs (« Animaux »,
         # « Chordés », « Passereaux ») ne doivent pas devenir des mots-clés,
         # même s'ils sont absents du thésaurus local.
-        segment_nodes = [taxon_for_text(thesaurus, segment) for segment in segments]
-        if any(segment_node is not None for segment_node in segment_nodes):
-            for segment, segment_node in zip(segments, segment_nodes):
-                if segment_node is not None:
-                    taxa.append(taxon_record(segment_node))
+        segment_taxa = [
+            resolve_taxon_text(taxonomy, thesaurus, segment)
+            for segment in segments
+        ]
+        if any(segment_taxon is not None for segment_taxon in segment_taxa):
+            for segment_taxon in segment_taxa:
+                if segment_taxon is not None:
+                    taxa.append(segment_taxon)
             continue
 
         for segment in segments:
@@ -515,11 +658,37 @@ def classify_keywords(
             if key in person_index:
                 person_ids.append(person_index[key])
                 continue
-            if is_taxonomy_text(thesaurus, segment):
+            if is_taxonomy_text(thesaurus, segment, taxonomy):
                 continue
             if key not in seen_labels:
                 seen_labels.add(key)
                 labels.append(segment)
+
+    if hierarchy_segments:
+        # Une arborescence explicite est plus fiable qu'un mot-clé plat
+        # isolé. Sur une ancienne photo de mouton, le mot-clé plat
+        # « Mouflon » ne doit pas transformer une race domestique en
+        # mouflon sauvage TAXREF.
+        filtered: list[dict] = []
+        for taxon in taxa:
+            lineage = tuple(taxon.get("lineage") or [])
+            if lineage in hierarchy_lineages:
+                filtered.append(taxon)
+                continue
+            names = {
+                normalize_name(taxon.get("vernacularName")),
+                normalize_name(taxon.get("scientificName")),
+            }
+            names.update(
+                normalize_name(part)
+                for part in re.split(r"[,;]", taxon.get("vernacularName") or "")
+                if normalize_name(part)
+            )
+            names.discard("")
+            if names & hierarchy_segments:
+                continue
+            filtered.append(taxon)
+        taxa = filtered
 
     return sorted(set(person_ids)), _most_specific(taxa), labels
 

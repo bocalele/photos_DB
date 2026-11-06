@@ -32,7 +32,7 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from dataBase import annotations, photos_db  # noqa: E402
-from tools import environment  # noqa: E402
+from tools import environment, preferences  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -150,8 +150,8 @@ def _scope_relpath(scope: Path, root: Path) -> str:
     return "" if value == "." else value
 
 
-def _purge_taxonomy_keywords(conn: sqlite3.Connection, thesaurus) -> int:
-    if thesaurus is None:
+def _purge_taxonomy_keywords(conn: sqlite3.Connection, thesaurus, taxonomy=None) -> int:
+    if thesaurus is None and taxonomy is None:
         return 0
     taxa_keys = set()
     for row in conn.execute("SELECT name, scientific_name FROM taxa"):
@@ -162,7 +162,9 @@ def _purge_taxonomy_keywords(conn: sqlite3.Connection, thesaurus) -> int:
     removed = 0
     for row in conn.execute("SELECT id, label FROM keywords").fetchall():
         key = annotations.normalize_name(row["label"])
-        if key in taxa_keys or annotations.is_taxonomy_text(thesaurus, row["label"]):
+        if key in taxa_keys or annotations.is_taxonomy_text(
+            thesaurus, row["label"], taxonomy
+        ):
             conn.execute("DELETE FROM photo_keywords WHERE keyword_id = ?", (row["id"],))
             conn.execute("DELETE FROM keywords WHERE id = ?", (row["id"],))
             removed += 1
@@ -225,10 +227,17 @@ def update(args) -> dict:
         local = (Path.cwd() / raw_scope).resolve()
         under_root = (root / raw_scope).resolve()
         scope = local if local.exists() else under_root
+    metadata_revision = preferences.metadata_revision()
     files = _scope_files(scope, root, args.limit)
-    thesaurus = annotations.load_thesaurus(
-        args.thesaurus or environment.thesaurus_dir()
+    taxonomy = annotations.load_taxonomy(
+        args.taxref or environment.taxref_dir(),
+        args.thesaurus or environment.thesaurus_dir(),
     )
+    thesaurus = getattr(taxonomy, "thesaurus", None) if taxonomy is not None else None
+    if thesaurus is None:
+        thesaurus = annotations.load_thesaurus(
+            args.thesaurus or environment.thesaurus_dir()
+        )
 
     conn = photos_db.connect(target)
     stats = {
@@ -251,6 +260,7 @@ def update(args) -> dict:
                 "root": str(root),
                 "files": len(files),
                 "thesaurus": thesaurus is not None,
+                "taxref": taxonomy is not None,
                 "dry_run": True,
             }
 
@@ -264,21 +274,38 @@ def update(args) -> dict:
         for index, path in enumerate(files, start=1):
             batch.append(path)
             if len(batch) >= 100:
-                _process_batch(conn, batch, root, thesaurus, person_index, stats)
+                _process_batch(
+                    conn, batch, root, thesaurus, person_index, stats,
+                    taxonomy=taxonomy,
+                )
                 batch = []
                 _progress(args, index, len(files), stats, started)
         if batch:
-            _process_batch(conn, batch, root, thesaurus, person_index, stats)
+            _process_batch(
+                conn, batch, root, thesaurus, person_index, stats,
+                taxonomy=taxonomy,
+            )
 
         if args.prune:
             stats["pruned_photos"] = _prune_missing(conn, scope, root)
-        stats["taxonomy_keywords_removed"] = _purge_taxonomy_keywords(conn, thesaurus)
+        stats["taxonomy_keywords_removed"] = _purge_taxonomy_keywords(
+            conn, thesaurus, taxonomy
+        )
         stats["pruned_keywords"] = photos_db.prune_unused_keywords(conn)
 
         photo_count = int(conn.execute("SELECT COUNT(*) FROM photos").fetchone()[0])
         photos_db.set_meta(conn, "source_root", str(root))
         photos_db.set_meta(conn, "last_update_at", photos_db.now_iso())
         photos_db.set_meta(conn, "last_update_scope", _scope_relpath(scope, root))
+        # La révision est lue avant le parcours : une écriture qui arrive
+        # pendant la synchronisation laisse volontairement la base « sale ».
+        photos_db.set_meta(conn, "synced_revision", str(metadata_revision))
+        photos_db.set_meta(conn, "synced_scope", _scope_relpath(scope, root))
+        photos_db.set_meta(conn, "last_sync_at", photos_db.now_iso())
+        photos_db.set_meta(
+            conn, "sync_complete", "1" if stats["errors"] == 0 else "0"
+        )
+        photos_db.set_meta(conn, "sync_errors", str(stats["errors"]))
         photos_db.set_meta(conn, "photo_count", str(photo_count))
         conn.commit()
     finally:
@@ -290,6 +317,7 @@ def update(args) -> dict:
         "root": str(root),
         "files": len(files),
         "thesaurus": thesaurus is not None,
+        "taxref": taxonomy is not None,
         "photos": stats["photos"],
         "errors": stats["errors"],
         "people_links": stats["people_links"],
@@ -299,16 +327,22 @@ def update(args) -> dict:
         "pruned_keywords": stats["pruned_keywords"],
         "taxonomy_keywords_removed": stats["taxonomy_keywords_removed"],
         "total_photos": photo_count,
+        "synced_revision": metadata_revision,
+        "synced_scope": _scope_relpath(scope, root),
+        "sync_complete": stats["errors"] == 0,
     }
 
 
-def _process_batch(conn, batch, root, thesaurus, person_index, stats) -> None:
+def _process_batch(
+    conn, batch, root, thesaurus, person_index, stats, taxonomy=None
+) -> None:
     from dataBase import rebuild
 
     try:
         with photos_db.deferred_commits():
             rebuild.process_batch(
-                conn, batch, root, thesaurus, person_index, {}, stats
+                conn, batch, root, thesaurus, person_index, {}, stats,
+                taxonomy=taxonomy,
             )
         conn.commit()
     except Exception:
@@ -380,6 +414,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     update_parser.add_argument("--db", help="Base cible (défaut : preferences.json).")
     update_parser.add_argument("--root", help="Racine photo (défaut : preferences.json).")
     update_parser.add_argument("--thesaurus", help="Dossier des thésaurus.")
+    update_parser.add_argument("--taxref", help="Dossier TAXREF.")
     update_parser.add_argument("--limit", type=int, default=0, help="Limite le nombre de fichiers (test).")
     update_parser.add_argument(
         "--prune", action="store_true", help="Retire de la base les photos absentes du disque dans la portée."

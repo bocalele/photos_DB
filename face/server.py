@@ -14,6 +14,7 @@ Usage :
 from __future__ import annotations
 
 import json
+import math
 import mimetypes
 import subprocess
 import sys
@@ -36,7 +37,7 @@ if str(PROJECT_DIR) not in sys.path:
 from dataBase import face_db, photos_db  # noqa: E402
 import index  # noqa: E402
 import metadata  # noqa: E402
-from tools import environment, preferences  # noqa: E402
+from tools import preferences  # noqa: E402
 
 PHOTO_ROOT = face_db.DEFAULT_PHOTO_ROOT
 PAGE_SIZE = 200
@@ -44,6 +45,38 @@ PREVIEW_SIZE = 1600
 # Incrémenter à chaque changement de la façon de rendre les images : cela change
 # l'URL et invalide le cache du navigateur (qui garde les JPEG 24 h).
 IMAGE_VERSION = "3"
+# Les détecteurs peuvent renvoyer des boîtes qui dépassent légèrement l'image.
+# On les ramène juste à l'intérieur (quelques pixels de marge) pour qu'elles
+# restent sélectionnables et validables dans l'interface.
+BOX_INSET = 0.002
+BOX_MIN_SIZE = 0.004
+
+
+def clamp_bbox(bbox: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+    x1, y1, x2, y2 = (float(value) for value in bbox)
+    if not all(math.isfinite(value) for value in (x1, y1, x2, y2)):
+        raise ValueError("Boîte de visage invalide.")
+    x1, x2 = sorted((x1, x2))
+    y1, y2 = sorted((y1, y2))
+    inside = x1 >= 0.0 and y1 >= 0.0 and x2 <= 1.0 and y2 <= 1.0
+    if inside:
+        return (x1, y1, x2, y2)
+
+    low = BOX_INSET
+    high = 1.0 - BOX_INSET
+    x1 = min(max(x1, low), high)
+    y1 = min(max(y1, low), high)
+    x2 = min(max(x2, low), high)
+    y2 = min(max(y2, low), high)
+
+    if x2 - x1 < BOX_MIN_SIZE:
+        center = min(max((x1 + x2) / 2, low + BOX_MIN_SIZE / 2), high - BOX_MIN_SIZE / 2)
+        x1, x2 = center - BOX_MIN_SIZE / 2, center + BOX_MIN_SIZE / 2
+    if y2 - y1 < BOX_MIN_SIZE:
+        center = min(max((y1 + y2) / 2, low + BOX_MIN_SIZE / 2), high - BOX_MIN_SIZE / 2)
+        y1, y2 = center - BOX_MIN_SIZE / 2, center + BOX_MIN_SIZE / 2
+    return (x1, y1, x2, y2)
+
 
 STATE: "AppState"
 
@@ -342,7 +375,10 @@ class AppState:
             conn.close()
 
         regions = metadata.read_regions([path]).get(str(path.resolve()), [])
-        boxes = [{"bbox": (row["x1"], row["y1"], row["x2"], row["y2"])} for row in rows]
+        boxes = [
+            {"bbox": (row["x1"], row["y1"], row["x2"], row["y2"])}
+            for row in rows
+        ]
         detailed = index.match_regions_detailed(regions, boxes)
         matches = {face_index: (name, score) for face_index, _, name, score in detailed}
         matched_regions = {region_index for _, region_index, _, _ in detailed}
@@ -353,37 +389,52 @@ class AppState:
 
         faces = []
         for position, row in enumerate(rows):
-            scored = self.scores(face_db.unpack(row["embedding"]), exclude=key)
-            alternatives = [
-                {
-                    "id_people": item["id_people"],
-                    "name": item["name"],
-                    "score": round(item["score"], 3),
-                }
-                for item in scored[:3]
-            ]
-            existing = matches.get(position)
+            invalid = bool(row["invalid"])
+            alternatives = []
             existing_payload = None
-            if existing:
-                name, score = existing
-                existing_payload = {
-                    "name": name,
-                    "id_people": self.name_index.get(photos_db.normalize_name(name)),
-                    "score": round(float(score), 3),
-                }
+            if not invalid:
+                scored = self.scores(face_db.unpack(row["embedding"]), exclude=key)
+                alternatives = [
+                    {
+                        "id_people": item["id_people"],
+                        "name": item["name"],
+                        "score": round(item["score"], 3),
+                    }
+                    for item in scored[:3]
+                ]
+                existing = matches.get(position)
+                if existing:
+                    name, score = existing
+                    existing_payload = {
+                        "name": name,
+                        "id_people": self.name_index.get(photos_db.normalize_name(name)),
+                        "score": round(float(score), 3),
+                    }
             faces.append(
                 {
                     "index": position,
                     "bbox": [
-                        round(float(row["x1"]), 6),
-                        round(float(row["y1"]), 6),
-                        round(float(row["x2"]), 6),
-                        round(float(row["y2"]), 6),
+                        round(value, 6)
+                        for value in clamp_bbox(
+                            (row["x1"], row["y1"], row["x2"], row["y2"])
+                        )
                     ],
                     "detScore": round(float(row["det_score"]), 3),
                     "existing": existing_payload,
+                    "ignored": (
+                        bool(row["ignored"])
+                        and not invalid
+                        and existing_payload is None
+                    ),
+                    "invalid": invalid,
                     "alternatives": alternatives,
-                    "proposal": alternatives[0] if alternatives and alternatives[0]["score"] >= suggestion else None,
+                    "proposal": (
+                        alternatives[0]
+                        if not invalid
+                        and alternatives
+                        and alternatives[0]["score"] >= suggestion
+                        else None
+                    ),
                 }
             )
 
@@ -429,9 +480,18 @@ class AppState:
                 bbox = tuple(float(value) for value in bbox)
             except (TypeError, ValueError):
                 raise ValueError("Boîte de visage invalide.") from None
-            if not all(0.0 <= value <= 1.0 for value in bbox):
-                raise ValueError("Boîte de visage hors de l'image.")
+            bbox = clamp_bbox(bbox)
+            index_value = face.get("index")
+            if index_value is None:
+                face_index = None
+            else:
+                try:
+                    face_index = int(index_value)
+                except (TypeError, ValueError):
+                    raise ValueError("Index de visage invalide.") from None
             id_people = face.get("id_people")
+            ignored = bool(face.get("ignored"))
+            invalid = bool(face.get("invalid"))
             if id_people is not None:
                 try:
                     id_people = int(id_people)
@@ -439,12 +499,26 @@ class AppState:
                     raise ValueError("Personne invalide.") from None
                 if id_people not in self.people:
                     raise ValueError("Personne inconnue.")
+                # Un visage nommé n'est jamais « sans nom » ni invalide.
+                ignored = False
+                invalid = False
+            elif invalid:
+                ignored = False
             # Seuls les visages réellement modifiés par l'utilisateur sont touchés.
             # Les régions existantes que l'app ne sait pas nommer sont conservées.
-            assignments.append((bbox, id_people, bool(face.get("apply"))))
+            assignments.append(
+                (
+                    face_index,
+                    bbox,
+                    id_people,
+                    bool(face.get("apply")),
+                    ignored,
+                    invalid,
+                )
+            )
 
         existing = metadata.read_regions([path]).get(str(path.resolve()), [])
-        touched = [bbox for bbox, _, apply in assignments if apply]
+        touched = [bbox for _, bbox, _, apply, _, _ in assignments if apply]
         # Appariement un-à-un entre les visages modifiés et les régions existantes :
         # une région de Lightroom ne recouvre pas exactement la boîte du détecteur
         # (IoU observé 0,3–0,65), mais elle ne doit être remplacée qu'une fois.
@@ -469,56 +543,83 @@ class AppState:
         ]
         regions += [
             {"name": self.people[id_people]["label"], "bbox": bbox}
-            for bbox, id_people, apply in assignments
+            for _, bbox, id_people, apply, _, _ in assignments
             if apply and id_people is not None
         ]
 
-        keywords = metadata.read_keywords(path)
-        record = metadata.read_metadata(path)
-        width = int(record.get("ImageWidth") or 0)
-        height = int(record.get("ImageHeight") or 0)
-        orientation = int(record.get("Orientation") or 1)
-        if orientation in (5, 6, 7, 8):
-            width, height = height, width
-        if not width or not height:
-            conn = face_db.connect()
-            try:
-                limits = face_db.photo_dimensions(conn, key)
-            finally:
-                conn.close()
-            if limits:
-                width, height = int(limits["width"]), int(limits["height"])
-
-        names = [region["name"] for region in regions]
-
-        def merged(values: list[str]) -> list[str]:
-            result = []
-            for value in values:
-                if photos_db.normalize_name(value) in self.known_names:
-                    continue
-                if value not in result:
-                    result.append(value)
-            for name in names:
-                if name not in result:
-                    result.append(name)
-            return result
-
-        metadata.write_regions(
-            path,
-            width,
-            height,
-            regions,
-            subject=merged(keywords["subject"]),
-            hierarchical=merged(keywords["hierarchical"]),
-            weighted=merged(keywords["weighted"]),
+        # « Sans nom » sur un visage encore inconnu ne modifie aucune métadonnée :
+        # seule la décision dans face.db change. On évite ainsi de réécrire le
+        # fichier et d'incrémenter inutilement metadata_revision.
+        metadata_changed = bool(replaced_regions) or any(
+            apply and id_people is not None
+            for _, _, id_people, apply, _, _ in assignments
         )
-        try:
-            photos_db.record_people_for_path(environment.photos_root(), path, names)
-        except Exception as error:
-            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
+        if metadata_changed:
+            keywords = metadata.read_keywords(path)
+            record = metadata.read_metadata(path)
+            width = int(record.get("ImageWidth") or 0)
+            height = int(record.get("ImageHeight") or 0)
+            orientation = int(record.get("Orientation") or 1)
+            if orientation in (5, 6, 7, 8):
+                width, height = height, width
+            if not width or not height:
+                conn = face_db.connect()
+                try:
+                    limits = face_db.photo_dimensions(conn, key)
+                finally:
+                    conn.close()
+                if limits:
+                    width, height = int(limits["width"]), int(limits["height"])
+
+            names = [region["name"] for region in regions]
+
+            def merged(values: list[str]) -> list[str]:
+                result = []
+                for value in values:
+                    if photos_db.normalize_name(value) in self.known_names:
+                        continue
+                    if value not in result:
+                        result.append(value)
+                for name in names:
+                    if name not in result:
+                        result.append(name)
+                return result
+
+            metadata.write_regions(
+                path,
+                width,
+                height,
+                regions,
+                subject=merged(keywords["subject"]),
+                hierarchical=merged(keywords["hierarchical"]),
+                weighted=merged(keywords["weighted"]),
+            )
 
         conn = face_db.connect()
         try:
+            # Les décisions de travail sont appliquées avant de recalculer les
+            # étiquettes : une détection invalidée ne doit pas être réintroduite
+            # par une région XMP, même si elle chevauche une ancienne région.
+            for face_index, bbox, id_people, apply, ignored, invalid in assignments:
+                if not apply:
+                    continue
+                if face_index is None:
+                    best_position = None
+                    best_score = 0.0
+                    for position, row in enumerate(face_db.photo_faces(conn, key)):
+                        score = index.iou(
+                            (row["x1"], row["y1"], row["x2"], row["y2"]), bbox
+                        )
+                        if score > best_score:
+                            best_position = position
+                            best_score = score
+                    if best_score >= index.MIN_REGION_IOU:
+                        face_index = best_position
+                if face_index is not None:
+                    face_db.set_face_invalid(conn, key, face_index, invalid)
+                    if not invalid:
+                        face_db.set_face_ignored(conn, key, face_index, ignored)
+
             rows = face_db.photo_faces(conn, key)
             boxes = [{"bbox": (row["x1"], row["y1"], row["x2"], row["y2"])} for row in rows]
             # Les étalons de cette photo sont réécrits : une correction ne doit pas
@@ -526,6 +627,8 @@ class AppState:
             face_db.clear_exemplars(conn, key)
             labels = []
             for face_index, name, score in index.match_regions(regions, boxes):
+                if face_index >= len(rows) or rows[face_index]["invalid"]:
+                    continue
                 id_people = self.name_index.get(photos_db.normalize_name(name))
                 if id_people is None:
                     continue
@@ -546,6 +649,8 @@ class AppState:
                     face_db.unpack(rows[face_index]["embedding"]),
                 )
             face_db.replace_labels(conn, key, labels)
+            stat = path.stat()
+            face_db.mark_current(conn, key, stat.st_size, stat.st_mtime)
             self.status_dirty = True
             self.references = face_db.load_references(conn)
         finally:
@@ -555,7 +660,17 @@ class AppState:
 
     # --- analyse du dossier ------------------------------------------------
 
-    def start_analyze(self) -> str:
+    def start_analyze(self, names: list[str] | None = None) -> str:
+        paths = self.list_files()
+        if names:
+            selected_paths = []
+            for name in names:
+                path = self.photo_path(str(name))
+                if path is not None:
+                    selected_paths.append(path)
+            if not selected_paths:
+                raise ValueError("Aucune photo sélectionnée n’est disponible.")
+            paths = selected_paths
         with self.lock:
             if self.job_running:
                 return self.job_running
@@ -575,7 +690,7 @@ class AppState:
             while len(self.jobs) > 20:
                 self.jobs.pop(next(iter(self.jobs)))
         threading.Thread(
-            target=self.run_analyze, args=(job_id, self.list_files()), daemon=True
+            target=self.run_analyze, args=(job_id, paths), daemon=True
         ).start()
         return job_id
 
@@ -638,15 +753,13 @@ class AppState:
         return key.rstrip("/") + "/"
 
     def pending_faces(self, limit: int = 400) -> list[dict]:
-        """Visages sans nom du dossier courant, avec leur meilleure proposition.
+        """Visages du dossier courant qui n'ont encore aucune décision.
 
-        Triés du plus douteux au plus sûr : c'est l'ordre de validation le plus
-        rentable pour l'utilisateur.
+        Un visage est « décidé » s'il est nommé ou validé « sans nom ». Les
+        autres sont triés du plus incertain au plus sûr. Une proposition n'est
+        affichée que si elle dépasse le seuil de suggestion ; les visages sans
+        proposition restent dans la liste pour pouvoir être validés sans nom.
         """
-        references = self.references
-        if not references or not references.get("groups"):
-            return []
-
         conn = face_db.connect()
         try:
             rows = face_db.unlabelled_faces(conn)
@@ -663,38 +776,45 @@ class AppState:
         if not rows:
             return []
 
-        matrix = np.stack([face_db.unpack(row["embedding"]) for row in rows])
-        similarities = matrix @ references["matrix"].T
-
-        by_photo: dict[str, list[int]] = {}
-        for position, row in enumerate(rows):
-            by_photo.setdefault(row["relpath"], []).append(position)
-        for relpath, positions in by_photo.items():
-            columns = np.nonzero(references["relpaths"] == relpath)[0]
-            if len(columns):
-                similarities[np.ix_(positions, columns)] = -1.0
-
-        starts = [start for start, _ in references["groups"]]
-        person_scores = np.maximum.reduceat(similarities, starts, axis=1)
-        best = person_scores.argmax(axis=1)
-        best_scores = person_scores[np.arange(len(rows)), best]
-
+        references = self.references or {}
+        groups = references.get("groups") or []
         suggestion = float(references.get("suggestion", 0.33))
+        best = np.full(len(rows), -1, dtype=int)
+        best_scores = np.zeros(len(rows), dtype=np.float32)
+
+        if groups:
+            matrix = np.stack([face_db.unpack(row["embedding"]) for row in rows])
+            similarities = matrix @ references["matrix"].T
+
+            by_photo: dict[str, list[int]] = {}
+            for position, row in enumerate(rows):
+                by_photo.setdefault(row["relpath"], []).append(position)
+            for relpath, positions in by_photo.items():
+                columns = np.nonzero(references["relpaths"] == relpath)[0]
+                if len(columns):
+                    similarities[np.ix_(positions, columns)] = -1.0
+
+            starts = [start for start, _ in groups]
+            person_scores = np.maximum.reduceat(similarities, starts, axis=1)
+            best = person_scores.argmax(axis=1)
+            best_scores = person_scores[np.arange(len(rows)), best]
+
+        order = np.argsort(best_scores) if groups else range(len(rows))
         items = []
-        for position in np.argsort(best_scores):
-            score = float(best_scores[position])
-            if score < suggestion:
-                continue
-            person = int(best[position])
+        for position in order:
+            score = float(best_scores[position]) if groups else 0.0
+            person = int(best[position]) if groups else -1
+            has_proposal = bool(groups) and person >= 0 and score >= suggestion
             row = rows[position]
             items.append(
                 {
                     "name": row["relpath"],
                     "faceIndex": int(row["face_idx"]),
                     "score": round(score, 3),
-                    "id_people": references["ids"][person],
-                    "person": references["names"][person],
+                    "id_people": references["ids"][person] if has_proposal else None,
+                    "person": references["names"][person] if has_proposal else "",
                     "detScore": round(float(row["det_score"]), 3),
+                    "hasProposal": has_proposal,
                 }
             )
             if len(items) >= limit:
@@ -791,16 +911,30 @@ class FaceHandler(BaseHTTPRequestHandler):
                 _crop_bytes.cache_clear()
                 self.send_json({"directory": str(directory)})
             elif route == "/api/analyze":
-                self.read_json()
-                self.send_json({"jobId": STATE.start_analyze()}, 202)
+                payload = self.read_json()
+                names = payload.get("names")
+                if names is not None and not isinstance(names, list):
+                    raise ValueError("Liste de photos sélectionnées invalide.")
+                self.send_json(
+                    {"jobId": STATE.start_analyze(
+                        [str(name) for name in names] if names else None
+                    )},
+                    202,
+                )
             elif route == "/api/change-directory":
                 self.handle_change_directory()
+            elif route == "/api/shutdown":
+                self.handle_shutdown()
             else:
                 self.send_error(404)
         except (ValueError, FileNotFoundError) as error:
             self.send_json({"error": str(error)}, 400)
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
             self.send_json({"error": str(error)}, 500)
+
+    def handle_shutdown(self):
+        self.send_json({"status": "shutting_down"})
+        threading.Thread(target=self.server.shutdown, daemon=True).start()
 
     # --- routes ------------------------------------------------------------
 
@@ -863,6 +997,11 @@ class FaceHandler(BaseHTTPRequestHandler):
             key = relpath_for(path)
             info = status.get(key)
             indexed = info is not None and not info.get("error")
+            n_valid = (
+                max(0, int(info["n_faces"]) - int(info.get("n_invalid", 0)))
+                if indexed
+                else 0
+            )
             entry = {
                 "name": key,
                 "displayName": path.name,
@@ -872,13 +1011,24 @@ class FaceHandler(BaseHTTPRequestHandler):
                     f"&v={image_version(path)}"
                 ),
                 "indexed": indexed,
-                "nFaces": int(info["n_faces"]) if indexed else 0,
+                "nFaces": n_valid,
                 "nNamed": int(info["n_labels"]) if indexed else 0,
+                "nIgnored": int(info.get("n_ignored", 0)) if indexed else 0,
+                "nInvalid": int(info.get("n_invalid", 0)) if indexed else 0,
+                "nResolved": (
+                    int(info["n_labels"]) + int(info.get("n_ignored", 0))
+                    if indexed
+                    else 0
+                ),
                 "error": info.get("error") if info else None,
             }
-            if wanted == "todo" and not (not indexed or entry["nNamed"] < entry["nFaces"]):
+            if wanted == "todo" and not (
+                not indexed or entry["nResolved"] < entry["nFaces"]
+            ):
                 continue
-            if wanted == "named" and not (entry["nFaces"] > 0 and entry["nNamed"] >= entry["nFaces"]):
+            if wanted == "named" and not (
+                entry["nFaces"] > 0 and entry["nResolved"] >= entry["nFaces"]
+            ):
                 continue
             if wanted == "new" and indexed:
                 continue

@@ -18,6 +18,7 @@
       <div class="topbar-title">
         <h1 id="app-title">Sélection</h1>
         <p id="app-sub" class="sub">Parcourir et filtrer les photos</p>
+        <span id="database-count" class="database-count" title="Nombre total de photos dans photos.db" hidden></span>
       </div>
       <nav id="mode-tabs" class="mode-tabs" aria-label="Modes de sélection">
         <button type="button" class="mode-tab" data-mode="geotag" style="--tab-color:var(--geotag)" title="Géotag · sélection par lieu">
@@ -47,6 +48,8 @@
         <button id="graph-photos-btn" type="button" class="primary">
           Afficher les photos<span id="selection-count" class="count-badge">0</span>
         </button>
+        <button id="exit-app" type="button" class="secondary exit-button"
+                title="Quitter et arrêter le serveur">Quitter</button>
       </div>
     </header>
 
@@ -69,11 +72,29 @@
             <select id="self-select"></select>
           </div>
 
+          <div class="field graph-display">
+            <label for="label-mode">Étiquettes</label>
+            <select id="label-mode" title="Choisir comment afficher les noms des nœuds">
+              <option value="auto">Automatique</option>
+              <option value="all">Toutes</option>
+              <option value="hover">Au survol</option>
+              <option value="none">Aucune</option>
+            </select>
+            <div class="graph-actions">
+              <button id="fit-graph" type="button" class="secondary" title="Cadrer tous les nœuds visibles">Ajuster</button>
+              <button id="center-graph" type="button" class="secondary" title="Recentrer sur le nœud courant">Recentrer</button>
+            </div>
+            <div id="label-summary" class="order-help"></div>
+          </div>
+
           <div class="legend">
             <div id="cluster-legend-title" class="section-title">Groupes</div>
             <div id="cluster-legend"></div>
             <div class="legend-help">
-              <span class="dot ring"></span>Nœud courant
+              <span class="dot ring"></span>Nœud courant<br>
+              Molette : zoom · glisser : déplacer · survol : nom complet<br>
+              Clic sur un nœud : le sélectionner · double-clic : garder sa descendance<br>
+              Clic dans le fond : menu du graphe
             </div>
           </div>
         </section>
@@ -249,6 +270,19 @@
             <div id="photo-modal-count">0 photo</div>
           </div>
           <div class="photo-modal-actions">
+            <label class="photo-sort" for="photo-sort" title="Trier les photos affichées">
+              <span>Trier</span>
+              <select id="photo-sort">
+                <option value="date_desc">Date · récentes</option>
+                <option value="date_asc">Date · anciennes</option>
+                <option value="rating_desc">Note · meilleures</option>
+                <option value="rating_asc">Note · moins bonnes</option>
+                <option value="filename_asc">Nom · A → Z</option>
+                <option value="filename_desc">Nom · Z → A</option>
+                <option value="random">Aléatoire</option>
+              </select>
+            </label>
+            <button id="photo-shuffle" type="button" class="secondary" title="Tirer un nouvel ordre aléatoire">Mélanger</button>
             <button id="photo-select-all" type="button" class="secondary">Tout sélectionner</button>
             <button id="photo-clear-selection" type="button" class="secondary">Effacer</button>
             <button id="photo-create-album" type="button" class="primary" disabled>

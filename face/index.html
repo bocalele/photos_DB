@@ -23,23 +23,35 @@
             <input id="thumbnail-size" type="range" min="110" max="260" value="170">
           </label>
           <button id="change-directory" type="button" class="secondary">Changer de dossier</button>
+          <button id="exit-app" type="button" class="secondary exit-button"
+                  title="Quitter et arrêter le serveur">Quitter</button>
         </div>
       </header>
 
       <div class="gallery-tools">
         <div class="modes" role="group" aria-label="Mode d’affichage">
           <button type="button" class="mode active" data-mode="photos">Photos</button>
-          <button type="button" class="mode" data-mode="faces">
-            Visages à vérifier <span id="pending-count" class="count"></span>
+          <button type="button" class="mode" data-mode="faces"
+                  title="Visages sans nom ni validation « sans nom », du plus incertain au plus sûr">
+            Visages à décider <span id="pending-count" class="count"></span>
           </button>
         </div>
-        <button id="analyze" type="button" class="primary">Analyser ce dossier</button>
+        <button id="select-all" type="button">Tout sélectionner</button>
+        <button id="deselect-photos" type="button" disabled>Désélectionner</button>
+        <button id="analyze-selection" type="button" class="primary" disabled>
+          Analyser la sélection
+        </button>
+        <button id="analyze" type="button" class="secondary">Analyser ce dossier</button>
       </div>
       <div id="photo-filters" class="gallery-filters">
-        <button type="button" class="filter active" data-filter="all">Toutes</button>
-        <button type="button" class="filter" data-filter="todo">À valider</button>
-        <button type="button" class="filter" data-filter="named">Nommées</button>
-        <button type="button" class="filter" data-filter="new">Non analysées</button>
+        <button type="button" class="filter active" data-filter="all"
+                title="Toutes les photos du dossier">Toutes</button>
+        <button type="button" class="filter" data-filter="todo"
+                title="Photos avec au moins un visage sans nom et sans validation « sans nom »">À décider</button>
+        <button type="button" class="filter" data-filter="named"
+                title="Photos dont tous les visages sont nommés ou validés sans nom">Validées</button>
+        <button type="button" class="filter" data-filter="new"
+                title="Photos qui n’ont pas encore été analysées">Non analysées</button>
       </div>
       <div id="analyze-status" class="analyze-status" hidden>
         <progress id="analyze-bar" value="0" max="100"></progress>
@@ -58,6 +70,9 @@
         <p class="muted">
           Les visages détectés sont encadrés. Cliquez sur l’un d’eux pour lui donner
           un nom : le nom est écrit immédiatement dans les métadonnées de la photo.
+          Un visage peut aussi être validé « Sans nom » : la photo est alors traitée
+          sans identité, par exemple pour des passants. Si la détection est fausse
+          (fleur, reflet…), utilisez « Pas un visage » pour l’écarter.
         </p>
       </div>
 
@@ -66,9 +81,17 @@
           <div class="viewer-title">
             <h2 id="viewer-title"></h2>
             <p id="viewer-subtitle" class="muted"></p>
+            <p class="viewer-shortcuts muted">←/→ : visage · Ctrl + ←/→ : photo</p>
           </div>
           <div class="viewer-actions">
-            <button id="validate-all" type="button" class="primary">Valider les propositions</button>
+            <button id="validate-all" type="button" class="primary"
+                    title="Accepte seulement les propositions au-dessus du seuil ; les autres restent à décider">
+              Propositions sûres
+            </button>
+            <button id="validate-without-names" type="button" class="secondary"
+                    title="Marque tous les visages restants comme validés sans nom">
+              Valider sans nom
+            </button>
             <button id="reload-photo" type="button" class="secondary" title="Relire la photo et ses métadonnées">↻</button>
           </div>
         </header>
@@ -93,7 +116,11 @@
               <div id="person-results" class="person-results"></div>
             </div>
             <div class="editor-actions">
-              <button id="ignore-face" type="button" class="secondary">Aucun nom</button>
+              <button id="ignore-face" type="button" class="secondary">Sans nom</button>
+              <button id="invalidate-face" type="button" class="secondary"
+                      title="Ignorer cette fausse détection : ce n'est pas un visage">
+                Pas un visage
+              </button>
               <span id="save-status" class="save-status" role="status"></span>
             </div>
           </div>

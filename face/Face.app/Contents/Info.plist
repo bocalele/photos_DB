@@ -7,11 +7,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>Visages</string>
 	<key>CFBundleExecutable</key>
-	<string>FaceLauncher</string>
-	<key>CFBundleIdentifier</key>
-	<string>org.photos.visages</string>
+	<string>applet</string>
 	<key>CFBundleIconFile</key>
 	<string>Face</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.photos.visages</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -20,7 +20,7 @@
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>Visages ouvre le Terminal pour lancer le serveur local d’identification des personnes.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

@@ -168,6 +168,43 @@ def _format_correction(value: Any) -> str:
     return f"{number:+.1f} IL"
 
 
+FLASH_LABELS = {
+    0: "Non déclenché",
+    1: "Déclenché",
+    5: "Déclenché, retour non détecté",
+    7: "Déclenché, retour détecté",
+    9: "Activé, non déclenché",
+    13: "Activé, retour non détecté",
+    15: "Activé, retour détecté",
+    16: "Désactivé",
+    24: "Auto, non déclenché",
+    25: "Auto, déclenché",
+    29: "Auto, déclenché, retour non détecté",
+    31: "Auto, déclenché, retour détecté",
+    32: "Sans flash",
+    48: "Désactivé, sans flash",
+    65: "Déclenché, réduction des yeux rouges",
+    69: "Déclenché, réduction des yeux rouges, retour non détecté",
+    71: "Déclenché, réduction des yeux rouges, retour détecté",
+    73: "Activé, réduction des yeux rouges",
+    77: "Activé, réduction des yeux rouges, retour non détecté",
+    79: "Activé, réduction des yeux rouges, retour détecté",
+    89: "Auto, déclenché, réduction des yeux rouges",
+    93: "Auto, déclenché, réduction des yeux rouges, retour non détecté",
+    95: "Auto, déclenché, réduction des yeux rouges, retour détecté",
+}
+
+
+def _format_flash(value: Any) -> str:
+    number = _as_float(value)
+    if number is None:
+        return ""
+    code = int(number)
+    if code < 0:
+        return ""
+    return FLASH_LABELS.get(code, f"Mode {code}")
+
+
 def _technical_fields(record: dict) -> list[dict[str, str]]:
     fields: list[dict[str, str]] = []
     model = _text(record.get("camera_model"), 80)
@@ -177,6 +214,7 @@ def _technical_fields(record: dict) -> list[dict[str, str]]:
     shutter = _format_shutter(record.get("shutter_speed"))
     iso = record.get("iso")
     correction = _format_correction(record.get("exposure_compensation"))
+    flash = _format_flash(record.get("flash"))
     if model:
         fields.append({"label": "Boîtier", "value": model})
     if lens:
@@ -191,6 +229,8 @@ def _technical_fields(record: dict) -> list[dict[str, str]]:
         fields.append({"label": "ISO", "value": str(iso)})
     if correction:
         fields.append({"label": "Correction", "value": correction})
+    if flash:
+        fields.append({"label": "Flash", "value": flash})
     return fields
 
 

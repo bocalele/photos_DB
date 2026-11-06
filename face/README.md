@@ -46,25 +46,46 @@ pixi run python server.py                       # choisit un dossier
 pixi run python server.py "/chemin/vers/le/dossier-de-photos"
 ```
 
-Ou double-cliquer `Face.app` (icône « Visages »). Le lanceur ouvre le Terminal,
-trouve un port libre et démarre le serveur.
+Ou double-cliquer `Face.app` (icône « Visages »). Le lanceur démarre le
+serveur en arrière-plan, trouve un port libre et ouvre l'interface. L'icône du
+Dock sert de lanceur ; un nouveau clic rouvre l'interface déjà démarrée.
 
 Deux vues :
 
 - **Photos** : vignettes du dossier, avec le nombre de visages et de noms.
   « Analyser ce dossier » lance la détection en tâche de fond (barre de
   progression), sans rien écrire.
-- **Visages à vérifier** : les visages sans nom, triés du plus douteux au plus
-  sûr, avec la proposition et son score. C'est la vue de validation en série.
+- **Visages à décider** : tous les visages qui n’ont ni nom, ni validation
+  « sans nom », ni invalidation, triés du plus incertain au plus sûr. Une
+  proposition n’est affichée que si elle dépasse le seuil de suggestion ; les
+  visages sans proposition restent dans la liste pour pouvoir être validés sans
+  nom. Les détections invalidées n’y figurent pas.
 
-Dans la photo, chaque visage est encadré. Un clic sur un visage affiche les
-trois meilleures propositions ; on choisit, on cherche dans les personnes du catalogue,
-ou on laisse sans nom. La recherche accepte les flèches `↑`/`↓` et `Entrée`.
+« Visages à décider » n’est donc pas un filtre de faible probabilité : c’est la
+liste de tous les visages sans décision. Le bouton **Propositions sûres**
+accepte uniquement les propositions au-dessus du seuil de reconnaissance
+(0,43 par défaut) ; les autres restent à décider. Le bouton **Valider sans
+nom** traite d’un coup tous les visages restants de la photo, sans toucher aux
+détections invalidées.
+
+La galerie accepte la sélection multiple : **Shift + clic** sélectionne une
+plage, **Cmd/Ctrl + clic** ajoute ou retire une photo, et les boutons **Tout
+sélectionner** / **Désélectionner** travaillent sur le dossier courant.
+**Analyser la sélection** limite la détection aux photos cochées.
+
+Dans la photo, chaque visage est encadré. Les boîtes qui dépassent légèrement
+de l'image sont ramenées à l'intérieur (marge de quelques pixels) pour rester
+sélectionnables et validables. Un clic sur un visage affiche les trois
+meilleures propositions ; on choisit, on cherche dans les personnes du catalogue,
+ou on clique sur **Sans nom** pour valider le visage sans identité. Le bouton
+**Pas un visage** invalide une fausse détection (une fleur, un reflet…) : elle
+n’est plus comptée, ne bloque plus la photo et disparaît de la liste à décider.
+La recherche accepte les flèches `↑`/`↓` et `Entrée`.
 Si le nom cherché n'existe pas encore, une entrée « Créer « … » » l'ajoute au
 catalogue `photos.db` (table `people`) : il devient immédiatement disponible
 pour les autres photos et pour le sélecteur. Raccourcis : `←`/`→` visage précédent/suivant, `Entrée`
 accepte la proposition, `1`–`3` choisit une alternative, `Retour arrière`
-efface le nom.
+retire le nom et remet le visage à décider.
 
 Chaque validation est écrite **immédiatement dans la photo**, au format
 Lightroom :
@@ -76,19 +97,34 @@ Lightroom :
   autres mots-clés.
 
 Les régions déjà présentes qui ne correspondent à aucun visage détecté sont
-conservées. Une correction remplace l'ancienne région et retire l'ancien nom
+conservées. Une correction remplace l’ancienne région et retire l’ancien nom
 des mots-clés. Le visage validé est ajouté à la galerie de référence
 (`RefFace`), ce qui améliore les propositions suivantes ; `reference.py` peut
 reconstruire cette galerie depuis les étiquettes XMP.
 
+Un visage validé **sans nom** n’écrit rien dans le XMP : la décision est
+stockée dans `face.db` (`Face.ignored`). Il disparaît de « Visages à décider »
+et compte comme traité, même si la photo n’a aucun nom. Une **détection
+invalidée** est stockée de la même façon (`Face.invalid`), mais elle est
+entièrement exclue des compteurs et des propositions. Si une région XMP
+existait sur cette boîte, elle est retirée lors de l’invalidation ; sinon aucune
+métadonnée n’est écrite et `metadata_revision` n’est pas incrémenté.
+
+Lors d’une réindexation, les deux décisions sont réappariées par leur boîte
+pour être conservées ; une suppression de `face.db` ou une détection trop
+différente les perd. Une région XMP nommée reste prioritaire pour un visage
+valide, mais ne réactive jamais une détection invalidée.
+
 Les écritures passent par ExifTool avec `-overwrite_original` : pas de fichier
 `_original` à côté des photos, comme pour l'app Géotag.
 
-Le XMP reste la source de vérité, mais `photos.db` est mise à jour juste après
-l'écriture de la photo : les liens `photo_people` sont réécrits pour cette
-photo. Si la base est absente ou en erreur, l'écriture XMP reste prioritaire et
-l'application continue de fonctionner. « Créer « … » » ajoute aussi la personne
-dans la table `people`.
+Le XMP reste la source de vérité. `photos.db` n’est pas mise à jour juste après
+l’écriture de la photo : les liens `photo_people` sont reconstruits par le
+bouton **photos.db** de la barre d’Annotations. Si la base est absente ou en
+erreur, l’écriture XMP reste prioritaire et l’application continue de
+fonctionner. « Créer « … » » ajoute seulement la personne dans la table
+`people` : ce catalogue n’est pas déduit des photos et reste donc écrit
+directement.
 
 ## Indexer tout le fonds
 
@@ -113,11 +149,11 @@ mieux les supprimer ou les exclure du fonds.
 
 ## Mettre à jour photos.db (le sélecteur)
 
-Les validations mettent à jour le XMP et `photo_people`. Le bouton **photos.db**
-de la barre d'Annotations (ou la commande ci-dessous) reprend aussi les
-modifications faites hors application. La mise à jour est limitée au dossier
-demandé et passe par le script unique `dataBase.sync` (personnes, mots-clés,
-taxons et lieux).
+Les validations mettent à jour le XMP. Le bouton **photos.db** de la barre
+d'Annotations (ou la commande ci-dessous) reconstruit ensuite `photo_people` et
+reprend aussi les modifications faites hors application. La mise à jour est
+limitée au dossier demandé et passe par le script unique `dataBase.sync`
+(personnes, mots-clés, taxons et lieux).
 
 ```sh
 # Depuis la racine du projet, avec l'environnement racine
@@ -131,9 +167,13 @@ Le chemin est relatif à la racine photo de `preferences.json` (ou absolu).
 
 ## Base
 
-`face.db` est créé à côté de `photos.db`, dans `_DATA` du fonds photo, et
-peut être supprimé sans perte : tout est reconstructible. Ces chemins sont
-décrits dans la section `environment` du
+`face.db` est créé à côté de `photos.db`, dans `_DATA` du fonds photo. Il
+contient l’index reconstructible des visages et les décisions de travail
+« sans nom » et « pas un visage ». Une suppression de `face.db` ou une
+détection trop différente perd ces décisions, mais pas les noms, qui restent
+dans les XMP. Ces chemins sont décrits
+dans la section
+`environment` du
 [`preferences.json`](../preferences.json) commun (`photos_root`, `data_dir`,
 `photos_db`, `face_db`, `previews_dir`). Le code d'accès aux deux bases vit
 dans `dataBase/` (`photos_db.py`, `face_db.py`).
@@ -141,7 +181,7 @@ dans `dataBase/` (`photos_db.py`, `face_db.py`).
 | Table | Contenu |
 |---|---|
 | `Photo` | photos indexées (chemin relatif, dimensions, taille, mtime, version de traitement) |
-| `Face` | un visage par ligne : boîte normalisée, score, embedding 512 (2 Ko) |
+| `Face` | un visage par ligne : boîte normalisée, score, embedding 512 (2 Ko), validation « sans nom », détection invalidée |
 | `FaceLabel` | étiquette connue d'un visage (région XMP ou validation dans l'app) |
 | `RefPerson` | une ligne par personne de référence (centroïde, seuil) |
 | `RefFace` | exemplaires de référence utilisés pour la comparaison |
@@ -155,6 +195,8 @@ est disponible tout de suite, sans redémarrer.
 À chaque validation, `face.db` est mis à jour immédiatement : les étiquettes de
 la photo sont réécrites, ses exemplaires de référence sont remplacés (une
 correction ne laisse pas l'ancien nom) et la galerie en mémoire est rechargée.
+Une invalidation sans région XMP ne modifie que `face.db`, sans réécrire la
+photo.
 `reference.py` peut la reconstruire entièrement depuis les XMP. Les variables
 `PHOTOS_ROOT`, `PHOTOS_DATA_DIR`, `PHOTOS_DB` et `PHOTOS_FACE_DB` restent
 prioritaires sur le fichier de préférences pour un lancement ponctuel.
@@ -175,7 +217,7 @@ Calibration (un visage n'est jamais comparé aux références de sa propre photo
 | bonne personne au 1er rang | 94,1 % |
 | seuil retenu (précision ≥ 97 %) | 0,43 |
 | rappel / précision à ce seuil | 85,9 % / 97,2 % |
-| seuil « à vérifier » | 0,33 |
+| seuil d’affichage d’une proposition | 0,33 |
 | validation par année entière absente de la référence | 80,4 % au 1er rang |
 
 La validation par année est la plus réaliste : sur des photos éloignées dans le

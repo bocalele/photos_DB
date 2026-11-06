@@ -22,12 +22,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import zipfile
 from contextlib import closing
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -37,7 +38,7 @@ for candidate in (PROJECT_DIR, BASE_DIR):
 
 import album_export  # noqa: E402
 from dataBase import photos_db  # noqa: E402
-from tools import environment  # noqa: E402
+from tools import environment, preferences  # noqa: E402
 
 DB_PATH = environment.photos_db()
 PHOTOS_ROOT = environment.photos_root()
@@ -287,6 +288,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.handle_album_preview()
             elif route == "/api/album/export":
                 self.handle_album_export()
+            elif route == "/api/shutdown":
+                self.handle_shutdown()
             else:
                 self.send_json({"error": "Route inconnue."}, HTTPStatus.NOT_FOUND)
         except ValueError as error:
@@ -298,11 +301,17 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as error:
             self.send_json({"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
+    def handle_shutdown(self):
+        self.send_json({"status": "shutting_down"})
+        threading.Thread(target=self.server.shutdown, daemon=True).start()
+
     def handle_api_get(self, route: str):
         if route == "/api/health":
             self.api_health()
         elif route == "/api/datasets":
             self.api_datasets()
+        elif route == "/api/preferences":
+            self.api_preferences()
         elif route == "/api/family":
             self.api_family()
         elif route == "/api/thesaurus/fauna":
@@ -313,6 +322,8 @@ class Handler(BaseHTTPRequestHandler):
             self.api_keywords()
         elif route == "/api/technical":
             self.api_technical()
+        elif route == "/api/node-photo":
+            self.api_node_photo()
         elif route == "/api/album/options":
             self.send_json(album_export.options_payload())
         elif route.startswith("/api/photos/") and route.endswith("/thumbnail"):
@@ -371,6 +382,9 @@ class Handler(BaseHTTPRequestHandler):
             },
         })
 
+    def api_preferences(self):
+        self.send_json({"defaultApp": preferences.default_select_app("faune")})
+
     def api_family(self):
         with closing(photos_db.connect(DB_PATH, readonly=True)) as conn:
             payload = photos_db.family_payload(conn)
@@ -392,11 +406,44 @@ class Handler(BaseHTTPRequestHandler):
 
     def api_keywords(self):
         with closing(photos_db.connect(DB_PATH, readonly=True)) as conn:
-            self.send_json({"keywords": photos_db.keywords_with_counts(conn)})
+            self.send_json({
+                "keywords": photos_db.keywords_with_counts(conn, exclude_fauna=True)
+            })
 
     def api_technical(self):
         with closing(photos_db.connect(DB_PATH, readonly=True)) as conn:
             self.send_json(photos_db.technical_facets(conn))
+
+    def api_node_photo(self):
+        query = parse_qs(urlparse(self.path).query)
+        dataset = query.get("dataset", ["family"])[0]
+        node = query.get("node", [""])[0].strip()
+        if not node:
+            raise ValueError("Nœud invalide.")
+        with closing(photos_db.connect(DB_PATH, readonly=True)) as conn:
+            result = photos_db.search_photos(
+                conn,
+                mode="graph",
+                dataset=dataset,
+                selections=[node],
+                limit=1,
+                include_ids=False,
+            )
+        photos = result.get("photos") or []
+        photo = photos[0] if photos else None
+        self.send_json({
+            "photo": (
+                {
+                    "id": photo.get("id"),
+                    "filename": photo.get("filename"),
+                    "relpath": photo.get("relpath"),
+                    "thumbUrl": photo.get("thumbUrl"),
+                }
+                if photo
+                else None
+            ),
+            "total": result.get("total", 0),
+        })
 
     def handle_directory(self):
         global CURRENT_DIRECTORY
@@ -432,6 +479,7 @@ class Handler(BaseHTTPRequestHandler):
                 correction_max=_float_arg(data.get("correction_max")),
                 limit=_int_arg(data.get("limit"), 500) or 500,
                 offset=_int_arg(data.get("offset"), 0) or 0,
+                sort=str(data.get("sort") or "date_desc"),
             )
         self.send_json(result)
 

@@ -216,6 +216,19 @@ def getLocation (iptc):
         pass
     return(location)
 
+def _flat_values(value):
+    """Liste de valeurs simples, sans découpage des noms composés."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        result = []
+        for item in value:
+            result.extend(_flat_values(item))
+        return result
+    text = str(value).strip()
+    return [text] if text else []
+
+
 def getPerso (exif, iptc, xmp):
     perso = {'Author':None, 'Rating':None, 'Keywords':None, 'HKeywords':None}
     try:
@@ -226,19 +239,23 @@ def getPerso (exif, iptc, xmp):
         perso['Rating'] = xmp ['Rating']
     except:
         pass
-    try:
-        perso['Keywords'] = xmp ['dc.subject']
-    except:
-        pass
-    if perso['Keywords'] == None:
-        try:
-            perso['Keywords'] = xmp ['lr.weightedFlatSubject']
-        except:
-            pass
+    # Les applications écrivent les mots-clés plats dans IPTC:Keywords et
+    # XMP-dc:Subject. XMP-lr:WeightedFlatSubject est un champ dérivé de
+    # Lightroom qui peut conserver d'anciens mots-clés après une suppression :
+    # on ne l'utilise donc pas comme source de vérité.
+    keywords = []
+    seen = set()
+    for value in ((iptc or {}).get('Keywords'), (xmp or {}).get('dc.subject')):
+        for keyword in _flat_values(value):
+            key = keyword.casefold()
+            if key not in seen:
+                seen.add(key)
+                keywords.append(keyword)
+    perso['Keywords'] = keywords or None
     try:
         perso['HKeywords'] = xmp ['lr.hierarchicalSubject']
     except:
-        pass       
+        pass
         
     return(perso)
 

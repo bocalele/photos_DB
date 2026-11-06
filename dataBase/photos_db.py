@@ -25,6 +25,7 @@ Les chemins de la machine viennent de ``preferences.json`` via
 
 from __future__ import annotations
 
+import re
 import sqlite3
 import sys
 import unicodedata
@@ -83,11 +84,13 @@ CREATE TABLE IF NOT EXISTS photos (
     shutter_speed REAL,
     iso INTEGER,
     exposure_compensation REAL,
+    flash INTEGER,
     width INTEGER,
     height INTEGER,
     orientation INTEGER,
     rating INTEGER,
     author TEXT,
+    groupe INTEGER NOT NULL DEFAULT 1,
     location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL,
     file_size INTEGER,
     mtime_ns INTEGER,
@@ -103,6 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_photos_aperture ON photos(aperture);
 CREATE INDEX IF NOT EXISTS idx_photos_shutter ON photos(shutter_speed);
 CREATE INDEX IF NOT EXISTS idx_photos_correction ON photos(exposure_compensation);
 CREATE INDEX IF NOT EXISTS idx_photos_rating ON photos(rating);
+CREATE INDEX IF NOT EXISTS idx_photos_groupe ON photos(groupe);
 CREATE INDEX IF NOT EXISTS idx_photos_location ON photos(location_id);
 
 CREATE TABLE IF NOT EXISTS photo_people (
@@ -214,11 +218,34 @@ def _schema_version(conn: sqlite3.Connection) -> str | None:
     return row[0] if row else None
 
 
+# Colonnes ajoutées après la première publication du schéma v4. Elles restent
+# compatibles avec la version 4 : la base est migrée en place à la première
+# ouverture en écriture.
+_ADDED_PHOTO_COLUMNS = {
+    "flash": "INTEGER",
+    "groupe": "INTEGER NOT NULL DEFAULT 1",
+}
+
+
+def _ensure_photo_columns(conn: sqlite3.Connection) -> None:
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(photos)")}
+    for name, sql_type in _ADDED_PHOTO_COLUMNS.items():
+        if name not in columns:
+            conn.execute(f"ALTER TABLE photos ADD COLUMN {name} {sql_type}")
+    if any(name not in columns for name in _ADDED_PHOTO_COLUMNS):
+        conn.commit()
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_photos_groupe ON photos(groupe)"
+    )
+    conn.commit()
+
+
 def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
     """Supprime ``photos.filename`` : le nom se déduit de ``relpath``."""
     columns = {row[1] for row in conn.execute("PRAGMA table_info(photos)")}
     if "filename" in columns:
         conn.execute("ALTER TABLE photos DROP COLUMN filename")
+    _ensure_photo_columns(conn)
     conn.execute(
         "INSERT INTO meta(key, value) VALUES ('schema_version', ?) "
         "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -247,6 +274,8 @@ def ensure_schema(conn: sqlite3.Connection, readonly: bool = False) -> None:
             "Exécutez `python -m dataBase.sync reset` pour repartir d'une base propre."
         )
     if version == SCHEMA_VERSION:
+        if not readonly:
+            _ensure_photo_columns(conn)
         return
     if version == "3":
         if readonly:
@@ -488,9 +517,34 @@ def photo_id_by_relpath(conn: sqlite3.Connection, relpath: str) -> int | None:
     return int(row["id"]) if row else None
 
 
+def taxa_for_path(root: Path | str, photo: Path | str) -> list[dict]:
+    """Taxons liés à une photo, avec leur nom et leur lignée.
+
+    Sert notamment à nettoyer les métadonnées Faune avant de retirer toutes
+    les relations ``photo_taxa`` d'une photo. Une base absente n'est pas une
+    erreur : l'application Faune peut fonctionner sans catalogue.
+    """
+    try:
+        relpath = relpath_for(photo, root)
+        conn = connect(readonly=True)
+    except (FileNotFoundError, ValueError):
+        return []
+    with closing(conn) as connection:
+        photo_id = photo_id_by_relpath(connection, relpath)
+        if photo_id is None:
+            return []
+        rows = connection.execute(
+            "SELECT t.name, t.scientific_name, t.path "
+            "FROM photo_taxa pt JOIN taxa t ON t.id = pt.taxon_id "
+            "WHERE pt.photo_id = ? ORDER BY t.path",
+            (photo_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
 PHOTO_FIELDS = (
     "taken_at", "year", "camera_model", "lens", "focal_mm", "aperture",
-    "shutter_speed", "iso", "exposure_compensation", "width", "height",
+    "shutter_speed", "iso", "exposure_compensation", "flash", "width", "height",
     "orientation", "rating", "author", "location_id", "file_size", "mtime_ns",
 )
 
@@ -710,17 +764,110 @@ def prune_unused_keywords(conn: sqlite3.Connection) -> int:
     return int(cursor.rowcount or 0)
 
 
-def keywords_with_counts(conn: sqlite3.Connection) -> list[dict]:
+_FAUNA_TAXON_ROOTS = {
+    "Animaux",
+    "Insectes s.l.",
+    "Mammifères",
+    "Oiseaux",
+    "Papillon",
+}
+
+
+def _keyword_plural_forms(key: str) -> tuple[str, ...]:
+    if key.endswith("s") and len(key) > 3:
+        return (key, key[:-1])
+    return (key, key + "s")
+
+
+def _taxonomy_keyword_index(conn: sqlite3.Connection) -> tuple[set[str], set[str]]:
+    """Libellés taxonomiques connus et genres scientifiques de la base.
+
+    Le sélecteur ne doit pas présenter les identifications Faune comme de
+    simples mots-clés. On se limite à la table ``taxa`` (légère) et à quelques
+    formes anciennes repérables par leur orthographe.
+    """
+    keys: set[str] = set()
+    genera: set[str] = set()
+    for row in conn.execute("SELECT name, scientific_name, path FROM taxa"):
+        root = str(row["path"] or "").split("/", 1)[0]
+        values = [row["name"], row["scientific_name"]]
+        for value in values:
+            text = clean_text(value)
+            key = annotations.normalize_name(text)
+            if not key:
+                continue
+            keys.add(key)
+            # Les anciens mots-clés pouvaient conserver une liste de synonymes
+            # dans un seul libellé : chaque variante doit aussi être reconnue.
+            variants = [key]
+            for part in re.split(r"[,;]", text):
+                part_key = annotations.normalize_name(part)
+                if part_key:
+                    keys.add(part_key)
+                    variants.append(part_key)
+            # Le thésaurus utilise souvent le pluriel (« Insectes »,
+            # « Libellules ») alors que les anciens mots-clés sont au singulier.
+            if root in _FAUNA_TAXON_ROOTS:
+                for variant in variants:
+                    keys.update(_keyword_plural_forms(variant))
+        scientific = annotations.normalize_name(row["scientific_name"])
+        if scientific:
+            genera.add(scientific.split(" ", 1)[0])
+    return keys, genera
+
+
+def _looks_like_fauna_keyword(label: str, keys: set[str], genera: set[str]) -> bool:
+    text = clean_text(label)
+    key = annotations.normalize_name(text)
+    if not key:
+        return False
+    if key in keys:
+        return True
+    # Une liste de synonymes dans un seul mot-clé est une trace des anciennes
+    # identifications Faune ; les mots-clés v4 sont atomiques.
+    if "," in text or ";" in text:
+        return True
+    tokens = key.split()
+    if len(tokens) >= 2 and tokens[1][:1].islower() and text[:1].isupper():
+        if tokens[0] in genera:
+            return True
+        # Noms scientifiques anciens dont le genre n'est plus dans la base
+        # courante (Apis mellifera, Equus ferus, Decticus verrucivorus…).
+        if tokens[1].endswith((
+            "a", "ae", "us", "um", "is", "i", "ii", "orum", "arum",
+            "ensis", "ense", "es", "ens", "oides",
+        )):
+            return True
+    # Nom vernaculaire composé, par exemple « Choucas des tours ».
+    if len(tokens) >= 3 and text[:1].isupper():
+        if any(token in {"de", "des", "du", "d", "la", "le", "les"} for token in tokens[1:]):
+            return True
+    return False
+
+
+def keywords_with_counts(
+    conn: sqlite3.Connection, exclude_fauna: bool = False
+) -> list[dict]:
     rows = conn.execute(
         "SELECT k.id, k.label, COUNT(pk.photo_id) AS count "
         "FROM keywords k LEFT JOIN photo_keywords pk ON pk.keyword_id = k.id "
         "GROUP BY k.id, k.label "
         "ORDER BY count DESC, k.label COLLATE NOCASE"
     ).fetchall()
-    return [
-        {"id": int(row["id"]), "label": row["label"], "count": int(row["count"])}
-        for row in rows
-    ]
+    keys: set[str] = set()
+    genera: set[str] = set()
+    if exclude_fauna:
+        keys, genera = _taxonomy_keyword_index(conn)
+    result = []
+    for row in rows:
+        if exclude_fauna and _looks_like_fauna_keyword(row["label"], keys, genera):
+            continue
+        result.append({
+            "id": int(row["id"]),
+            "label": row["label"],
+            "count": int(row["count"]),
+        })
+    return result
 
 
 def keyword_rows_for_labels(conn: sqlite3.Connection, labels: Iterable[str]) -> list[sqlite3.Row]:
@@ -1102,11 +1249,17 @@ def photos_payload(conn: sqlite3.Connection, rows: Iterable[sqlite3.Row]) -> lis
             "iso": row["iso"],
             "correction": row["exposure_compensation"],
             "exposure_compensation": row["exposure_compensation"],
+            "flash": row["flash"] if "flash" in keys else None,
             "width": row["width"],
             "height": row["height"],
             "orientation": row["orientation"],
             "rating": row["rating"],
             "author": row["author"],
+            "groupe": (
+                int(row["groupe"])
+                if "groupe" in keys and row["groupe"] is not None
+                else 1
+            ),
             "people": people.get(photo_id, []),
             "keywords": keywords.get(photo_id, []),
             "taxa": taxa.get(photo_id, []),
@@ -1122,6 +1275,23 @@ def photos_payload(conn: sqlite3.Connection, rows: Iterable[sqlite3.Row]) -> lis
             }
         result.append(record)
     return result
+
+
+PHOTO_ORDER_BY = {
+    "date_desc": "p.taken_at IS NULL, p.taken_at DESC, p.id DESC",
+    "date_asc": "p.taken_at IS NULL, p.taken_at ASC, p.id ASC",
+    "rating_desc": (
+        "p.rating IS NULL, p.rating DESC, "
+        "p.taken_at IS NULL, p.taken_at DESC, p.id DESC"
+    ),
+    "rating_asc": (
+        "p.rating IS NULL, p.rating ASC, "
+        "p.taken_at IS NULL, p.taken_at DESC, p.id DESC"
+    ),
+    "filename_asc": "p.relpath COLLATE NOCASE ASC, p.id ASC",
+    "filename_desc": "p.relpath COLLATE NOCASE DESC, p.id DESC",
+    "random": "RANDOM()",
+}
 
 
 def search_photos(
@@ -1147,9 +1317,14 @@ def search_photos(
     correction_max: float | None = None,
     limit: int = 500,
     offset: int = 0,
+    sort: str = "date_desc",
     include_ids: bool = True,
 ) -> dict:
     selections = [str(value) for value in (selections or [])]
+    sort = str(sort or "date_desc")
+    if sort not in PHOTO_ORDER_BY:
+        sort = "date_desc"
+    order_by = PHOTO_ORDER_BY[sort]
     where: list[str] = []
     params: list[Any] = []
 
@@ -1246,7 +1421,7 @@ def search_photos(
         ids = [
             int(row["id"])
             for row in conn.execute(
-                f"SELECT p.id {base}{clause} ORDER BY p.taken_at IS NULL, p.taken_at DESC, p.id DESC",
+                f"SELECT p.id {base}{clause} ORDER BY {order_by}",
                 params,
             )
         ]
@@ -1255,7 +1430,7 @@ def search_photos(
     rows = conn.execute(
         f"SELECT p.*, l.country AS loc_country, l.city AS loc_city, "
         f"l.latitude AS loc_latitude, l.longitude AS loc_longitude {base}{clause} "
-        "ORDER BY p.taken_at IS NULL, p.taken_at DESC, p.id DESC LIMIT ? OFFSET ?",
+        f"ORDER BY {order_by} LIMIT ? OFFSET ?",
         [*params, limit, offset],
     ).fetchall()
     return {
@@ -1264,6 +1439,7 @@ def search_photos(
         "ids": ids,
         "limit": limit,
         "offset": offset,
+        "sort": sort,
     }
 
 
@@ -1332,6 +1508,36 @@ def record_location_for_path(
         return photo_id
 
 
+def set_photo_group(conn: sqlite3.Connection, photo_id: int, group: int) -> None:
+    """Associe une photo à un groupe d'accès (entier positif)."""
+    value = int(group)
+    if value < 1:
+        raise ValueError("Le groupe doit être un entier positif.")
+    conn.execute("UPDATE photos SET groupe = ? WHERE id = ?", (value, photo_id))
+    _commit(conn)
+
+
+def record_group_for_path(
+    root: Path | str,
+    photo: Path | str,
+    group: int,
+) -> int:
+    """Met à jour le groupe d'accès d'une photo dans ``photos.db``.
+
+    Le groupe est un attribut de l'index, pas une métadonnée XMP : il n'est
+    donc pas écrit dans le fichier et survit aux synchronisations qui ne
+    fournissent pas de nouvelle valeur.
+    """
+    value = int(group)
+    if value < 1:
+        raise ValueError("Le groupe doit être un entier positif.")
+    relpath = relpath_for(photo, root)
+    with closing(write_connect()) as conn:
+        photo_id = ensure_photo(conn, relpath, root)
+        set_photo_group(conn, photo_id, value)
+    return value
+
+
 def record_people_for_path(
     root: Path | str,
     photo: Path | str,
@@ -1356,6 +1562,7 @@ def record_taxon_for_path(
     photo: Path | str,
     taxon: dict | None,
     validated: bool = True,
+    previous_taxon: dict | None = None,
 ) -> int:
     relpath = relpath_for(photo, root)
     with closing(write_connect()) as conn:
@@ -1381,13 +1588,16 @@ def record_taxon_for_path(
             set_photo_taxa(conn, photo_id, [taxon_id], replace=True)
             # Le XMP est nettoyé par l'app Faune ; on garde la base cohérente
             # immédiatement en retirant les mêmes termes de photo_keywords.
-            taxon_keys = sorted(
-                {
-                    annotations.normalize_name(scientific),
-                    annotations.normalize_name(vernacular),
-                }
-                - {""}
-            )
+            taxon_labels = {
+                annotations.normalize_name(scientific),
+                annotations.normalize_name(vernacular),
+            }
+            if previous_taxon:
+                taxon_labels.update({
+                    annotations.normalize_name(previous_taxon.get("scientificName")),
+                    annotations.normalize_name(previous_taxon.get("vernacularName")),
+                })
+            taxon_keys = sorted(taxon_labels - {""})
             if taxon_keys:
                 placeholders = _placeholders(taxon_keys)
                 conn.execute(
@@ -1407,6 +1617,7 @@ def record_taxon_for_path(
 
 
 _THESAURUS_CACHE: tuple[str, object] | None = None
+_TAXONOMY_CACHE: tuple[str, object | None] | None = None
 
 
 def _thesaurus_index():
@@ -1418,6 +1629,20 @@ def _thesaurus_index():
         return _THESAURUS_CACHE[1]
     index = annotations.load_thesaurus(directory)
     _THESAURUS_CACHE = (key, index)
+    return index
+
+
+def _taxonomy_index():
+    """Charge TAXREF une seule fois par dossier configuré."""
+    global _TAXONOMY_CACHE
+    directory = environment.taxref_dir()
+    key = str(directory)
+    if _TAXONOMY_CACHE is not None and _TAXONOMY_CACHE[0] == key:
+        return _TAXONOMY_CACHE[1]
+    index = annotations.load_taxonomy(
+        directory, environment.thesaurus_dir()
+    )
+    _TAXONOMY_CACHE = (key, index)
     return index
 
 
@@ -1440,10 +1665,21 @@ def record_keywords_rating_author_for_path(
             )
         _commit(conn)
         if keywords is not None:
-            thesaurus = _thesaurus_index()
+            taxonomy = _taxonomy_index()
+            thesaurus = (
+                getattr(taxonomy, "thesaurus", None)
+                if taxonomy is not None
+                else None
+            )
+            if thesaurus is None:
+                thesaurus = _thesaurus_index()
             preserve = (
-                (lambda text: annotations.taxon_for_text(thesaurus, text) is not None)
-                if thesaurus is not None
+                (
+                    lambda text: annotations.resolve_taxon_text(
+                        taxonomy, thesaurus, text
+                    ) is not None
+                )
+                if thesaurus is not None or taxonomy is not None
                 else None
             )
             flat_keywords: list[str] = []
@@ -1453,7 +1689,8 @@ def record_keywords_rating_author_for_path(
                 )
             person_index = build_index(load_people_from_connection(conn))
             person_ids, _taxa, labels = annotations.classify_keywords(
-                flat_keywords, list(hierarchies or []), thesaurus, person_index
+                flat_keywords, list(hierarchies or []), thesaurus, person_index,
+                taxonomy=taxonomy,
             )
             keyword_ids = get_or_create_keywords(conn, labels)
             set_photo_keywords(conn, photo_id, keyword_ids, replace=True)

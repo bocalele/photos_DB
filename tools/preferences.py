@@ -5,10 +5,14 @@ Annotations, Géotag, Faune, Visages, Mots-clés et l'application de sélection.
 Il contient :
 
 - `initial_directory` : le dossier de photos courant ;
-- `active_app` : l'onglet actif dans Annotations ;
+- `active_app` : dernier onglet utilisé dans Annotations ;
+- `default_active_app` : onglet ouvert au lancement d'Annotations ;
+- `default_select_app` : outil ouvert au lancement de l'application Sélection ;
+- `metadata_revision` : compteur incrémenté à chaque écriture de métadonnées ;
 - `environment` : les chemins propres à la machine (voir `tools/environment.py`) ;
 - `apps` : les réglages propres à une application, par exemple
-  `{"motscles": {"default_author": "Pierre", "default_rating": 3}}`.
+  `{"motscles": {"default_author": "Pierre", "default_rating": 3,
+  "default_group": 1}}`.
 
 Les écritures sont protégées par un verrou (`preferences.json.lock`) et
 remplacées atomiquement : plusieurs serveurs peuvent tourner en même temps
@@ -126,6 +130,46 @@ def set_initial_directory(directory: Path | str) -> dict:
 def active_app(default: str = "geotag") -> str:
     configured = value("active_app")
     return configured if isinstance(configured, str) and configured else default
+
+
+def default_active_app(default: str = "geotag") -> str:
+    """Onglet ouvert au lancement, indépendant du dernier onglet utilisé."""
+    configured = value("default_active_app")
+    if isinstance(configured, str) and configured:
+        return configured
+    # Compatibilité avec les préférences créées avant l'ajout du défaut.
+    return active_app(default)
+
+
+def default_select_app(default: str = "faune") -> str:
+    """Outil ouvert au lancement de l'application Sélection."""
+    configured = value("default_select_app")
+    if isinstance(configured, str) and configured:
+        return configured
+    # Sans réglage propre, on reprend le défaut d'Annotations.
+    return default_active_app(default)
+
+
+def metadata_revision() -> int:
+    """Compteur global des écritures de métadonnées dans les fichiers."""
+    configured = value("metadata_revision", 0)
+    try:
+        return max(0, int(configured))
+    except (TypeError, ValueError):
+        return 0
+
+
+def touch_metadata_revision() -> int:
+    """Incrémente le compteur après une écriture XMP/EXIF réussie."""
+    with _locked():
+        data = _read()
+        try:
+            revision = max(0, int(data.get("metadata_revision", 0))) + 1
+        except (TypeError, ValueError):
+            revision = 1
+        data["metadata_revision"] = revision
+        _write(data)
+        return revision
 
 
 def app_settings(app_id: str) -> dict:

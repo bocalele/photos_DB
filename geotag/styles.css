@@ -21,6 +21,8 @@ button {
   cursor: pointer;
 }
 button:hover { background: #3a415e; }
+button.exit-button { color: #ff8787; border-color: #ff878755; }
+button.exit-button:hover { background: #ff87871f; }
 button:disabled { opacity: .6; cursor: default; }
 input:not([type="range"]) {
   min-width: 0;
@@ -213,5 +215,7 @@ button.secondary:hover { background: #3a415e; }
   #photo-grid { gap: 7px; padding: 8px; }
 }
 
-/* Intégrée dans l’application Annotations : le dossier se change depuis la barre globale. */
-.embedded #change-directory { display: none; }
+/* Intégrée dans l’application Annotations : le dossier et l’arrêt sont gérés
+   depuis la barre globale, avec un seul bouton Quitter. */
+.embedded #change-directory,
+.embedded #exit-app { display: none; }

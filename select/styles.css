@@ -40,6 +40,8 @@ button {
   cursor: pointer;
 }
 button:hover { background: #3a415e; }
+button.exit-button { color: #ff8787; border-color: #ff878755; }
+button.exit-button:hover { background: #ff87871f; }
 button:disabled { opacity: .55; cursor: default; }
 button.primary { border: 0; background: var(--accent); color: #171a27; font-weight: 650; }
 button.primary:hover { background: #ffd061; }
@@ -102,6 +104,20 @@ input[type="checkbox"] { accent-color: var(--accent); }
   text-overflow: ellipsis;
   max-width: 60vw;
 }
+.database-count {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 5px;
+  padding: 3px 8px;
+  border: 1px solid #ffffff14;
+  border-radius: 999px;
+  background: #ffffff09;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.database-count strong { color: var(--accent); font-weight: 700; }
 .mode-tabs {
   display: flex;
   align-items: stretch;
@@ -279,6 +295,9 @@ button.primary .count-badge { background: #171a2722; color: #171a27; }
 .input-group { display: flex; gap: 6px; }
 .input-group input { flex: 1; }
 .input-group button { padding: 9px 12px; }
+.graph-actions { display: flex; gap: 6px; }
+.graph-actions button { flex: 1; padding: 7px 8px; font-size: 11px; }
+.graph-display #label-summary { min-height: 14px; }
 
 /* ---------------------------------------------------------
    Contenu
@@ -301,7 +320,8 @@ button.primary .count-badge { background: #171a2722; color: #171a27; }
 #app.mode-keywords #keywords-container { display: flex; }
 #app.mode-album #album-container { display: flex; }
 #app.mode-album #sidebar { display: none; }
-#app.mode-album .topbar-actions { display: none; }
+#app.mode-album .topbar-actions { display: flex; }
+#app.mode-album .topbar-actions > :not(#exit-app) { display: none; }
 
 /* ---------------------------------------------------------
    Graphe
@@ -326,8 +346,15 @@ button.primary .count-badge { background: #171a2722; color: #171a27; }
   stroke-linejoin: round;
 }
 .node.self circle { stroke: var(--self) !important; stroke-width: 4px; }
-.link { fill: none; stroke: var(--link); stroke-width: 1.6px; }
+.node { transition: opacity .15s ease; }
+.node.faded { opacity: .14; }
+.node.hovered circle { stroke: #fff !important; stroke-width: 3.5px; }
+.node.hovered .node-label { font-weight: 700; }
+.node-label { transition: opacity .12s ease; }
+.link { fill: none; stroke: var(--link); stroke-width: 1.6px; transition: stroke .15s ease, stroke-opacity .15s ease, stroke-width .15s ease; }
 .link.spouse { stroke: var(--link-spouse); stroke-dasharray: 5 4; }
+.link.highlight { stroke: #ff6b6b; stroke-width: 2.2px; stroke-opacity: .95; }
+.link.faded { stroke-opacity: .08; }
 
 #tooltip {
   position: absolute;
@@ -344,6 +371,22 @@ button.primary .count-badge { background: #171a2722; color: #171a27; }
   opacity: 0;
   transition: opacity .15s;
 }
+#tooltip .tooltip-top { display: flex; align-items: flex-start; gap: 10px; }
+#tooltip .tooltip-main { min-width: 0; }
+#tooltip .tooltip-photo {
+  display: flex;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #ffffff24;
+  border-radius: 7px;
+  background: #0e1020;
+}
+#tooltip .tooltip-photo img { width: 100%; height: 100%; object-fit: cover; }
+#tooltip .tooltip-photo-empty { color: var(--muted); font-size: 16px; }
 #tooltip .name { margin-bottom: 4px; font-size: 14px; font-weight: 600; }
 #tooltip .dates { margin-bottom: 5px; color: var(--muted); }
 #tooltip .bio { color: #cfd3eb; }
@@ -658,6 +701,18 @@ button.primary .count-badge { background: #171a2722; color: #171a27; }
   gap: 7px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+.photo-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.photo-sort select {
+  padding: 6px 8px;
+  font-size: 11px;
 }
 .photo-modal-actions .primary,
 .photo-modal-actions .secondary {

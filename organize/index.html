@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>if (new URLSearchParams(location.search).has("embed")) document.documentElement.classList.add("embedded");</script>
+  <title>Classement</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="organizer">
+    <aside class="tree-panel">
+      <header class="panel-header">
+        <div>
+          <h1>Classement</h1>
+          <p id="tree-root" class="muted"></p>
+        </div>
+        <button id="new-folder" type="button" class="secondary" title="Créer un dossier dans le dossier courant">
+          + Dossier
+        </button>
+      </header>
+      <div class="tree-help tree-legend" aria-label="Légende des couleurs des dossiers">
+        <div class="legend-item"><span class="legend-dot status-ok"></span>
+          <span><strong>Vert</strong> : photos présentes et à jour</span></div>
+        <div class="legend-item"><span class="legend-dot status-stale"></span>
+          <span><strong>Orange</strong> : taille/date différente ou indexation partielle</span></div>
+        <div class="legend-item"><span class="legend-dot status-unindexed"></span>
+          <span><strong>Rose</strong> : dossier PSD/JPEG sans photo en base</span></div>
+        <div class="legend-item"><span class="legend-dot status-missing"></span>
+          <span><strong>Rouge</strong> : photo de la base introuvable sur le disque</span></div>
+      </div>
+      <div id="tree" class="tree" role="tree" aria-label="Arborescence des dossiers"></div>
+    </aside>
+
+    <section class="content">
+      <header class="content-header">
+        <div class="title-block">
+          <h2 id="folder-title">Chargement…</h2>
+          <p id="folder-path" class="directory-path"></p>
+          <p id="photo-count" class="muted"></p>
+        </div>
+        <div class="header-actions">
+          <div class="view-switch" role="group" aria-label="Mode d’affichage">
+            <button id="view-icons" type="button" class="view-mode active" data-view="icons">
+              Icônes
+            </button>
+            <button id="view-slideshow" type="button" class="view-mode" data-view="slideshow">
+              Diaporama
+            </button>
+          </div>
+          <button id="refresh" type="button" class="secondary">Rafraîchir</button>
+          <button id="change-directory" type="button" class="secondary">Choisir un dossier</button>
+          <button id="exit-app" type="button" class="secondary exit-button"
+                  title="Quitter et arrêter le serveur">Quitter</button>
+        </div>
+      </header>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <nav id="breadcrumb" class="breadcrumb" aria-label="Chemin du dossier courant"></nav>
+          <div class="mode-switch" role="group" aria-label="Type d’éléments à déplacer">
+            <button id="mode-photos" type="button" class="mode active" data-mode="photos">
+              Photos
+            </button>
+            <button id="mode-folders" type="button" class="mode" data-mode="folders">
+              Dossiers
+            </button>
+          </div>
+        </div>
+        <div class="toolbar-actions">
+          <button id="select-all" type="button" class="secondary">Tout sélectionner</button>
+          <button id="deselect" type="button" class="secondary" disabled>Désélectionner</button>
+          <button id="move-to" type="button" disabled>Déplacer…</button>
+          <button id="rename" type="button" disabled>Renommer</button>
+        </div>
+      </div>
+      <div id="mode-help" class="mode-help">
+        Mode Photos : un clic sélectionne, <kbd>Maj</kbd> + clic sélectionne une plage.
+        Glissez les fichiers vers un dossier ou déposez des fichiers du Finder.
+      </div>
+
+      <div id="status" class="status" role="status" hidden></div>
+      <div id="drop-hint" class="drop-hint" hidden></div>
+      <div id="photo-grid" aria-live="polite"></div>
+
+      <section id="slideshow" class="slideshow" hidden aria-live="polite">
+        <div class="slideshow-stage">
+          <img id="slideshow-image" alt="" hidden>
+          <div id="slideshow-empty" class="slideshow-empty">Aucune photo dans ce dossier.</div>
+        </div>
+        <div class="slideshow-info">
+          <div class="slideshow-title">
+            <strong id="slideshow-name"></strong>
+            <span id="slideshow-meta" class="muted"></span>
+          </div>
+          <div class="slideshow-controls">
+            <button id="slideshow-prev" type="button" class="secondary" title="Photo précédente (←)">
+              ← Précédente
+            </button>
+            <span id="slideshow-counter" class="slideshow-counter">0 / 0</span>
+            <button id="slideshow-next" type="button" class="secondary" title="Photo suivante (→)">
+              Suivante →
+            </button>
+            <div id="slideshow-rating" class="photo-rating slideshow-rating" role="group"
+                 aria-label="Notation de la photo"></div>
+            <button id="slideshow-trash" type="button" class="trash-button slideshow-trash"
+                    title="Mettre la photo affichée à la corbeille">
+              Corbeille
+            </button>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="folder-dialog" class="dialog">
+    <form id="folder-form" method="dialog">
+      <h2>Nouveau dossier</h2>
+      <p class="muted">Dans <strong id="folder-parent"></strong></p>
+      <label>
+        Nom du dossier
+        <input id="folder-name" type="text" autocomplete="off" required>
+      </label>
+      <p id="folder-error" class="form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button id="folder-cancel" type="button" class="secondary">Annuler</button>
+        <button class="primary" type="submit">Créer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="rename-dialog" class="dialog">
+    <form id="rename-form" method="dialog">
+      <h2>Renommer</h2>
+      <p id="rename-source" class="muted"></p>
+      <label>
+        Nouveau nom
+        <input id="rename-name" type="text" autocomplete="off" required>
+      </label>
+      <p id="rename-error" class="form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button id="rename-cancel" type="button" class="secondary">Annuler</button>
+        <button class="primary" type="submit">Renommer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="move-dialog" class="dialog move-dialog">
+    <form id="move-form" method="dialog">
+      <h2>Déplacer</h2>
+      <p id="move-summary" class="muted"></p>
+      <label>
+        Dossier de destination
+        <select id="move-destination" required></select>
+      </label>
+      <p id="move-error" class="form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button id="move-cancel" type="button" class="secondary">Annuler</button>
+        <button class="primary" type="submit">Déplacer</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

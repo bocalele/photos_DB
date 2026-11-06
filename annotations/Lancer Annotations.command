@@ -41,16 +41,23 @@ if [[ $? -ne 0 || -z "$PORT" ]]; then
   exit 1
 fi
 URL="http://127.0.0.1:${PORT}"
+LOG_DIR="$SCRIPT_DIR/logs"
+PID_FILE="$LOG_DIR/server.pid"
+URL_FILE="$LOG_DIR/server.url"
+mkdir -p "$LOG_DIR"
 
 cleanup() {
   if [[ -n "$server_pid" ]] && kill -0 "$server_pid" 2>/dev/null; then
     kill "$server_pid" 2>/dev/null || true
   fi
+  rm -f "$PID_FILE" "$URL_FILE"
 }
 trap cleanup EXIT INT TERM
 
 "$PIXI" run python annotations/server.py --host 127.0.0.1 --port "$PORT" &
 server_pid=$!
+printf '%s\n' "$server_pid" > "$PID_FILE"
+printf '%s\n' "$URL" > "$URL_FILE"
 while kill -0 "$server_pid" 2>/dev/null; do
   if curl --silent --fail --max-time 1 "$URL/" >/dev/null; then
     open "$URL"

@@ -7,11 +7,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>Faune</string>
 	<key>CFBundleExecutable</key>
-	<string>FauneLauncher</string>
-	<key>CFBundleIdentifier</key>
-	<string>org.photos.faune</string>
+	<string>applet</string>
 	<key>CFBundleIconFile</key>
 	<string>Faune</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.photos.faune</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -20,7 +20,7 @@
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>Faune ouvre le Terminal pour lancer le serveur local de classification.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

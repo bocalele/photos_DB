@@ -102,5 +102,121 @@ class KeywordSplittingTests(unittest.TestCase):
         self.assertEqual(labels, ["ESPAGNE"])
 
 
+class TaxonomyPriorityTests(unittest.TestCase):
+    class Node:
+        def __init__(self, name, scientific, lineage):
+            self.name = name
+            self.scientific = scientific
+            self.children = []
+            self._lineage = lineage
+
+        def lineage(self):
+            return self._lineage
+
+    def thesaurus(self):
+        mouflon = self.Node(
+            "Mouflon", "Ovis aries",
+            ["Mammifères", "Artiodactyles", "Bovidés", "Mouflon"],
+        )
+        suffolk = self.Node(
+            "Mouton Suffolk", None,
+            ["Mammifères", "Artiodactyles", "Bovidés", "Mouflon", "Mouton Suffolk"],
+        )
+        mouflon.children = [suffolk]
+        return type("Thesaurus", (), {
+            "by_scientific": {"ovis aries": mouflon},
+            "by_vernacular": {
+                "mouflon": [mouflon],
+                "mouton suffolk": [suffolk],
+            },
+            "by_path": {},
+            "nodes": [mouflon, suffolk],
+        })()
+
+    def test_taxref_wins_over_same_scientific_name_from_thesaurus(self):
+        taxonomy = type("Taxonomy", (), {
+            "resolve_taxon": lambda self, text: (
+                {
+                    "scientificName": "Ovis aries",
+                    "vernacularName": "Mouton domestique",
+                    "lineage": [
+                        "Animaux", "Chordés", "Mammifères", "Cétartiodactyles",
+                        "Bisons, Boeufs", "Mouton domestique",
+                    ],
+                    "authority": "taxref",
+                }
+                if text == "Mouton domestique" else None
+            ),
+            "resolve_hierarchy": lambda self, text: None,
+        })()
+
+        _, taxa, _ = annotations.classify_keywords(
+            ["Mouflon", "Mouton domestique"], [], self.thesaurus(), {},
+            taxonomy=taxonomy,
+        )
+
+        self.assertEqual(len(taxa), 1)
+        self.assertEqual(taxa[0]["vernacularName"], "Mouton domestique")
+        self.assertEqual(taxa[0]["authority"], "taxref")
+
+    def test_hierarchy_suppresses_ancestor_flat_keyword(self):
+        wild_mouflon = {
+            "scientificName": "Ovis gmelinii",
+            "vernacularName": "Mouflon d'Arménie, Mouflon",
+            "lineage": [
+                "Animaux", "Chordés", "Mammifères", "Cétartiodactyles",
+                "Bisons, Boeufs", "Mouflon d'Arménie, Mouflon",
+            ],
+            "authority": "taxref",
+        }
+        suffolk = {
+            "scientificName": None,
+            "vernacularName": "Mouton Suffolk",
+            "lineage": [
+                "Mammifères", "Artiodactyles", "Bovidés", "Mouflon", "Mouton Suffolk",
+            ],
+            "authority": "thesaurus",
+        }
+        taxonomy = type("Taxonomy", (), {
+            "resolve_taxon": lambda self, text: wild_mouflon if text == "Mouflon" else None,
+            "resolve_hierarchy": lambda self, text: suffolk,
+        })()
+
+        _, taxa, _ = annotations.classify_keywords(
+            ["Mouflon"],
+            ["Mammifères|Artiodactyles|Bovidés|Mouflon|Mouton Suffolk"],
+            self.thesaurus(), {},
+            taxonomy=taxonomy,
+        )
+
+        self.assertEqual([taxon["vernacularName"] for taxon in taxa], ["Mouton Suffolk"])
+
+
+class AuthoritativeKeywordTests(unittest.TestCase):
+    def test_ignores_derived_lightroom_keyword_fields(self):
+        _, facets = rebuild.parse_record({
+            "XMP": {
+                "WeightedFlatSubject": ["Chardonneret élégant", "Fringillidés"],
+                "LastKeywordXMP": ["Oiseaux"],
+            },
+        })
+
+        self.assertEqual(facets["keywords"], [])
+
+    def test_reads_iptc_and_dc_subject_only(self):
+        _, facets = rebuild.parse_record({
+            "IPTC": {"Keywords": ["Carduelis carduelis"]},
+            "XMP": {
+                "Subject": ["Chardonneret élégant"],
+                "WeightedFlatSubject": ["Ancien mot-clé"],
+            },
+        })
+
+        self.assertEqual(
+            facets["keywords"],
+            ["Carduelis carduelis", "Chardonneret élégant"],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

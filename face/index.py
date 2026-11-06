@@ -144,6 +144,46 @@ def collect_paths(directories: list[str]) -> list[Path]:
     return paths
 
 
+def apply_previous_decisions(
+    faces: list[dict], previous_decisions: list, minimum: float = 0.5
+) -> None:
+    """Rétablit « sans nom » / « pas un visage » après une réindexation.
+
+    Les décisions ne sont pas dans les XMP. On les réapparie une à une avec les
+    nouvelles détections par recouvrement de boîte, pour qu'une simple écriture
+    de métadonnées ne les efface pas.
+    """
+    if not previous_decisions:
+        return
+    pairs = []
+    for old_index, decision in enumerate(previous_decisions):
+        old_bbox = (
+            decision["x1"],
+            decision["y1"],
+            decision["x2"],
+            decision["y2"],
+        )
+        for face_index, face in enumerate(faces):
+            score = iou(old_bbox, face["bbox"])
+            if score >= minimum:
+                pairs.append((score, old_index, face_index))
+    pairs.sort(reverse=True)
+    used_old: set[int] = set()
+    used_faces: set[int] = set()
+    for _, old_index, face_index in pairs:
+        if old_index in used_old or face_index in used_faces:
+            continue
+        used_old.add(old_index)
+        used_faces.add(face_index)
+        decision = previous_decisions[old_index]
+        if decision["invalid"]:
+            faces[face_index]["invalid"] = True
+            faces[face_index]["ignored"] = False
+        else:
+            faces[face_index]["ignored"] = True
+            faces[face_index]["invalid"] = False
+
+
 def process_photo(
     app,
     conn,
@@ -160,6 +200,7 @@ def process_photo(
         raise ValueError("Image illisible")
     analysed_height, analysed_width = image.shape[:2]
 
+    previous_decisions = face_db.face_decisions(conn, relpath)
     faces = []
     for detected in app.get(image):
         faces.append(
@@ -172,8 +213,15 @@ def process_photo(
                 ),
                 "det_score": float(detected.det_score),
                 "embedding": detected.embedding,
+                "ignored": False,
+                "invalid": False,
             }
         )
+
+    # Une écriture de métadonnées par une autre app change le mtime et déclenche
+    # une réindexation. On réapparie les décisions de travail par leur boîte pour
+    # ne pas perdre les validations « sans nom » ni les détections invalidées.
+    apply_previous_decisions(faces, previous_decisions)
 
     labels = []
     orphans = 0
@@ -183,6 +231,9 @@ def process_photo(
     if source != "embedded":
         matches = match_regions(regions, faces)
         for face_index, name, score in matches:
+            if faces[face_index]["invalid"]:
+                continue
+            faces[face_index]["ignored"] = False
             id_people = name_index.get(photos_db.normalize_name(name))
             if id_people is None:
                 unknown.append(name)

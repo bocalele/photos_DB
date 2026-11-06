@@ -22,6 +22,8 @@
           <input id="thumbnail-size" type="range" min="90" max="280" value="170">
         </label>
         <button id="change-directory" type="button" class="secondary">Changer de dossier</button>
+        <button id="exit-app" type="button" class="secondary exit-button"
+                title="Quitter et arrêter le serveur">Quitter</button>
       </div>
     </header>
     <nav class="gallery-tools" aria-label="Actions sur les photos">
@@ -29,6 +31,9 @@
       <button id="deselect-photos" type="button" disabled>Désélectionner</button>
       <button id="classify-photos" class="primary" type="button" disabled>
         Classer les photos sélectionnées
+      </button>
+      <button id="clear-fauna" type="button" class="danger" disabled>
+        Supprimer les données Faune
       </button>
     </nav>
     <section id="classification-progress" class="classification-progress" hidden>
@@ -38,5 +43,22 @@
     </section>
     <section id="photo-grid" aria-live="polite"></section>
   </main>
+
+  <div id="class-overlay" class="class-overlay" hidden>
+    <div class="class-dialog" role="dialog" aria-modal="true" aria-labelledby="class-title">
+      <h2 id="class-title">Rattacher ce taxon à une classe</h2>
+      <p>
+        <strong id="class-taxon-name"></strong> n’est présent ni dans TAXREF ni
+        dans les thésaurus. Choisissez la classe à laquelle le rattacher.
+      </p>
+      <label class="control-label" for="class-select">Classe</label>
+      <select id="class-select"></select>
+      <p id="class-error" class="class-error" hidden></p>
+      <div class="class-actions">
+        <button id="class-cancel" type="button" class="secondary">Annuler</button>
+        <button id="class-confirm" type="button" class="primary">Rattacher</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

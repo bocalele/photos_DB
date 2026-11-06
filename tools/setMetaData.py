@@ -2,6 +2,7 @@ import subprocess
 from os import PathLike
 from typing import Union
 
+from tools import preferences
 from tools.environment import exiftool_executable
 
 
@@ -45,4 +46,11 @@ def set_metadata(filepath: Union[str, PathLike], categories: dict, dry_run=False
     if result.returncode:
         message = result.stderr.strip() or result.stdout.strip() or "Erreur ExifTool."
         raise RuntimeError(f"Échec d’écriture des métadonnées pour {filepath}: {message}")
+    # Les applications ouvertes dans Annotations utilisent ce compteur pour
+    # savoir qu'une autre vue vient de modifier un fichier et doit être
+    # rechargée avant d'afficher des métadonnées devenues obsolètes.
+    try:
+        preferences.touch_metadata_revision()
+    except OSError:
+        pass
     return result

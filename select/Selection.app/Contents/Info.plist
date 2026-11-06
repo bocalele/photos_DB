@@ -7,7 +7,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Sélection</string>
 	<key>CFBundleExecutable</key>
-	<string>SelectionLauncher</string>
+	<string>applet</string>
 	<key>CFBundleIconFile</key>
 	<string>Selection</string>
 	<key>CFBundleIdentifier</key>
@@ -20,7 +20,7 @@
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>Sélection ouvre le Terminal pour lancer le serveur local de sélection et d’albums photo.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

@@ -6,7 +6,7 @@ let yearMax = null;
 let keywordsModeInitialized = false;
 let filtersInitialized = false;
 let currentMode = 'graph'; // default mode
-let currentAppMode = 'face';
+let currentAppMode = 'faune';
 const APP_MODES = {
   geotag: { layout: 'map' },
   faune: { layout: 'graph', dataset: 'fauna' },
@@ -17,6 +17,22 @@ let datasetLoadSeq = 0;
 let populateKeywords = [];
 let currentFilterResult = { photos: [], ids: [], total: 0 };
 let photoModalShown = 0;
+let photoModalPhotos = [];
+let photoModalSourcePhotos = [];
+let photoModalLastIndex = -1;
+let photoModalSortSeq = 0;
+const PHOTO_SORTS = new Set([
+  'date_desc', 'date_asc', 'rating_desc', 'rating_asc',
+  'filename_asc', 'filename_desc', 'random',
+]);
+let photoModalSort = (() => {
+  try {
+    const saved = localStorage.getItem('select.photoSort');
+    return PHOTO_SORTS.has(saved) ? saved : 'date_desc';
+  } catch (_) {
+    return 'date_desc';
+  }
+})();
 
 let selectedPhotoIds = new Set();
 let selectedPhotoCache = new Map();
@@ -237,6 +253,22 @@ function createThesaurusDataset(thesDesc, globalConfig) {
 let svg, gRoot, linkLayer, nodeLayer, simulation, zoom;
 let nodeSel, linkSel;
 let width = 0, height = 0;
+
+const GRAPH_LABEL_MODES = new Set(['auto', 'all', 'hover', 'none']);
+let graphLabelMode = (() => {
+  try {
+    const saved = localStorage.getItem('select.graphLabelMode');
+    return GRAPH_LABEL_MODES.has(saved) ? saved : 'auto';
+  } catch (_) {
+    return 'auto';
+  }
+})();
+let hoveredNodeId = null;
+const HOVER_MAX_DEPTH = 4;
+const nodePhotoCache = new Map();
+let hoverPhotoToken = 0;
+let labelLayoutFrame = 0;
+let lastLabelLayout = 0;
 
 function resize() {
   const graphEl = document.getElementById('graph-container');
@@ -591,7 +623,10 @@ function resetVisualization() {
   nodeLayer = gRoot.append('g').attr('class', 'nodes');
 
   zoom = d3.zoom().scaleExtent([0.1, 3])
-    .on('zoom', e => gRoot.attr('transform', e.transform));
+    .on('zoom', e => {
+      gRoot.attr('transform', e.transform);
+      scheduleLabelLayout();
+    });
   svg.call(zoom);
 
   if (simulation) simulation.stop();
@@ -673,14 +708,19 @@ function update() {
   enter.append('circle')
     .attr('r', cfg.nodeRadius)
     .on('mouseover', onHover).on('mousemove', onHoverMove).on('mouseout', onHoverOut)
-    .on('click', onNodeClick);
+    .on('click', onNodeClick)
+    .on('dblclick', onNodeDoubleClick);
   enter.append('text')
     .attr('class', 'photo-count')
     .attr('dy', '0.3em')
     .text(d => state.photoCounts[d.id] || 0);
   enter.append('text')
+    .attr('class', 'node-label')
     .attr('dy', cfg.nodeRadius + 14)
-    .text(d => labelFor(state.nodesById[d.id]));
+    .text(d => {
+      d.labelText = labelFor(state.nodesById[d.id]);
+      return d.labelText;
+    });
   nodeSel = enter.merge(nodeSel);
 
   nodeSel.classed('self', d => d.id === state.selfId);
@@ -689,14 +729,39 @@ function update() {
     .attr('stroke', d => d.id === state.selfId ? 'var(--self)' : '#1a1d2e')
     .attr('stroke-width', d => d.id === state.selfId ? 4 : 2.5);
 
+  // Mesurer une fois le libellé à sa taille réelle : le calcul de
+  // non-chevauchement n'a plus qu'à comparer des rectangles.
+  nodeSel.select('text.node-label').attr('display', null);
+  nodeSel.each(function (d) {
+    const label = this.querySelector('text.node-label');
+    try {
+      d.labelWidth = label ? label.getComputedTextLength() : 0;
+    } catch (_) {
+      d.labelWidth = 0;
+    }
+  });
+
+  if (hoveredNodeId && !nodes.some(node => node.id === hoveredNodeId)) {
+    hoveredNodeId = null;
+  }
+  applyHoverHighlight();
+  syncLabelModeControl();
+  scheduleLabelLayout();
+
   simulation.nodes(nodes);
   simulation.force('link').links(links);
   simulation.alpha(0.6).restart();
   if (currentMode === 'graph') renderQuery();
 }
 
+function primaryVernacular(name) {
+  const value = String(name || '').trim();
+  if (!value) return '';
+  return value.split(',')[0].trim() || value;
+}
+
 function taxonDisplayName(taxon) {
-  const name = taxon?.name || '';
+  const name = primaryVernacular(taxon?.name);
   const scientific = taxon?.scientific || '';
   if (name && scientific && name !== scientific) return `${name} (${scientific})`;
   return name || scientific;
@@ -713,7 +778,7 @@ function mostSpecificTaxon(taxa) {
 
 function photoDisplayTitle(photo) {
   const taxon = mostSpecificTaxon(photo?.taxa);
-  if (taxon) return taxon.name || taxon.scientific;
+  if (taxon) return primaryVernacular(taxon.name) || taxon.scientific;
   const people = (photo?.people || []).filter(Boolean);
   if (people.length) return people.slice(0, 2).join(', ') + (people.length > 2 ? '…' : '');
   const keyword = (photo?.keywords || []).find(Boolean);
@@ -737,8 +802,12 @@ function displayNodeName(node) {
 }
 
 function labelFor(node) {
-  // Pour le thésaurus, garder les noms entiers ; pour la famille, juste le prénom
-  if (state.cfg === datasets.family) return node.name.split(' ')[0];
+  if (!node) return '';
+  const cfg = state?.cfg;
+  // Libellés courts dans le graphe : le nom scientifique complet reste dans
+  // l'infobulle et le menu. Cela réduit fortement les chevauchements en faune.
+  if (cfg === datasets.family) return (node.name || '').split(' ')[0];
+  if (cfg?.id === 'fauna') return node.name || node.scientific || '';
   return displayNodeName(node);
 }
 
@@ -747,6 +816,307 @@ function ticked() {
     .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
     .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
   nodeSel.attr('transform', d => `translate(${d.x},${d.y})`);
+  scheduleLabelLayout();
+}
+
+// =========================================================
+//  LISIBILITÉ DU GRAPHE
+// =========================================================
+function syncLabelModeControl() {
+  const select = document.getElementById('label-mode');
+  if (select && select.value !== graphLabelMode) select.value = graphLabelMode;
+}
+
+function setGraphLabelMode(mode) {
+  if (!GRAPH_LABEL_MODES.has(mode)) return;
+  graphLabelMode = mode;
+  try {
+    localStorage.setItem('select.graphLabelMode', mode);
+  } catch (_) {
+    // Mode privé ou stockage indisponible : le choix reste valable pour la session.
+  }
+  scheduleLabelLayout();
+}
+
+function scheduleLabelLayout() {
+  if (labelLayoutFrame) return;
+  labelLayoutFrame = requestAnimationFrame(timestamp => {
+    labelLayoutFrame = 0;
+    // Le calcul est volontairement limité à ~25 images/s : pendant que la
+    // simulation bouge, une étiquette peut suivre son nœud avec un léger retard
+    // sans refaire tout le calcul de collisions à chaque tick.
+    if (timestamp - lastLabelLayout < 40) {
+      scheduleLabelLayout();
+      return;
+    }
+    lastLabelLayout = timestamp;
+    layoutLabels();
+  });
+}
+
+function labelPriority(d, near) {
+  const node = state.nodesById[d.id] || {};
+  let priority = 0;
+  if (d.id === state.selfId) priority += 1_000_000_000;
+  if (d.id === hoveredNodeId) priority += 500_000_000;
+  if (near.has(d.id)) priority += 100_000_000;
+  if (node.isClass || node.depth === 0) priority += 10_000_000;
+  if (node.depth === 1) priority += 5_000_000;
+  const count = Number(state.photoCounts[d.id]) || 0;
+  priority += Math.min(count, 999) * 1000;
+  priority += Math.max(0, 100 - (node.depth ?? 100));
+  return priority;
+}
+
+function labelRect(d) {
+  const text = d.labelText ?? labelFor(state.nodesById[d.id]) ?? '';
+  const estimated = Math.max(16, text.length * 7);
+  const width = Math.max(16, d.labelWidth || estimated) + 8;
+  const y = (d.y || 0) + state.cfg.nodeRadius + 14;
+  return {
+    x1: (d.x || 0) - width / 2,
+    x2: (d.x || 0) + width / 2,
+    y1: y - 12,
+    y2: y + 4,
+  };
+}
+
+function rectsOverlap(a, b) {
+  return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
+}
+
+const LABEL_GRID_CELL = 80;
+
+function gridCells(rect) {
+  return {
+    x0: Math.floor(rect.x1 / LABEL_GRID_CELL),
+    x1: Math.floor(rect.x2 / LABEL_GRID_CELL),
+    y0: Math.floor(rect.y1 / LABEL_GRID_CELL),
+    y1: Math.floor(rect.y2 / LABEL_GRID_CELL),
+  };
+}
+
+function addToGrid(grid, rect, value = null) {
+  const cells = gridCells(rect);
+  for (let x = cells.x0; x <= cells.x1; x += 1) {
+    for (let y = cells.y0; y <= cells.y1; y += 1) {
+      const key = `${x},${y}`;
+      const bucket = grid.get(key);
+      if (bucket) bucket.push({ rect, value });
+      else grid.set(key, [{ rect, value }]);
+    }
+  }
+}
+
+function collidesWithGrid(grid, rect, ignoreValue = null) {
+  const cells = gridCells(rect);
+  for (let x = cells.x0; x <= cells.x1; x += 1) {
+    for (let y = cells.y0; y <= cells.y1; y += 1) {
+      const bucket = grid.get(`${x},${y}`);
+      if (!bucket) continue;
+      for (const item of bucket) {
+        if (ignoreValue !== null && item.value === ignoreValue) continue;
+        if (rectsOverlap(rect, item.rect)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function hoverDepths(id) {
+  const depths = new Map();
+  if (!id || !state) return depths;
+  depths.set(id, 0);
+  let frontier = [id];
+  for (let depth = 1; depth <= HOVER_MAX_DEPTH; depth += 1) {
+    const next = [];
+    for (const current of frontier) {
+      const neighbors = new Set([
+        ...getParents(current),
+        ...getChildren(current),
+        ...getSpouses(current),
+        ...getSiblings(current),
+      ]);
+      for (const neighbor of neighbors) {
+        if (!state.visible.has(neighbor) || depths.has(neighbor)) continue;
+        depths.set(neighbor, depth);
+        next.push(neighbor);
+      }
+    }
+    if (!next.length) break;
+    frontier = next;
+  }
+  return depths;
+}
+
+function applyHoverHighlight() {
+  if (!nodeSel || !linkSel || !state) return;
+  const active = hoveredNodeId && state.nodesById[hoveredNodeId]
+    ? hoveredNodeId
+    : null;
+  if (!active) {
+    nodeSel
+      .classed('hovered', false)
+      .classed('neighbor', false)
+      .classed('faded', false)
+      .style('opacity', null);
+    linkSel
+      .classed('highlight', false)
+      .classed('faded', false)
+      .style('stroke', null)
+      .style('stroke-width', null)
+      .style('stroke-opacity', null);
+    return;
+  }
+  const depths = hoverDepths(active);
+  nodeSel
+    .classed('hovered', d => d.id === active)
+    .classed('neighbor', d => d.id !== active && depths.has(d.id))
+    .classed('faded', d => !depths.has(d.id))
+    .style('opacity', d => depths.has(d.id)
+      ? String(Math.max(0.2, 1 - depths.get(d.id) * 0.2))
+      : null);
+  const endpoint = value => (value && typeof value === 'object' ? value.id : value);
+  const edgeDepth = d => {
+    const source = endpoint(d.source);
+    const target = endpoint(d.target);
+    if (!depths.has(source) || !depths.has(target)) return null;
+    return Math.max(depths.get(source), depths.get(target));
+  };
+  linkSel
+    .classed('highlight', d => edgeDepth(d) !== null)
+    .classed('faded', d => {
+      const source = endpoint(d.source);
+      const target = endpoint(d.target);
+      return !depths.has(source) && !depths.has(target);
+    })
+    .style('stroke', d => edgeDepth(d) !== null ? '#ff6b6b' : null)
+    .style('stroke-width', d => {
+      const depth = edgeDepth(d);
+      return depth === null ? null : `${Math.max(0.9, 2.4 - depth * 0.25)}px`;
+    })
+    .style('stroke-opacity', d => {
+      const depth = edgeDepth(d);
+      if (depth !== null) return String(Math.max(0.18, 1 - depth * 0.18));
+      const source = endpoint(d.source);
+      const target = endpoint(d.target);
+      return depths.has(source) || depths.has(target) ? '0.16' : null;
+    });
+}
+
+function updateLabelSummary(shown, total) {
+  const el = document.getElementById('label-summary');
+  if (!el) return;
+  let text;
+  if (graphLabelMode === 'auto') {
+    text = `${shown} / ${total} étiquettes visibles (anti-chevauchement)`;
+  } else if (graphLabelMode === 'all') {
+    text = `${total} étiquettes affichées`;
+  } else if (graphLabelMode === 'hover') {
+    text = hoveredNodeId
+      ? `${shown} étiquette(s) autour du nœud survolé`
+      : 'Survolez un nœud pour afficher son nom';
+  } else {
+    text = 'Étiquettes masquées';
+  }
+  if (el.textContent !== text) el.textContent = text;
+}
+
+function layoutLabels() {
+  if (!nodeSel || !state) return;
+  const labelText = nodeSel.select('text.node-label');
+  const nodes = nodeSel.data();
+  const total = nodes.length;
+  if (!total) {
+    updateLabelSummary(0, 0);
+    return;
+  }
+  if (graphLabelMode === 'none') {
+    labelText.attr('display', 'none');
+    updateLabelSummary(0, total);
+    return;
+  }
+  if (graphLabelMode === 'all') {
+    labelText.attr('display', null);
+    updateLabelSummary(total, total);
+    return;
+  }
+
+  const near = hoveredNodeId ? hoverDepths(hoveredNodeId) : new Map();
+  const nearIds = new Set(near.keys());
+  let candidates = nodes.map(d => ({
+    d,
+    priority: labelPriority(d, nearIds),
+    rect: labelRect(d),
+  }));
+  if (graphLabelMode === 'hover') {
+    const visibleAroundHover = hoveredNodeId
+      ? new Set([hoveredNodeId, ...nearIds, state.selfId])
+      : new Set([state.selfId]);
+    candidates = candidates.filter(item => visibleAroundHover.has(item.d.id));
+  }
+  candidates.sort((a, b) => b.priority - a.priority || a.d.id.localeCompare(b.d.id));
+
+  const radius = state.cfg.nodeRadius + 2;
+  const nodeGrid = new Map();
+  for (const d of nodes) {
+    addToGrid(nodeGrid, {
+      x1: (d.x || 0) - radius,
+      x2: (d.x || 0) + radius,
+      y1: (d.y || 0) - radius,
+      y2: (d.y || 0) + radius,
+    }, d.id);
+  }
+  const labelGrid = new Map();
+  const visible = new Set();
+  for (const item of candidates) {
+    const force = item.d.id === state.selfId || item.d.id === hoveredNodeId;
+    if (!force) {
+      const hitNode = collidesWithGrid(nodeGrid, item.rect, item.d.id);
+      if (hitNode || collidesWithGrid(labelGrid, item.rect)) continue;
+    }
+    visible.add(item.d.id);
+    addToGrid(labelGrid, item.rect);
+  }
+  labelText.each(function (d) {
+    const hidden = !visible.has(d.id);
+    if (hidden) {
+      if (this.getAttribute('display') !== 'none') {
+        this.setAttribute('display', 'none');
+      }
+    } else if (this.hasAttribute('display')) {
+      this.removeAttribute('display');
+    }
+  });
+  updateLabelSummary(visible.size, total);
+}
+
+function fitGraph() {
+  if (!state || !simulation || !width || !height) return;
+  const nodes = simulation.nodes().filter(node =>
+    state.visible.has(node.id)
+    && Number.isFinite(node.x)
+    && Number.isFinite(node.y)
+  );
+  if (!nodes.length) return;
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  for (const node of nodes) {
+    minX = Math.min(minX, node.x);
+    maxX = Math.max(maxX, node.x);
+    minY = Math.min(minY, node.y);
+    maxY = Math.max(maxY, node.y);
+  }
+  const pad = Math.max(60, state.cfg.nodeRadius * 4);
+  const spanX = Math.max(1, maxX - minX + pad * 2);
+  const spanY = Math.max(1, maxY - minY + pad * 2);
+  const scale = Math.max(0.1, Math.min(2, Math.min(width / spanX, height / spanY)));
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const transform = d3.zoomIdentity
+    .translate(width / 2 - cx * scale, height / 2 - cy * scale)
+    .scale(scale);
+  svg.transition().duration(450).call(zoom.transform, transform);
 }
 
 // =========================================================
@@ -754,29 +1124,201 @@ function ticked() {
 // =========================================================
 const tooltip = () => document.getElementById('tooltip');
 function onHover(event, d) {
+  hoveredNodeId = d.id;
+  applyHoverHighlight();
+  scheduleLabelLayout();
   const n = state.nodesById[d.id];
   const cid = state.cluster[d.id];
   const tip = tooltip();
   tip.innerHTML = `
-    <div class="name">${n.name}</div>
-    ${state.cfg.formatTooltip(n)}
-    <div class="branch" style="background:${state.clusterColor[cid]}">${state.clusterLabel[cid]}</div>
+    <div class="tooltip-top">
+      <div id="tooltip-photo" class="tooltip-photo"><span class="tooltip-photo-empty">…</span></div>
+      <div class="tooltip-main">
+        <div class="name">${escapeHtml(n.name)}</div>
+        ${state.cfg.formatTooltip(n)}
+      </div>
+    </div>
+    <div class="branch" style="background:${state.clusterColor[cid]}">${escapeHtml(state.clusterLabel[cid])}</div>
   `;
   tip.style.opacity = 1;
+  const token = ++hoverPhotoToken;
+  loadTooltipPhoto(d.id, token);
   onHoverMove(event);
+}
+
+function renderTooltipPhoto(photo) {
+  const holder = document.getElementById('tooltip-photo');
+  if (!holder) return;
+  holder.replaceChildren();
+  if (photo?.thumbUrl) {
+    const image = document.createElement('img');
+    image.src = photo.thumbUrl;
+    image.alt = photo.filename || '';
+    image.loading = 'eager';
+    image.addEventListener('error', () => {
+      if (!image.isConnected) return;
+      holder.replaceChildren();
+      const empty = document.createElement('span');
+      empty.className = 'tooltip-photo-empty';
+      empty.textContent = '—';
+      holder.appendChild(empty);
+    });
+    holder.appendChild(image);
+    holder.title = photo.filename || '';
+  } else {
+    const empty = document.createElement('span');
+    empty.className = 'tooltip-photo-empty';
+    empty.textContent = '—';
+    holder.appendChild(empty);
+  }
+}
+
+function loadTooltipPhoto(nodeId, token) {
+  if (!state) return;
+  const cacheKey = `${state.cfg.id}:${nodeId}`;
+  if (nodePhotoCache.has(cacheKey)) {
+    renderTooltipPhoto(nodePhotoCache.get(cacheKey));
+    return;
+  }
+  if (!Number(state.photoCounts[nodeId] || 0)) {
+    nodePhotoCache.set(cacheKey, null);
+    renderTooltipPhoto(null);
+    return;
+  }
+  const url = `/api/node-photo?dataset=${encodeURIComponent(state.cfg.id)}&node=${encodeURIComponent(nodeId)}`;
+  fetch(url)
+    .then(response => response.ok ? response.json() : Promise.reject(new Error('Photo indisponible')))
+    .then(data => {
+      const photo = data.photo || null;
+      nodePhotoCache.set(cacheKey, photo);
+      if (token === hoverPhotoToken && hoveredNodeId === nodeId) renderTooltipPhoto(photo);
+    })
+    .catch(() => {
+      nodePhotoCache.set(cacheKey, null);
+      if (token === hoverPhotoToken && hoveredNodeId === nodeId) renderTooltipPhoto(null);
+    });
 }
 function onHoverMove(event) {
   const rect = document.getElementById('graph-container').getBoundingClientRect();
   tooltip().style.left = (event.clientX - rect.left + 14) + 'px';
   tooltip().style.top  = (event.clientY - rect.top + 14) + 'px';
 }
-function onHoverOut() { tooltip().style.opacity = 0; }
+function onHoverOut() {
+  tooltip().style.opacity = 0;
+  hoverPhotoToken += 1;
+  hoveredNodeId = null;
+  applyHoverHighlight();
+  scheduleLabelLayout();
+}
 
 // =========================================================
 //  MENU CONTEXTUEL
 // =========================================================
 const menuEl = () => document.getElementById('menu');
-function onNodeClick(event, d) { event.stopPropagation(); showMenuFor(d, event); }
+
+function allGraphNodeIds() {
+  if (!state) return new Set();
+  const allowed = isFauna() ? faunaAllowedNodeIds() : null;
+  return new Set(
+    state.nodes
+      .map(node => node.id)
+      .filter(id => !allowed || allowed.has(id))
+  );
+}
+
+function showAllNodes() {
+  if (!state) return;
+  state.visible = allGraphNodeIds();
+  state.visible.add(state.selfId);
+  update();
+}
+
+function selectNode(id, { isolate = false } = {}) {
+  if (!state || !state.nodesById[id]) return;
+  state.selfId = id;
+  if (isolate) state.visible = new Set([id]);
+  else state.visible.add(id);
+  const select = document.getElementById('self-select');
+  if (select && [...select.options].some(option => option.value === id)) {
+    select.value = id;
+  }
+  const node = state.nodesById[id];
+  if (node?.classId) {
+    const groupSelect = document.getElementById('group-select');
+    if (groupSelect && [...groupSelect.options].some(option => option.value === node.classId)) {
+      groupSelect.value = node.classId;
+    }
+  }
+  update();
+}
+
+function positionMenu(event) {
+  const menu = menuEl();
+  let x = event.clientX + 12;
+  let y = event.clientY + 12;
+  menu.style.position = 'fixed';
+  menu.style.display = 'block';
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  requestAnimationFrame(() => {
+    const rect = menu.getBoundingClientRect();
+    const menuWidth = rect.width || 240;
+    const menuHeight = rect.height || 260;
+    if (x + menuWidth > window.innerWidth) x = Math.max(10, window.innerWidth - menuWidth - 10);
+    if (y + menuHeight > window.innerHeight) y = Math.max(10, window.innerHeight - menuHeight - 10);
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+  });
+}
+
+function showBackgroundMenu(event) {
+  const menu = menuEl();
+  const allCount = allGraphNodeIds().size;
+  const visibleCount = state?.visible?.size || 0;
+  menu.innerHTML = `
+    <div class="menu-title">Graphe</div>
+    <button data-action="all">
+      <span><span class="icon">◎</span>Afficher tous les nœuds</span>
+      <span class="badge">${allCount}</span>
+    </button>
+    <button data-action="only-self">
+      <span><span class="icon">◉</span>Garder uniquement le nœud sélectionné</span>
+      <span class="badge">${visibleCount > 1 ? 'isoler' : ''}</span>
+    </button>
+    <hr/>
+    <button data-action="fit"><span><span class="icon">⤢</span>Ajuster la vue</span></button>
+    <button data-action="center"><span><span class="icon">⌖</span>Recentrer sur le nœud sélectionné</span></button>
+  `;
+  menu.querySelectorAll('button[data-action]').forEach(button => {
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      const action = button.dataset.action;
+      if (action === 'all') showAllNodes();
+      else if (action === 'only-self') {
+        if (state?.selfId) selectNode(state.selfId, { isolate: true });
+      } else if (action === 'fit') {
+        fitGraph();
+      } else if (action === 'center') {
+        centerOnSelf();
+      }
+      hideMenu();
+    });
+  });
+  positionMenu(event);
+}
+
+function onNodeClick(event, d) {
+  event.stopPropagation();
+  selectNode(d.id);
+  showMenuFor(d, event);
+}
+
+function onNodeDoubleClick(event, d) {
+  event.preventDefault();
+  event.stopPropagation();
+  hideMenu();
+  keepDescendants(d.id);
+}
 document.addEventListener('click', hideMenu);
 
 function showMenuFor(d, event) {
@@ -807,7 +1349,7 @@ function showMenuFor(d, event) {
 
   const menu = menuEl();
   menu.innerHTML = `
-    <div class="menu-title">${displayNodeName(state.nodesById[id])}</div>
+    <div class="menu-title">${escapeHtml(displayNodeName(state.nodesById[id]))}</div>
     ${btn('parents',  labels.parents,  expanded.parents,  groups.parents.length)}
     ${btn('children', labels.children, expanded.children, groups.children.length)}
     ${btn('siblings', labels.siblings, expanded.siblings, groups.siblings.length)}
@@ -815,7 +1357,8 @@ function showMenuFor(d, event) {
     <hr/>
     ${btn('all', 'Tout', allExp, allTotal)}
     <hr/>
-    <button data-group="hide"><span><span class="icon">✖</span>Cacher ce nœud</span></button>
+    <button data-group="show-all"><span><span class="icon">◎</span>Afficher tous les nœuds du graphe</span></button>
+    <button data-group="only"><span><span class="icon">◉</span>Garder uniquement ce nœud</span></button>
     <button class="set-self" data-group="self"><span><span class="icon">★</span>Définir comme ${state.cfg.selfLabel.toLowerCase()}</span></button>
   `;
   menu.querySelectorAll('button[data-group]').forEach(b => {
@@ -823,51 +1366,39 @@ function showMenuFor(d, event) {
       e.stopPropagation();
       const group = b.dataset.group;
       if (group === 'self') {
-        state.selfId = id;
-        document.getElementById('self-select').value = id;
-        const node = state.nodesById[id];
-        if (node?.classId) {
-          const groupSelect = document.getElementById('group-select');
-          if ([...groupSelect.options].some(option => option.value === node.classId)) {
-            groupSelect.value = node.classId;
-          }
-        }
-        state.visible.add(id);
-        update();
+        selectNode(id, { isolate: false });
         setTimeout(centerOnSelf, 180);
-      } else if (group === 'hide') {
-        hideNode(id);
+      } else if (group === 'show-all') {
+        showAllNodes();
+      } else if (group === 'only') {
+        selectNode(id, { isolate: true });
       } else {
         toggleGroup(id, group);
       }
       hideMenu();
     });
   });
-
-  let x = event.clientX + 12;
-  let y = event.clientY + 12;
-  menu.style.position = 'fixed';
-  menu.style.display = 'block';
-  console.log('Menu displayed at', x, y);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-  
-  // Use requestAnimationFrame to allow DOM to render before measuring
-  requestAnimationFrame(() => {
-    const menuRect = menu.getBoundingClientRect();
-    const defaultWidth = 240;
-    const defaultHeight = 320;
-    const menuWidth = menuRect.width || defaultWidth;
-    const menuHeight = menuRect.height || defaultHeight;
-    
-    if (x + menuWidth > window.innerWidth) x = Math.max(10, window.innerWidth - menuWidth - 10);
-    if (y + menuHeight > window.innerHeight) y = Math.max(10, window.innerHeight - menuHeight - 10);
-    
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
-  });
+  positionMenu(event);
 }
 function hideMenu() { menuEl().style.display = 'none'; }
+
+let backgroundPointerStart = null;
+const graphContainerEl = document.getElementById('graph-container');
+graphContainerEl?.addEventListener('mousedown', event => {
+  if (event.button === 0) {
+    backgroundPointerStart = { x: event.clientX, y: event.clientY };
+  }
+});
+graphContainerEl?.addEventListener('click', event => {
+  if (event.target.closest?.('.node')) return;
+  if (backgroundPointerStart) {
+    const dx = event.clientX - backgroundPointerStart.x;
+    const dy = event.clientY - backgroundPointerStart.y;
+    if (Math.hypot(dx, dy) > 5) return;
+  }
+  event.stopPropagation();
+  showBackgroundMenu(event);
+});
 
 // =========================================================
 //  ACCESSEURS RELATIONS
@@ -879,6 +1410,52 @@ function getSiblings(id) {
   const sibs = new Set();
   for (const p of getParents(id)) for (const c of (state.childrenOf[p] || [])) if (c !== id) sibs.add(c);
   return [...sibs];
+}
+
+function descendantIds(id, { includeSpouses = false } = {}) {
+  const descendants = new Set();
+  const pending = [id];
+  while (pending.length) {
+    const current = pending.pop();
+    if (descendants.has(current)) continue;
+    descendants.add(current);
+    for (const child of getChildren(current)) pending.push(child);
+  }
+  if (includeSpouses) {
+    for (const current of [...descendants]) {
+      for (const spouse of getSpouses(current)) descendants.add(spouse);
+    }
+  }
+  return descendants;
+}
+
+function keepDescendants(id) {
+  if (!state || !state.nodesById[id]) return;
+  const descendants = descendantIds(id, { includeSpouses: state.cfg.id === 'family' });
+  const allowed = isFauna() ? faunaAllowedNodeIds() : null;
+  if (allowed) {
+    for (const nodeId of [...descendants]) {
+      if (!allowed.has(nodeId)) descendants.delete(nodeId);
+    }
+  }
+  // Le nœud double-cliqué reste visible même si un filtre d'ordre l'exclut
+  // temporairement : c'est le point d'entrée de la descendance demandée.
+  descendants.add(id);
+  state.selfId = id;
+  state.visible = descendants;
+  const select = document.getElementById('self-select');
+  if (select && [...select.options].some(option => option.value === id)) {
+    select.value = id;
+  }
+  const node = state.nodesById[id];
+  if (node?.classId) {
+    const groupSelect = document.getElementById('group-select');
+    if (groupSelect && [...groupSelect.options].some(option => option.value === node.classId)) {
+      groupSelect.value = node.classId;
+    }
+  }
+  update();
+  setTimeout(fitGraph, 450);
 }
 
 // =========================================================
@@ -901,12 +1478,6 @@ function collapseGroup(id, group) {
     state.visible.delete(x);
   }
   pruneOrphans();
-}
-function hideNode(id) {
-  if (id === state.selfId) return;
-  state.visible.delete(id);
-  pruneOrphans(); 
-  update();
 }
 function toggleGroup(id, group) {
   const list = listFor(id, group);
@@ -931,6 +1502,7 @@ function pruneOrphans() {
 //  CENTRAGE / NIVEAUX
 // =========================================================
 function centerOnSelf() {
+  if (!state) return;
   const n = state.nodeData[state.selfId];
   if (!n) return;
   const t = d3.zoomIdentity.translate(width / 2 - n.x, height / 2 - n.y).scale(1);
@@ -960,6 +1532,13 @@ document.getElementById('self-select').addEventListener('change', e => {
   hideMenu(); update();
   centerOnSelf();
 });
+document.getElementById('label-mode')?.addEventListener('change', e => {
+  setGraphLabelMode(e.target.value);
+});
+document.getElementById('fit-graph')?.addEventListener('click', fitGraph);
+document.getElementById('center-graph')?.addEventListener('click', centerOnSelf);
+syncLabelModeControl();
+
 document.getElementById('group-select').addEventListener('change', e => {
   if (!state) return;
   state.activeClassId = e.target.value;
@@ -1262,7 +1841,7 @@ function getTechnicalFilters() {
   };
 }
 
-async function filterPhotos(mode) {
+async function filterPhotos(mode, { sort = null } = {}) {
   const selections = getSelectionsForMode(mode);
   const data = {
     mode: mode,
@@ -1273,6 +1852,7 @@ async function filterPhotos(mode) {
     year_max: yearMax,
     ...getTechnicalFilters(),
     limit: 1000,
+    sort: sort || 'date_desc',
   };
 
   try {
@@ -1333,7 +1913,7 @@ async function openPhotosForSelection() {
     button.textContent = 'Chargement…';
   }
   try {
-    const result = await filterPhotos(currentMode);
+    const result = await filterPhotos(currentMode, { sort: photoModalSort });
     openPhotoModal(result);
   } finally {
     if (button) {
@@ -1399,18 +1979,52 @@ function togglePhotoSelection(photo) {
   updateAlbumSelectionUI();
 }
 
+function selectPhotoRange(index) {
+  if (!photoModalPhotos.length) return;
+  if (photoModalLastIndex < 0) {
+    const photo = photoModalPhotos[index];
+    if (photo) {
+      selectedPhotoIds.add(Number(photo.id));
+      selectedPhotoCache.set(Number(photo.id), photo);
+    }
+  } else {
+    const start = Math.min(photoModalLastIndex, index);
+    const end = Math.max(photoModalLastIndex, index);
+    for (let position = start; position <= end; position++) {
+      const photo = photoModalPhotos[position];
+      if (!photo) continue;
+      selectedPhotoIds.add(Number(photo.id));
+      selectedPhotoCache.set(Number(photo.id), photo);
+    }
+  }
+  photoModalLastIndex = index;
+  updateAlbumSelectionUI();
+}
+
+function selectPhotoFromModal(photo, index, event) {
+  if (event?.shiftKey) {
+    selectPhotoRange(index);
+    return;
+  }
+  togglePhotoSelection(photo);
+  photoModalLastIndex = index;
+}
+
 function selectAllCurrentPhotos() {
-  for (const photo of (currentFilterResult.photos || []).slice(0, 1000)) {
+  const photos = (currentFilterResult.photos || []).slice(0, 1000);
+  for (const photo of photos) {
     const photoId = Number(photo.id);
     selectedPhotoIds.add(photoId);
     selectedPhotoCache.set(photoId, photo);
   }
+  photoModalLastIndex = photos.length - 1;
   updateAlbumSelectionUI();
 }
 
 function clearPhotoSelection() {
   selectedPhotoIds.clear();
   selectedPhotoCache.clear();
+  photoModalLastIndex = -1;
   updateAlbumSelectionUI();
 }
 
@@ -1442,58 +2056,100 @@ function openPhotoModal(result) {
   const total = Array.isArray(result) ? photos.length : (result.total ?? photos.length);
   const ids = Array.isArray(result) ? photos.map(photo => photo.id) : (result.ids || photos.map(photo => photo.id));
   currentFilterResult = { photos, ids, total };
+  photoModalSourcePhotos = photos.slice(0, 1000);
 
-  const shown = photos.slice(0, 1000);
-  photoModalShown = shown.length;
-  updatePhotoModalCount();
-  grid.innerHTML = '';
+  const sortSelect = document.getElementById('photo-sort');
+  if (sortSelect) sortSelect.value = photoModalSort;
 
-  if (!photos.length && !total) {
-    grid.innerHTML = '<div class="photo-empty">Aucune photo ne correspond à cette sélection.</div>';
-  } else {
-    for (const photo of shown) {
-      const card = document.createElement('article');
-      const selected = selectedPhotoIds.has(Number(photo.id));
-      card.className = `photo-card${selected ? ' selected' : ''}`;
-      const people = (photo.people || []).slice(0, 4).join(', ');
-      const keywords = (photo.keywords || []).slice(0, 5).join(', ');
-      const taxa = (photo.taxa || []).map(taxonDisplayName).filter(Boolean).slice(0, 4).join(', ');
-      const title = photoDisplayTitle(photo);
-      card.innerHTML = `
-        <button class="photo-select${selected ? ' selected' : ''}" type="button"
-          data-photo-id="${Number(photo.id)}" aria-pressed="${selected ? 'true' : 'false'}"
-          title="${selected ? 'Retirer de la sélection' : 'Sélectionner pour l’album'}">${selected ? '✓' : '+'}</button>
-        <img src="${photo.thumbUrl}" alt="${escapeHtml(title)}" loading="lazy">
-        <div class="photo-card-body">
-          <div class="photo-title" title="${escapeHtml(photoDisplayTooltip(photo, title))}">${escapeHtml(title)}</div>
-          <div class="photo-meta">${escapeHtml(photo.date || 'Date inconnue')}${photo.rating ? ' · ' + Number(photo.rating) + '★' : ''}</div>
-          <div class="photo-meta">${escapeHtml(photo.model || '')}${photo.lens ? ' · ' + escapeHtml(photo.lens) : ''}</div>
-          ${people ? `<div class="photo-tags">${escapeHtml(people)}</div>` : ''}
-          ${taxa ? `<div class="photo-tags">${escapeHtml(taxa)}</div>` : ''}
-          ${keywords ? `<div class="photo-tags muted">${escapeHtml(keywords)}</div>` : ''}
-        </div>
-      `;
-      card.querySelector('.photo-select').addEventListener('click', event => {
-        event.stopPropagation();
-        togglePhotoSelection(photo);
-      });
-      card.addEventListener('click', event => {
-        if (event.target.closest('button')) return;
-        togglePhotoSelection(photo);
-      });
-      card.querySelector('img').addEventListener('error', event => {
-        event.currentTarget.replaceWith(Object.assign(document.createElement('div'), {
-          className: 'photo-missing',
-          textContent: 'Miniature indisponible',
-        }));
-      });
-      grid.appendChild(card);
-    }
-  }
-
-  updateAlbumSelectionUI();
+  renderPhotoModalGrid();
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
+}
+
+function renderPhotoModalGrid() {
+  const grid = document.getElementById('photo-grid');
+  if (!grid) return;
+  const photos = photoModalSourcePhotos;
+  photoModalShown = photos.length;
+  photoModalPhotos = photos;
+  photoModalLastIndex = -1;
+  grid.title = 'Cliquer pour sélectionner · Maj + clic pour sélectionner une plage';
+  grid.innerHTML = '';
+
+  if (!photos.length) {
+    grid.innerHTML = '<div class="photo-empty">Aucune photo ne correspond à cette sélection.</div>';
+    updateAlbumSelectionUI();
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const [index, photo] of photos.entries()) {
+    const card = document.createElement('article');
+    const selected = selectedPhotoIds.has(Number(photo.id));
+    card.className = `photo-card${selected ? ' selected' : ''}`;
+    const people = (photo.people || []).slice(0, 4).join(', ');
+    const keywords = (photo.keywords || []).slice(0, 5).join(', ');
+    const taxa = (photo.taxa || []).map(taxonDisplayName).filter(Boolean).slice(0, 4).join(', ');
+    const title = photoDisplayTitle(photo);
+    card.innerHTML = `
+      <button class="photo-select${selected ? ' selected' : ''}" type="button"
+        data-photo-id="${Number(photo.id)}" aria-pressed="${selected ? 'true' : 'false'}"
+        title="${selected ? 'Retirer de la sélection' : 'Sélectionner pour l’album'}">${selected ? '✓' : '+'}</button>
+      <img src="${photo.thumbUrl}" alt="${escapeHtml(title)}" loading="lazy">
+      <div class="photo-card-body">
+        <div class="photo-title" title="${escapeHtml(photoDisplayTooltip(photo, title))}">${escapeHtml(title)}</div>
+        <div class="photo-meta">${escapeHtml(photo.date || 'Date inconnue')}${photo.rating ? ' · ' + Number(photo.rating) + '★' : ''}</div>
+        <div class="photo-meta">${escapeHtml(photo.model || '')}${photo.lens ? ' · ' + escapeHtml(photo.lens) : ''}</div>
+        ${people ? `<div class="photo-tags">${escapeHtml(people)}</div>` : ''}
+        ${taxa ? `<div class="photo-tags">${escapeHtml(taxa)}</div>` : ''}
+        ${keywords ? `<div class="photo-tags muted">${escapeHtml(keywords)}</div>` : ''}
+      </div>
+    `;
+    card.querySelector('.photo-select').addEventListener('click', event => {
+      event.stopPropagation();
+      selectPhotoFromModal(photo, index, event);
+    });
+    card.addEventListener('click', event => {
+      if (event.target.closest('button')) return;
+      selectPhotoFromModal(photo, index, event);
+    });
+    card.querySelector('img').addEventListener('error', event => {
+      event.currentTarget.replaceWith(Object.assign(document.createElement('div'), {
+        className: 'photo-missing',
+        textContent: 'Miniature indisponible',
+      }));
+    });
+    fragment.appendChild(card);
+  }
+  grid.appendChild(fragment);
+  updateAlbumSelectionUI();
+}
+
+async function reloadPhotoModalWithSort() {
+  const sequence = ++photoModalSortSeq;
+  const select = document.getElementById('photo-sort');
+  if (select) select.disabled = true;
+  try {
+    const result = await filterPhotos(currentMode, { sort: photoModalSort });
+    if (sequence !== photoModalSortSeq) return;
+    const modal = document.getElementById('photo-modal');
+    if (!modal?.classList.contains('open')) return;
+    openPhotoModal(result);
+  } finally {
+    if (sequence === photoModalSortSeq && select) select.disabled = false;
+  }
+}
+
+function setPhotoModalSort(value) {
+  photoModalSort = PHOTO_SORTS.has(value) ? value : 'date_desc';
+  const select = document.getElementById('photo-sort');
+  if (select) select.value = photoModalSort;
+  try {
+    localStorage.setItem('select.photoSort', photoModalSort);
+  } catch (_) {
+    // Le tri reste actif pour la session.
+  }
+  reloadPhotoModalWithSort();
 }
 
 function closePhotoModal() {
@@ -2121,6 +2777,12 @@ document.getElementById('photo-modal-close')?.addEventListener('click', closePho
 document.getElementById('photo-modal')?.addEventListener('click', event => {
   if (event.target.id === 'photo-modal') closePhotoModal();
 });
+document.getElementById('photo-sort')?.addEventListener('change', event => {
+  setPhotoModalSort(event.target.value);
+});
+document.getElementById('photo-shuffle')?.addEventListener('click', () => {
+  setPhotoModalSort('random');
+});
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     closePhotoModal();
@@ -2128,22 +2790,72 @@ document.addEventListener('keydown', event => {
   }
 });
 
+document.getElementById('exit-app')?.addEventListener('click', async () => {
+  try {
+    await fetch('/api/shutdown', { method: 'POST', keepalive: true });
+  } catch (_) {
+    // Le serveur peut déjà être arrêté.
+  }
+  window.open('', '_self');
+  window.close();
+  setTimeout(() => {
+    document.body.innerHTML =
+      '<main style="display:grid;place-items:center;height:100vh;font-family:sans-serif;background:#171a27;color:#edf0f7">' +
+      '<div style="text-align:center"><h1>Serveur arrêté</h1><p>Vous pouvez fermer cette fenêtre.</p></div></main>';
+  }, 250);
+});
+
+let databaseTotalFetchedAt = 0;
+async function loadDatabaseTotal({ force = false } = {}) {
+  const element = document.getElementById('database-count');
+  if (!element) return;
+  if (!force && Date.now() - databaseTotalFetchedAt < 15000) return;
+  databaseTotalFetchedAt = Date.now();
+  try {
+    const response = await fetch('/api/health', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Base indisponible');
+    const data = await response.json();
+    const total = Number(data.tables?.photos ?? 0);
+    element.innerHTML = `<strong>${total.toLocaleString('fr-FR')}</strong> photo${total > 1 ? 's' : ''} dans la base`;
+    element.hidden = false;
+  } catch (_) {
+    element.textContent = 'Base indisponible';
+    element.hidden = false;
+  }
+}
+window.addEventListener('focus', () => loadDatabaseTotal());
+
 // Initialiser le mode par défaut au chargement
+async function preferredSelectApp() {
+  try {
+    const data = await fetch('/api/preferences').then(r => r.json());
+    return typeof data.defaultApp === 'string' ? data.defaultApp : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function initializeDefaultMode() {
   if (!Object.keys(datasets).length) await initializeDatasets();
   const defaultDataset = thesaurusConfig?.defaultThesaurus || 'family';
-  const initialApp = defaultDataset === 'fauna' && datasets.fauna ? 'faune' : 'face';
+  const fallback = defaultDataset === 'fauna' && datasets.fauna ? 'faune' : 'face';
+  const preferred = await preferredSelectApp();
+  let initialApp = APP_MODES[preferred] ? preferred : fallback;
+  const dataset = APP_MODES[initialApp]?.dataset;
+  if (dataset && !datasets[dataset]) initialApp = fallback;
   await activateAppMode(initialApp);
 }
 
 // Charger les lieux au démarrage
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
+    loadDatabaseTotal({ force: true });
     loadLocationHierarchy();
     initializeFilters();
     initializeDefaultMode();
   });
 } else {
+  loadDatabaseTotal({ force: true });
   loadLocationHierarchy();
   initializeFilters();
   initializeDefaultMode();

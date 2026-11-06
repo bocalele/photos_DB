@@ -11,14 +11,21 @@
   let loaded = false;
   let loading = false;
   let saving = false;
+  let applyingDefaults = false;
   let thumbnailObserver;
   let defaultAuthor = "Pierre";
   let defaultRating = 3;
+  let defaultGroup = 1;
+  let noKeywordsOnly = false;
 
   // Editor state
   let editorKeywords = [];
+  let editorKeywordAdditions = [];
+  let editorKeywordRemovals = [];
+  let editorClearKeywords = false;
   let editorKeywordsTouched = false;
   let editorAuthorInitial = "";
+  let editorGroupInitial = null;
   let editorRating = null;
   let editorRatingMixed = false;
   let editorRatingTouched = false;
@@ -37,6 +44,9 @@
       const data = await requestJson("/api/preferences");
       defaultAuthor = data.default_author || "Pierre";
       defaultRating = data.default_rating ?? 3;
+      defaultGroup = Number.isInteger(data.default_group) && data.default_group >= 1
+        ? data.default_group
+        : 1;
     } catch (error) {
       console.warn("Impossible de charger les préférences :", error);
     }
@@ -61,9 +71,10 @@
         totalPhotos = data.total;
         byId("directory-path").textContent = data.directory;
         appendPhotoCards(data.photos, startIndex);
-        updatePhotoCount();
+        applyNoKeywordsFilter();
       } while (photos.length < totalPhotos);
       loaded = true;
+      applyNoKeywordsFilter();
       if (!photos.length) {
         const empty = document.createElement("p");
         empty.className = "message";
@@ -77,13 +88,65 @@
     }
   }
 
+  function photoHasNoKeywords(photo) {
+    return photo.metadataRead !== false
+      && (!photo.keywords || photo.keywords.length === 0);
+  }
+
+  function needsKeywordAttention(photo) {
+    return photoHasNoKeywords(photo) && !photo.hasIdentifiedPerson;
+  }
+
+  function markKeywordAttention(card, photo) {
+    const needsAttention = needsKeywordAttention(photo);
+    card.classList.toggle("needs-keywords", needsAttention);
+    card.title = needsAttention
+      ? `${photo.name}\nSans mot-clé et sans personne identifiée`
+      : photo.name;
+  }
+
+  function visiblePhotos() {
+    return noKeywordsOnly ? photos.filter(photoHasNoKeywords) : photos;
+  }
+
+  function applyNoKeywordsFilter() {
+    const noKeywords = photos.filter(photoHasNoKeywords).length;
+    for (const photo of photos) {
+      const card = cardsByName.get(photo.name);
+      if (card) card.hidden = noKeywordsOnly && !photoHasNoKeywords(photo);
+    }
+    if (noKeywordsOnly) {
+      for (const name of [...selectedNames]) {
+        const photo = photos.find(item => item.name === name);
+        if (!photo || !photoHasNoKeywords(photo)) {
+          selectedNames.delete(name);
+          updateCardSelection(name);
+        }
+      }
+    }
+    byId("no-keywords-count").textContent = String(noKeywords);
+    byId("filter-no-keywords").classList.toggle("active", noKeywordsOnly);
+    byId("filter-no-keywords").setAttribute("aria-pressed", String(noKeywordsOnly));
+    updatePhotoCount();
+  }
+
   function updatePhotoCount() {
-    byId("photo-count").textContent =
-      `${photos.length}${photos.length === totalPhotos ? "" : ` / ${totalPhotos}`} photo(s) · ` +
-      `${selectedNames.size} sélectionnée(s)`;
-    byId("select-all").disabled = photos.length === 0;
+    const noKeywords = photos.filter(photoHasNoKeywords).length;
+    if (noKeywordsOnly && photos.length && noKeywords === 0) {
+      byId("photo-count").textContent = "Aucune photo sans mot-clé dans ce dossier.";
+    } else {
+      byId("photo-count").textContent =
+        `${photos.length}${photos.length === totalPhotos ? "" : ` / ${totalPhotos}`} photo(s) · ` +
+        `${selectedNames.size} sélectionnée(s)` +
+        (noKeywordsOnly ? ` · filtre : ${noKeywords} sans mot-clé` : "");
+    }
+    byId("select-all").disabled = visiblePhotos().length === 0;
     byId("deselect-photos").disabled = selectedNames.size === 0;
-    byId("edit-keywords").disabled = selectedNames.size === 0 || saving;
+    byId("filter-no-keywords").disabled = photos.length === 0;
+    byId("edit-keywords").disabled =
+      selectedNames.size === 0 || saving || applyingDefaults;
+    byId("apply-defaults").disabled =
+      photos.length === 0 || saving || applyingDefaults;
   }
 
   function showMessage(message, isError = false) {
@@ -115,9 +178,10 @@
       const index = startIndex + i;
       const card = document.createElement("article");
       card.className = "photo-card";
-      card.title = photo.name;
       card.dataset.index = index;
       card.dataset.name = photo.name;
+      card.hidden = noKeywordsOnly && !photoHasNoKeywords(photo);
+      markKeywordAttention(card, photo);
 
       const selectionControls = document.createElement("div");
       selectionControls.className = "photo-selection-controls";
@@ -191,6 +255,13 @@
       caption.appendChild(author);
     }
 
+    if (Number(photo.groupe || 1) !== 1) {
+      const group = document.createElement("div");
+      group.className = "photo-group";
+      group.textContent = `Groupe ${photo.groupe}`;
+      caption.appendChild(group);
+    }
+
     return caption;
   }
 
@@ -238,6 +309,8 @@
     const oldCaption = card.querySelector(".photo-caption");
     const newCaption = buildCaption(photo);
     oldCaption.replaceWith(newCaption);
+    card.hidden = noKeywordsOnly && !photoHasNoKeywords(photo);
+    markKeywordAttention(card, photo);
   }
 
   function handleCardClick(name, index, event) {
@@ -245,6 +318,7 @@
       const start = Math.min(lastClickedIndex, index);
       const end = Math.max(lastClickedIndex, index);
       for (let i = start; i <= end; i++) {
+        if (noKeywordsOnly && !photoHasNoKeywords(photos[i])) continue;
         selectedNames.add(photos[i].name);
         updateCardSelection(photos[i].name);
       }
@@ -276,6 +350,7 @@
   }
 
   async function saveRating(name, value) {
+    if (applyingDefaults) return;
     const photo = photosByName.get(name);
     if (!photo) return;
     const token = (ratingSaveTokens.get(name) || 0) + 1;
@@ -326,28 +401,69 @@
     const ratings = [...new Set(
       selectedPhotos.map(photo => photo.rating).filter(value => value != null)
     )];
+    const groups = [...new Set(
+      selectedPhotos
+        .map(photo => Number(photo.groupe ?? 1))
+        .filter(value => Number.isInteger(value) && value >= 1)
+    )];
 
     return {
       allKeywords: [...allKeywords].sort((a, b) => a.localeCompare(b, "fr")),
       commonKeywords,
       authors,
       ratings,
+      groups,
     };
   }
 
   // ------------------------------------------------------------------ //
   // Editor
   // ------------------------------------------------------------------ //
+  const keywordKey = value => value.toLocaleLowerCase("fr");
+
+  function rememberKeywordAddition(value) {
+    const key = keywordKey(value);
+    editorKeywordRemovals = editorKeywordRemovals.filter(
+      item => keywordKey(item) !== key
+    );
+    if (!editorKeywordAdditions.some(item => keywordKey(item) === key)) {
+      editorKeywordAdditions.push(value);
+    }
+  }
+
+  function rememberKeywordRemoval(value) {
+    const key = keywordKey(value);
+    editorKeywordAdditions = editorKeywordAdditions.filter(
+      item => keywordKey(item) !== key
+    );
+    if (!editorKeywordRemovals.some(item => keywordKey(item) === key)) {
+      editorKeywordRemovals.push(value);
+    }
+  }
+
+  function hasKeywordChanges() {
+    return editorClearKeywords
+      || editorKeywordAdditions.length > 0
+      || editorKeywordRemovals.length > 0;
+  }
+
   function openEditor() {
     const data = collectSelectedData();
     if (!data) return;
 
-    byId("selected-count").textContent = `${selectedNames.size} photo(s) sélectionnée(s)`;
+    const partialCount = data.allKeywords.length - data.commonKeywords.size;
+    byId("selected-count").textContent = partialCount
+      ? `${selectedNames.size} photo(s) sélectionnée(s) · ` +
+        `${partialCount} mot(s)-clé(s) présent(s) seulement sur certaines photos`
+      : `${selectedNames.size} photo(s) sélectionnée(s)`;
 
     editorKeywords = data.allKeywords.map(keyword => ({
       value: keyword,
       common: data.commonKeywords.has(keyword),
     }));
+    editorKeywordAdditions = [];
+    editorKeywordRemovals = [];
+    editorClearKeywords = false;
     editorKeywordsTouched = false;
     renderKeywordChips();
 
@@ -365,6 +481,21 @@
     authorInput.placeholder = data.authors.length > 1
       ? "Auteurs différents — saisir une valeur pour toutes les photos"
       : "Nom de l'auteur";
+
+    const groupInput = byId("group-input");
+    if (data.groups.length === 1) {
+      editorGroupInitial = data.groups[0];
+      groupInput.value = String(data.groups[0]);
+    } else if (data.groups.length > 1) {
+      editorGroupInitial = null;
+      groupInput.value = "";
+    } else {
+      editorGroupInitial = defaultGroup;
+      groupInput.value = String(defaultGroup);
+    }
+    groupInput.placeholder = data.groups.length > 1
+      ? "Groupes différents — saisir une valeur pour toutes les photos"
+      : `Groupe (${defaultGroup} par défaut)`;
 
     editorRatingMixed = data.ratings.length > 1;
     if (editorRatingMixed) {
@@ -422,6 +553,7 @@
       remove.setAttribute("aria-label", `Retirer ${keyword.value}`);
       remove.addEventListener("click", () => {
         editorKeywords = editorKeywords.filter(item => item !== keyword);
+        rememberKeywordRemoval(keyword.value);
         editorKeywordsTouched = true;
         renderKeywordChips();
         byId("keyword-input").focus();
@@ -434,19 +566,41 @@
   function addKeywordsFromInput() {
     const input = byId("keyword-input");
     const parts = input.value.split(",").map(part => part.trim()).filter(Boolean);
-    let added = false;
+    let changed = false;
     for (const value of parts) {
-      const exists = editorKeywords.some(
-        item => item.value.toLocaleLowerCase("fr") === value.toLocaleLowerCase("fr")
-      );
-      if (!exists) {
-        editorKeywords.push({ value, common: true });
-        added = true;
+      const existing = editorKeywords.find(item => keywordKey(item.value) === keywordKey(value));
+      if (existing) {
+        // Un mot-clé grisé n'est présent que sur une partie de la sélection :
+        // le ressaisir signifie qu'on veut l'appliquer à toutes les photos.
+        if (!existing.common) {
+          existing.common = true;
+          rememberKeywordAddition(value);
+          changed = true;
+        }
+        continue;
       }
+      editorKeywords.push({ value, common: true });
+      rememberKeywordAddition(value);
+      changed = true;
     }
     input.value = "";
-    if (added) editorKeywordsTouched = true;
+    if (changed) editorKeywordsTouched = true;
     renderKeywordChips();
+  }
+
+  function clearAllKeywords() {
+    if (!selectedNames.size) return;
+    const label = selectedNames.size === 1
+      ? "cette photo"
+      : `${selectedNames.size} photos sélectionnées`;
+    if (!window.confirm(`Supprimer tous les mots-clés de ${label} ?`)) return;
+    editorKeywords = [];
+    editorKeywordAdditions = [];
+    editorKeywordRemovals = [];
+    editorClearKeywords = true;
+    editorKeywordsTouched = true;
+    renderKeywordChips();
+    byId("keyword-input").focus();
   }
 
   function renderEditorRating() {
@@ -485,17 +639,34 @@
     }
   }
 
+  function editorGroupValue() {
+    const input = byId("group-input");
+    const raw = input.value.trim();
+    if (raw === "") return null;
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value < 1) return NaN;
+    return value;
+  }
+
   function getEditorData() {
     const authorInput = byId("author-input");
     const authorValue = authorInput.value.trim();
     const authorChanged = authorValue !== editorAuthorInitial;
+    const groupValue = editorGroupValue();
+    const groupChanged = Number.isInteger(groupValue)
+      && groupValue !== editorGroupInitial;
 
     return {
       photoNames: [...selectedNames],
-      keywords: editorKeywordsTouched
-        ? editorKeywords.map(item => item.value)
+      keywordOperations: editorKeywordsTouched && hasKeywordChanges()
+        ? {
+            clear: editorClearKeywords,
+            add: [...editorKeywordAdditions],
+            remove: [...editorKeywordRemovals],
+          }
         : null,
       author: authorChanged ? authorValue : null,
+      groupe: groupChanged ? groupValue : null,
       rating: editorRatingTouched ? editorRating : null,
     };
   }
@@ -505,12 +676,27 @@
   // ------------------------------------------------------------------ //
   async function saveKeywords() {
     if (!selectedNames.size || saving) return;
+    const groupInput = byId("group-input");
+    if (groupInput.value.trim() !== "" && Number.isNaN(editorGroupValue())) {
+      groupInput.focus();
+      const status = byId("save-status");
+      status.textContent = "Le groupe doit être un entier positif.";
+      status.className = "error";
+      return;
+    }
     const data = getEditorData();
-    if (data.keywords === null && data.author === null && data.rating === null) {
+    if (
+      data.keywordOperations === null
+      && data.author === null
+      && data.groupe === null
+      && data.rating === null
+    ) {
       closeEditor();
       return;
     }
 
+    // Les mots-clés partiels ne sont jamais recopiés implicitement : seules
+    // les opérations explicitement demandées sont appliquées au lot.
     const button = byId("save-keywords");
     const status = byId("save-status");
     button.disabled = true;
@@ -552,9 +738,33 @@
       const successfulNames = new Set(job.updated);
       for (const photo of photos) {
         if (!successfulNames.has(photo.name)) continue;
-        if (data.keywords !== null) photo.keywords = data.keywords;
-        if (data.rating !== null) photo.rating = data.rating;
-        if (data.author !== null) photo.author = data.author;
+        const metadata = job.metadata?.[photo.name];
+        if (metadata) {
+          if (metadata.keywords !== undefined) photo.keywords = metadata.keywords || [];
+          if (metadata.rating !== undefined) photo.rating = metadata.rating;
+          if (metadata.author !== undefined) photo.author = metadata.author;
+          if (metadata.groupe != null) photo.groupe = metadata.groupe;
+        } else {
+          if (data.keywordOperations) {
+            let keywords = data.keywordOperations.clear ? [] : [...(photo.keywords || [])];
+            const removed = new Set(
+              data.keywordOperations.remove.map(item => keywordKey(item))
+            );
+            keywords = keywords.filter(item => !removed.has(keywordKey(item)));
+            const seen = new Set(keywords.map(item => keywordKey(item)));
+            for (const item of data.keywordOperations.add) {
+              const key = keywordKey(item);
+              if (!seen.has(key)) {
+                seen.add(key);
+                keywords.push(item);
+              }
+            }
+            photo.keywords = keywords;
+          }
+          if (data.rating !== null) photo.rating = data.rating;
+          if (data.author !== null) photo.author = data.author;
+          if (data.groupe !== null) photo.groupe = data.groupe;
+        }
         photo.metadataRead = true;
         validatedNames.add(photo.name);
       }
@@ -563,7 +773,7 @@
         refreshCard(name);
         updateCardSelection(name);
       }
-      updatePhotoCount();
+      applyNoKeywordsFilter();
 
       for (const error of job.errors) {
         const item = document.createElement("li");
@@ -590,18 +800,107 @@
   }
 
   // ------------------------------------------------------------------ //
+  // Default author and rating
+  // ------------------------------------------------------------------ //
+  async function applyDefaults() {
+    if (applyingDefaults || !photos.length) return;
+    const button = byId("apply-defaults");
+    const panel = byId("defaults-progress");
+    const progress = byId("defaults-progress-bar");
+    const status = byId("defaults-status");
+    const errors = byId("defaults-errors");
+    applyingDefaults = true;
+    button.textContent = "Application…";
+    panel.hidden = false;
+    progress.value = 0;
+    errors.replaceChildren();
+    status.textContent = "Recherche des photos sans auteur ou sans note…";
+    status.className = "";
+    updatePhotoCount();
+
+    try {
+      const started = await requestJson("/api/apply-defaults", { method: "POST" });
+      let job;
+      const startedAt = Date.now();
+      do {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        job = await requestJson(
+          `/api/apply-defaults?jobId=${encodeURIComponent(started.jobId)}`
+        );
+        progress.max = job.total || 1;
+        progress.value = job.done;
+        status.textContent =
+          `Vérification : ${job.done}/${job.total} photo(s) examinée(s), ` +
+          `${job.updated.length} complétée(s), ${job.skipped} déjà complète(s), ` +
+          `${job.errors.length} erreur(s).`;
+        if (!job.complete && Date.now() - startedAt > 15 * 60 * 1000) {
+          throw new Error(
+            "L’application des valeurs par défaut ne répond plus " +
+            "(délai de 15 minutes dépassé)."
+          );
+        }
+      } while (!job.complete);
+
+      const updated = new Set(job.updated || []);
+      for (const name of updated) {
+        const photo = photosByName.get(name);
+        const metadata = job.metadata?.[name];
+        if (!photo || !metadata) continue;
+        Object.assign(photo, metadata);
+        photo.metadataRead = true;
+        validatedNames.add(name);
+        refreshCard(name);
+        updateCardSelection(name);
+      }
+
+      if (job.updated.length) {
+        status.textContent =
+          `${job.updated.length} photo(s) complétée(s), ` +
+          `${job.skipped} déjà complète(s), ${job.errors.length} erreur(s).`;
+      } else if (job.errors.length) {
+        status.textContent =
+          `Aucune photo complétée ; ${job.errors.length} erreur(s) ` +
+          `sur ${job.total} photo(s) examinée(s).`;
+      } else {
+        status.textContent =
+          `Toutes les photos ont déjà un auteur et une note ` +
+          `(${job.skipped} vérifiée(s)).`;
+      }
+      status.className = job.errors.length ? "error" : "success";
+      for (const error of job.errors) {
+        const item = document.createElement("li");
+        item.textContent = `${error.filename || "Application"} : ${error.message}`;
+        errors.appendChild(item);
+      }
+    } catch (error) {
+      status.textContent = error.message;
+      status.className = "error";
+    } finally {
+      applyingDefaults = false;
+      button.textContent = "Compléter auteur et note";
+      updatePhotoCount();
+    }
+  }
+
+  // ------------------------------------------------------------------ //
   // Events
   // ------------------------------------------------------------------ //
   byId("thumbnail-size").addEventListener("input", event => {
     byId("photo-grid").style.setProperty("--tile-size", `${event.target.value}px`);
   });
   byId("select-all").addEventListener("click", () => {
-    for (const photo of photos) {
+    const targets = visiblePhotos();
+    for (const photo of targets) {
       selectedNames.add(photo.name);
       updateCardSelection(photo.name);
     }
-    lastClickedIndex = photos.length - 1;
+    const last = targets.at(-1);
+    lastClickedIndex = last ? photos.indexOf(last) : -1;
     updatePhotoCount();
+  });
+  byId("filter-no-keywords").addEventListener("click", () => {
+    noKeywordsOnly = !noKeywordsOnly;
+    applyNoKeywordsFilter();
   });
   byId("deselect-photos").addEventListener("click", () => {
     selectedNames.clear();
@@ -624,6 +923,7 @@
         loaded = false;
         selectedNames.clear();
         validatedNames.clear();
+        noKeywordsOnly = false;
         lastClickedIndex = -1;
         await loadPhotos();
       }
@@ -635,6 +935,8 @@
     }
   });
   byId("edit-keywords").addEventListener("click", openEditor);
+  byId("apply-defaults").addEventListener("click", applyDefaults);
+  byId("clear-keywords").addEventListener("click", clearAllKeywords);
   byId("cancel").addEventListener("click", closeEditor);
   byId("save-keywords").addEventListener("click", saveKeywords);
   byId("keyword-add-button").addEventListener("click", addKeywordsFromInput);
@@ -654,6 +956,27 @@
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") closeEditor();
   });
+
+  async function exitApplication() {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "photos-exit" }, "*");
+      return;
+    }
+    try {
+      await fetch("/api/shutdown", { method: "POST", keepalive: true });
+    } catch (_) {
+      // Le serveur peut déjà être arrêté.
+    }
+    window.open("", "_self");
+    window.close();
+    setTimeout(() => {
+      document.body.innerHTML =
+        '<main style="display:grid;place-items:center;height:100vh;font-family:sans-serif;background:#171a27;color:#edf0f7">' +
+        '<div style="text-align:center"><h1>Serveur arrêté</h1><p>Vous pouvez fermer cette fenêtre.</p></div></main>';
+    }, 250);
+  }
+
+  byId("exit-app")?.addEventListener("click", exitApplication);
 
   loadPhotos();
 })();

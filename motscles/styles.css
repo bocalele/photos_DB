@@ -23,6 +23,8 @@ button {
   cursor: pointer;
 }
 button:hover { background: #3a415e; }
+button.exit-button { color: #ff8787; border-color: #ff878755; }
+button.exit-button:hover { background: #ff87871f; }
 button:disabled { opacity: .55; cursor: default; }
 .primary { border: 0; background: var(--accent); color: #171a27; font-weight: 650; }
 .primary:hover { background: #ffd061; }
@@ -58,6 +60,17 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .thumbnail-size { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .thumbnail-size input { width: 110px; accent-color: var(--accent); }
 .gallery-tools { justify-content: flex-start; flex-wrap: wrap; }
+#filter-no-keywords { display: inline-flex; align-items: center; gap: 7px; }
+#filter-no-keywords.active { border-color: var(--accent); color: var(--accent); }
+.tool-count {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f1be4c26;
+  color: var(--accent);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.photo-card[hidden] { display: none; }
 
 #photo-grid {
   --tile-size: 170px;
@@ -84,6 +97,18 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 }
 .photo-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px #f1be4c40; }
 .photo-card.validated { border-color: var(--success); box-shadow: 0 0 0 2px #39c77a40; }
+.photo-card.needs-keywords {
+  border-color: #ff5c5c;
+  box-shadow: 0 0 0 1px #ff5c5c66;
+}
+.photo-card.needs-keywords.selected {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px #ff5c5c, 0 0 0 2px #f1be4c40;
+}
+.photo-card.needs-keywords.validated {
+  border-color: var(--success);
+  box-shadow: inset 0 0 0 2px #ff5c5c, 0 0 0 2px #39c77a40;
+}
 .photo-card img {
   display: block;
   width: 100%;
@@ -157,6 +182,16 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   font-style: italic;
   overflow-wrap: anywhere;
 }
+.photo-group {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 5px;
+  border: 1px solid #f1be4c55;
+  border-radius: 3px;
+  color: var(--accent);
+  font-size: 9px;
+  line-height: 1.4;
+}
 
 .message { grid-column: 1 / -1; padding: 30px 10px; color: var(--muted); text-align: center; }
 
@@ -167,23 +202,44 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .editor h2 { margin: 0; font-size: 18px; }
 .editor > p { margin: -8px 0 0; color: var(--muted); font-size: 13px; }
 .section-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+.keyword-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.link-danger {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--error);
+  font-size: 11px;
+  line-height: 1.2;
+}
+.link-danger:hover { background: none; text-decoration: underline; }
 
-.keywords-section, .author-section, .rating-section {
+.keywords-section, .author-section, .group-section, .rating-section {
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
-.author-section label {
+.author-section label, .group-section label {
   display: flex;
   flex-direction: column;
   gap: 6px;
   color: var(--muted);
   font-size: 12px;
 }
-.keywords-hint, .author-hint, .rating-hint {
+.keywords-hint, .author-hint, .group-hint, .rating-hint {
   margin: 0;
   color: var(--muted);
   font-size: 11px;
+}
+.group-hint code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #ffffff10;
+  font-size: 10px;
 }
 .mixed-indicator { color: var(--accent); font-weight: 600; }
 
@@ -248,7 +304,16 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .metadata-progress { color: var(--muted); font-size: 12px; }
 .metadata-progress progress { display: block; width: 100%; height: 12px; margin-bottom: 6px; accent-color: var(--accent); }
-#save-errors { max-height: 120px; overflow: auto; margin: 6px 0 0; padding-left: 20px; color: var(--error); }
+.defaults-progress {
+  padding: 9px 18px 11px;
+  border-bottom: 1px solid #ffffff18;
+  background: var(--panel);
+}
+.defaults-progress progress { display: block; width: 100%; height: 12px; margin-bottom: 6px; accent-color: var(--accent); }
+#defaults-status { color: var(--muted); font-size: 12px; }
+#defaults-status.success { color: var(--success); }
+#defaults-status.error { color: var(--error); }
+#save-errors, #defaults-errors { max-height: 120px; overflow: auto; margin: 6px 0 0; padding-left: 20px; color: var(--error); }
 #save-status { min-height: 18px; color: var(--muted); font-size: 12px; }
 #save-status.error { color: var(--error); }
 #save-status.success { color: var(--success); }
@@ -263,5 +328,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .rating-stars .star { font-size: 26px; }
 }
 
-/* Intégrée dans l’application Annotations : le dossier se change depuis la barre globale. */
-.embedded #change-directory { display: none; }
+/* Intégrée dans l’application Annotations : le dossier et l’arrêt sont gérés
+   depuis la barre globale, avec un seul bouton Quitter. */
+.embedded #change-directory,
+.embedded #exit-app { display: none; }

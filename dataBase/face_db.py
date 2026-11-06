@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Base SQLite des visages : photos indexées, embeddings et personnes de référence.
 
-La base vit à côté de `photos.db` (dossier `_DATA` du fonds photo) et ne contient
-que des données reconstructibles : elle peut être supprimée et reconstruite par
-`index.py` sans rien perdre d'irremplaçable.
+La base vit à côté de `photos.db` (dossier `_DATA` du fonds photo). Elle contient
+l’index reconstructible des visages, plus les décisions de travail
+« sans nom » (`Face.ignored`) et « détection invalidée » (`Face.invalid`).
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ PREVIEWS_DIR = environment.previews_dir()
 # décrites dans `preferences.json` (environment.legacy_photo_roots).
 LEGACY_ROOTS = environment.legacy_photo_roots()
 
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "3"
 # Version du traitement d'indexation. La changer force la réanalyse des photos
 # déjà indexées (préviews plus grandes, nouveau détecteur, correction de bugs…).
 PIPELINE_VERSION = "2"
@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS Face (
     x2 REAL NOT NULL, y2 REAL NOT NULL,
     det_score REAL NOT NULL,
     embedding BLOB NOT NULL,        -- float32[512], normalisé L2
+    ignored INTEGER NOT NULL DEFAULT 0, -- validé « sans nom » par l'utilisateur
+    invalid INTEGER NOT NULL DEFAULT 0, -- détection considérée comme non-visage
     UNIQUE(relpath, face_idx)
 );
 CREATE INDEX IF NOT EXISTS idx_face_relpath ON Face(relpath);
@@ -124,6 +126,15 @@ def create_schema(conn: sqlite3.Connection) -> None:
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(Photo)")}
     if "pipeline" not in columns:
         conn.execute("ALTER TABLE Photo ADD COLUMN pipeline TEXT")
+    face_columns = {row["name"] for row in conn.execute("PRAGMA table_info(Face)")}
+    if "ignored" not in face_columns:
+        conn.execute(
+            "ALTER TABLE Face ADD COLUMN ignored INTEGER NOT NULL DEFAULT 0"
+        )
+    if "invalid" not in face_columns:
+        conn.execute(
+            "ALTER TABLE Face ADD COLUMN invalid INTEGER NOT NULL DEFAULT 0"
+        )
     conn.execute(
         "INSERT INTO Meta(key, value) VALUES('schema_version', ?) "
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
@@ -177,6 +188,33 @@ def is_current(conn: sqlite3.Connection, relpath: str, size: int, mtime: float) 
     )
 
 
+def face_decisions(conn: sqlite3.Connection, relpath: str) -> list[sqlite3.Row]:
+    """Décisions « sans nom » et « détection invalidée » d'une photo.
+
+    Ces décisions ne sont pas dans les XMP : elles sont réappariées par boîte
+    lors d'une réindexation pour ne pas être perdues.
+    """
+    return conn.execute(
+        """
+        SELECT x1, y1, x2, y2, ignored, invalid
+        FROM Face
+        WHERE relpath = ? AND (ignored = 1 OR invalid = 1)
+        """,
+        (relpath,),
+    ).fetchall()
+
+
+def ignored_face_boxes(
+    conn: sqlite3.Connection, relpath: str
+) -> list[tuple[float, float, float, float]]:
+    """Boîtes des visages validés sans nom, avant une réindexation."""
+    return [
+        (row["x1"], row["y1"], row["x2"], row["y2"])
+        for row in face_decisions(conn, relpath)
+        if row["ignored"] and not row["invalid"]
+    ]
+
+
 def save_photo(
     conn: sqlite3.Connection,
     relpath: str,
@@ -211,8 +249,11 @@ def save_photo(
         for index, face in enumerate(faces):
             cursor = conn.execute(
                 """
-                INSERT INTO Face(relpath, face_idx, x1, y1, x2, y2, det_score, embedding)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO Face(
+                    relpath, face_idx, x1, y1, x2, y2, det_score, embedding,
+                    ignored, invalid
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     relpath,
@@ -223,10 +264,12 @@ def save_photo(
                     float(face["bbox"][3]),
                     float(face["det_score"]),
                     pack(face["embedding"]),
+                    1 if face.get("ignored") and not face.get("invalid") else 0,
+                    1 if face.get("invalid") else 0,
                 ),
             )
             label = labels_by_index.get(index)
-            if label is not None:
+            if label is not None and not face.get("invalid"):
                 conn.execute(
                     """
                     INSERT INTO FaceLabel(id_face, id_people, name, score, source)
@@ -265,14 +308,22 @@ def save_error(
 def summary(conn: sqlite3.Connection) -> dict:
     photos = conn.execute("SELECT COUNT(*) FROM Photo").fetchone()[0]
     errors = conn.execute("SELECT COUNT(*) FROM Photo WHERE error IS NOT NULL").fetchone()[0]
-    faces = conn.execute("SELECT COUNT(*) FROM Face").fetchone()[0]
-    labelled = conn.execute("SELECT COUNT(*) FROM FaceLabel").fetchone()[0]
-    people = conn.execute("SELECT COUNT(DISTINCT id_people) FROM FaceLabel").fetchone()[0]
+    faces = conn.execute("SELECT COUNT(*) FROM Face WHERE invalid = 0").fetchone()[0]
+    invalid = conn.execute("SELECT COUNT(*) FROM Face WHERE invalid = 1").fetchone()[0]
+    labelled = conn.execute(
+        "SELECT COUNT(*) FROM FaceLabel l JOIN Face f ON f.id = l.id_face "
+        "WHERE f.invalid = 0"
+    ).fetchone()[0]
+    people = conn.execute(
+        "SELECT COUNT(DISTINCT l.id_people) FROM FaceLabel l "
+        "JOIN Face f ON f.id = l.id_face WHERE f.invalid = 0"
+    ).fetchone()[0]
     reference = conn.execute("SELECT COUNT(*) FROM RefPerson").fetchone()[0]
     return {
         "photos": photos,
         "erreurs": errors,
         "visages": faces,
+        "visages_invalides": invalid,
         "visages_etiquetes": labelled,
         "personnes_etiquetees": people,
         "personnes_reference": reference,
@@ -291,6 +342,7 @@ def photo_faces(conn: sqlite3.Connection, relpath: str) -> list[sqlite3.Row]:
     return conn.execute(
         """
         SELECT f.id, f.face_idx, f.x1, f.y1, f.x2, f.y2, f.det_score, f.embedding,
+               f.ignored, f.invalid,
                l.id_people, l.name, l.score AS label_score
         FROM Face f
         LEFT JOIN FaceLabel l ON l.id_face = f.id
@@ -302,21 +354,101 @@ def photo_faces(conn: sqlite3.Connection, relpath: str) -> list[sqlite3.Row]:
 
 
 def status_map(conn: sqlite3.Connection) -> dict[str, dict]:
-    """État de chaque photo indexée : nombre de visages et de visages nommés."""
+    """État de chaque photo indexée : visages nommés ou validés sans nom."""
     status = {
-        row["relpath"]: {"n_faces": row["n_faces"], "n_labels": 0, "error": row["error"]}
+        row["relpath"]: {
+            "n_faces": row["n_faces"],
+            "n_labels": 0,
+            "n_ignored": 0,
+            "n_invalid": 0,
+            "error": row["error"],
+        }
         for row in conn.execute("SELECT relpath, n_faces, error FROM Photo")
     }
     for row in conn.execute(
         """
-        SELECT f.relpath, COUNT(*) AS n_labels
-        FROM Face f JOIN FaceLabel l ON l.id_face = f.id
+        SELECT f.relpath,
+               SUM(CASE WHEN f.invalid = 0 AND l.id_face IS NOT NULL
+                        THEN 1 ELSE 0 END) AS n_labels,
+               SUM(CASE WHEN f.invalid = 0 AND l.id_face IS NULL AND f.ignored = 1
+                        THEN 1 ELSE 0 END) AS n_ignored,
+               SUM(CASE WHEN f.invalid = 1 THEN 1 ELSE 0 END) AS n_invalid
+        FROM Face f LEFT JOIN FaceLabel l ON l.id_face = f.id
         GROUP BY f.relpath
         """
     ):
         if row["relpath"] in status:
-            status[row["relpath"]]["n_labels"] = row["n_labels"]
+            status[row["relpath"]]["n_labels"] = int(row["n_labels"] or 0)
+            status[row["relpath"]]["n_ignored"] = int(row["n_ignored"] or 0)
+            status[row["relpath"]]["n_invalid"] = int(row["n_invalid"] or 0)
     return status
+
+
+def set_face_ignored(
+    conn: sqlite3.Connection, relpath: str, face_idx: int, ignored: bool
+) -> None:
+    """Valide un visage « sans nom » (ou annule cette validation)."""
+    with conn:
+        if ignored:
+            conn.execute(
+                """
+                DELETE FROM FaceLabel
+                WHERE id_face IN (
+                    SELECT id FROM Face WHERE relpath = ? AND face_idx = ?
+                )
+                """,
+                (relpath, face_idx),
+            )
+        conn.execute(
+            "UPDATE Face SET ignored = ?, invalid = 0 "
+            "WHERE relpath = ? AND face_idx = ?",
+            (1 if ignored else 0, relpath, face_idx),
+        )
+
+
+def set_face_invalid(
+    conn: sqlite3.Connection, relpath: str, face_idx: int, invalid: bool
+) -> None:
+    """Marque une détection comme non-visage (ou annule cette décision)."""
+    with conn:
+        if invalid:
+            conn.execute(
+                """
+                DELETE FROM FaceLabel
+                WHERE id_face IN (
+                    SELECT id FROM Face WHERE relpath = ? AND face_idx = ?
+                )
+                """,
+                (relpath, face_idx),
+            )
+        conn.execute(
+            "UPDATE Face SET invalid = ?, ignored = 0 "
+            "WHERE relpath = ? AND face_idx = ?",
+            (1 if invalid else 0, relpath, face_idx),
+        )
+
+
+def mark_current(
+    conn: sqlite3.Connection,
+    relpath: str,
+    size: int,
+    mtime: float,
+    pipeline: str = PIPELINE_VERSION,
+) -> None:
+    """Marque la photo comme indexée après une écriture de métadonnées.
+
+    Sans cela, le changement de mtime provoqué par ExifTool ferait réindexer la
+    photo au prochain affichage et effacerait les décisions de travail.
+    """
+    with conn:
+        conn.execute(
+            """
+            UPDATE Photo
+            SET size = ?, mtime = ?, pipeline = ?
+            WHERE relpath = ?
+            """,
+            (size, mtime, pipeline, relpath),
+        )
 
 
 def replace_labels(conn: sqlite3.Connection, relpath: str, labels: list[dict]) -> None:
@@ -476,12 +608,12 @@ def photo_dimensions(
 
 
 def unlabelled_faces(conn: sqlite3.Connection) -> list[sqlite3.Row]:
-    """Visages indexés qui n'ont encore aucune étiquette."""
+    """Visages indexés qui n'ont ni nom ni validation « sans nom »."""
     return conn.execute(
         """
         SELECT f.relpath, f.face_idx, f.det_score, f.embedding
         FROM Face f LEFT JOIN FaceLabel l ON l.id_face = f.id
-        WHERE l.id_face IS NULL
+        WHERE l.id_face IS NULL AND f.ignored = 0 AND f.invalid = 0
         """
     ).fetchall()
 
@@ -494,7 +626,7 @@ def labelled_faces(conn: sqlite3.Connection) -> list[sqlite3.Row]:
                l.id_people, l.name, l.score, l.source
         FROM Face f
         JOIN FaceLabel l ON l.id_face = f.id
-        WHERE l.source IN ('xmp', 'manuel')
+        WHERE l.source IN ('xmp', 'manuel') AND f.invalid = 0
         """
     ).fetchall()
 

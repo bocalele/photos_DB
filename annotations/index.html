@@ -27,11 +27,14 @@
       <button id="sync-database" type="button" class="secondary sync-button"
               title="Mettre à jour photos.db pour le dossier courant (personnes, mots-clés, taxons, lieux)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-4.4 0-8 1.3-8 3v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6c0-1.7-3.6-3-8-3zm0 2c3.6 0 6 .8 6 1s-2.4 1-6 1-6-.8-6-1 2.4-1 6-1zm6 13c0 .2-2.4 1-6 1s-6-.8-6-1v-2.2c1.5.7 3.7 1.2 6 1.2s4.5-.5 6-1.2V18zm0-5c0 .2-2.4 1-6 1s-6-.8-6-1v-2.2c1.5.7 3.7 1.2 6 1.2s4.5-.5 6-1.2V13z"/></svg>
-        <span>photos.db</span>
+        <span class="sync-label">photos.db</span>
+        <span class="sync-state" aria-hidden="true"></span>
       </button>
       <button id="open-external" type="button" class="ghost" title="Ouvrir l’application active dans un onglet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7h-2V6.4l-8.3 8.3-1.4-1.4L17.6 5H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"/></svg>
       </button>
+      <button id="exit-app" type="button" class="secondary exit-button"
+              title="Quitter et arrêter tous les serveurs">Quitter</button>
     </div>
   </header>
 
@@ -55,5 +58,28 @@
   </main>
 
   <div id="notice" class="notice" role="status" hidden></div>
+
+  <div id="exit-overlay" class="exit-overlay" hidden>
+    <div class="exit-dialog" role="dialog" aria-modal="true" aria-labelledby="exit-title">
+      <h2 id="exit-title">Quitter Annotations</h2>
+      <p>
+        Des modifications ont été faites. Voulez-vous mettre à jour
+        <strong>photos.db</strong> avant de quitter ?
+      </p>
+      <p class="exit-hint">
+        La synchronisation vérifie les métadonnées écrites dans les fichiers.
+        Vous pouvez aussi quitter directement.
+      </p>
+      <div class="exit-actions">
+        <button id="exit-cancel" type="button" class="secondary">Annuler</button>
+        <button id="exit-without-save" type="button" class="secondary">
+          Quitter sans synchroniser
+        </button>
+        <button id="exit-save" type="button" class="primary">
+          Mettre à jour photos.db et quitter
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

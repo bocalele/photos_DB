@@ -21,7 +21,6 @@ PROJECT_DIR = APP_DIR.parent
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from dataBase import photos_db
 from tools import environment, preferences
 from tools.getMetaData import getGPS, get_metadata_many
 from tools.setMetaData import set_metadata
@@ -163,8 +162,14 @@ class GeotagHandler(BaseHTTPRequestHandler):
             self.handle_change_directory()
         elif route == "/api/directory":
             self.handle_set_directory()
+        elif route == "/api/shutdown":
+            self.handle_shutdown()
         else:
             self.send_error(404)
+
+    def handle_shutdown(self):
+        self.send_json({"status": "shutting_down"})
+        threading.Thread(target=self.server.shutdown, daemon=True).start()
 
     def handle_save_location(self):
         try:
@@ -334,12 +339,6 @@ class GeotagHandler(BaseHTTPRequestHandler):
                 },
             },
         )
-        try:
-            photos_db.record_location_for_path(
-                environment.photos_root(), path, latitude, longitude, sub_location, country
-            )
-        except Exception as error:
-            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
 
     def send_static(self, filename, content_type):
         path = APP_DIR / filename

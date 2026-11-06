@@ -11,6 +11,7 @@ import json
 import mimetypes
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -53,6 +54,7 @@ ALL_METADATA_TAGS = KEYWORDS_TAGS + RATING_TAGS + AUTHOR_TAGS
 MAX_SELECTED_PHOTOS = 500
 DEFAULT_AUTHOR = "Pierre"
 DEFAULT_RATING = 3
+DEFAULT_GROUP = 1
 
 thumbnail_lock = threading.Lock()
 preview_cache: OrderedDict[tuple[str, int, int], tuple[bytes, str]] = OrderedDict()
@@ -72,6 +74,146 @@ def metadata_values(*values) -> list[str]:
     for value in flattened:
         unique.setdefault(value.casefold(), value)
     return list(unique.values())
+
+
+def merge_keyword_operations(current: list[str], operations: dict) -> list[str]:
+    """Applique des ajouts/retraits à la liste réellement présente dans XMP.
+
+    Le client ne renvoie plus la liste complète des mots-clés : celle-ci peut
+    être devenue obsolète si une autre application (Faune, Visages…) a modifié
+    le fichier entre-temps. On relit donc toujours l'état courant avant de
+    fusionner les opérations demandées.
+    """
+    result = [] if operations.get("clear") else metadata_values(current)
+    removed = {
+        annotations.normalize_name(value)
+        for value in operations.get("remove", [])
+        if annotations.normalize_name(value)
+    }
+    if removed:
+        result = [
+            value for value in result
+            if annotations.normalize_name(value) not in removed
+        ]
+    seen = {annotations.normalize_name(value) for value in result}
+    for value in operations.get("add", []):
+        cleaned = str(value or "").strip()
+        key = annotations.normalize_name(cleaned)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        result.append(cleaned)
+    return result
+
+
+def _photo_relpath(path: Path) -> str | None:
+    """Chemin relatif à la racine photo, pour interroger les index dérivés."""
+    root = environment.photos_root().expanduser().resolve()
+    try:
+        return path.expanduser().resolve().relative_to(root).as_posix()
+    except (OSError, ValueError):
+        return None
+
+
+def identified_person_paths(paths: list[str]) -> set[str]:
+    """Photos du lot ayant au moins une personne identifiée.
+
+    On interroge les deux index disponibles : ``photos.db`` pour les liens
+    dérivés des métadonnées, et ``face.db`` pour les noms attribués dans
+    Visages et pas encore synchronisés. Un visage validé « sans nom » ou
+    invalidé ne compte pas comme une identification.
+    """
+    unique = [value for value in dict.fromkeys(paths) if value]
+    if not unique:
+        return set()
+    result: set[str] = set()
+
+    def chunks(values: list[str], size: int = 400):
+        for start in range(0, len(values), size):
+            yield values[start:start + size]
+
+    for chunk in chunks(unique):
+        placeholders = ",".join("?" for _ in chunk)
+
+        face_path = environment.face_db()
+        if face_path.is_file():
+            try:
+                conn = sqlite3.connect(
+                    f"file:{quote(str(face_path))}?mode=ro",
+                    uri=True,
+                    timeout=2,
+                )
+                try:
+                    rows = conn.execute(
+                        "SELECT DISTINCT f.relpath FROM Face f "
+                        "JOIN FaceLabel l ON l.id_face = f.id "
+                        f"WHERE f.invalid = 0 AND f.relpath IN ({placeholders})",
+                        chunk,
+                    ).fetchall()
+                finally:
+                    conn.close()
+                result.update(str(row[0]) for row in rows)
+            except sqlite3.Error:
+                pass
+
+        photos_path = environment.photos_db()
+        if photos_path.is_file():
+            try:
+                conn = sqlite3.connect(
+                    f"file:{quote(str(photos_path))}?mode=ro",
+                    uri=True,
+                    timeout=2,
+                )
+                try:
+                    rows = conn.execute(
+                        "SELECT DISTINCT p.relpath FROM photos p "
+                        "JOIN photo_people pp ON pp.photo_id = p.id "
+                        f"WHERE p.relpath IN ({placeholders})",
+                        chunk,
+                    ).fetchall()
+                finally:
+                    conn.close()
+                result.update(str(row[0]) for row in rows)
+            except sqlite3.Error:
+                pass
+    return result
+
+
+def photo_groups(paths: list[str], default: int = DEFAULT_GROUP) -> dict[str, int]:
+    """Groupes d'accès stockés dans ``photos.db`` pour les chemins demandés."""
+    unique = [value for value in dict.fromkeys(paths) if value]
+    if not unique:
+        return {}
+    result: dict[str, int] = {}
+    photos_path = environment.photos_db()
+    if not photos_path.is_file():
+        return result
+    try:
+        conn = sqlite3.connect(
+            f"file:{quote(str(photos_path))}?mode=ro",
+            uri=True,
+            timeout=2,
+        )
+        try:
+            for start in range(0, len(unique), 400):
+                chunk = unique[start:start + 400]
+                placeholders = ",".join("?" for _ in chunk)
+                rows = conn.execute(
+                    "SELECT relpath, groupe FROM photos "
+                    f"WHERE relpath IN ({placeholders})",
+                    chunk,
+                ).fetchall()
+                for relpath, group in rows:
+                    try:
+                        value = int(group)
+                    except (TypeError, ValueError):
+                        value = default
+                    result[str(relpath)] = max(1, value)
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        pass
+    return result
 
 
 def read_photo_keywords_rating_author(metadata: dict) -> dict:
@@ -123,11 +265,22 @@ def write_photo_metadata(
     keywords: list[str] | None,
     rating: int | None,
     author: str | None,
-    root: Path | None = None,
+    keyword_operations: dict | None = None,
+    group: int | None = None,
 ) -> dict:
     iptc_data: dict = {}
     xmp_data: dict = {}
     exif_data: dict = {}
+
+    if keyword_operations is not None:
+        current_records = get_metadata_many([str(path)], tags=KEYWORDS_TAGS)
+        current_metadata = current_records.get(str(path))
+        if current_metadata is None:
+            raise RuntimeError(
+                f"ExifTool n’a pas pu relire les mots-clés de {path.name}."
+            )
+        current_keywords = read_photo_keywords_rating_author(current_metadata)["keywords"]
+        keywords = merge_keyword_operations(current_keywords, keyword_operations)
 
     if keywords is not None:
         cleaned = metadata_values(keywords)
@@ -151,20 +304,22 @@ def write_photo_metadata(
         categories["XMP"] = xmp_data
     if exif_data:
         categories["EXIF"] = exif_data
-    set_metadata(path, categories)
-    if root is not None:
-        try:
-            photos_db.record_keywords_rating_author_for_path(
-                root, path, keywords, rating, author
-            )
-        except Exception as error:
-            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
 
-    updated_records = get_metadata_many([str(path)], tags=ALL_METADATA_TAGS)
-    updated = updated_records.get(str(path))
-    if updated is None:
-        raise RuntimeError(f"ExifTool n’a pas pu relire les métadonnées de {path.name}.")
-    return read_photo_keywords_rating_author(updated)
+    result: dict = {}
+    if categories:
+        set_metadata(path, categories)
+        updated_records = get_metadata_many([str(path)], tags=ALL_METADATA_TAGS)
+        updated = updated_records.get(str(path))
+        if updated is None:
+            raise RuntimeError(f"ExifTool n’a pas pu relire les métadonnées de {path.name}.")
+        result = read_photo_keywords_rating_author(updated)
+
+    if group is not None:
+        value = photos_db.record_group_for_path(
+            environment.photos_root(), path, int(group)
+        )
+        result["groupe"] = value
+    return result
 
 
 @lru_cache(maxsize=4)
@@ -278,6 +433,26 @@ def write_preferences(changes: dict) -> None:
     preferences.update_app("motscles", changes)
 
 
+def default_author_rating() -> tuple[str, int]:
+    """Valeurs par défaut effectives de l'application Mots-clés."""
+    settings = read_preferences()
+    author = settings.get("default_author")
+    rating = settings.get("default_rating")
+    if not isinstance(author, str) or not author.strip():
+        author = DEFAULT_AUTHOR
+    if not isinstance(rating, int) or not 1 <= rating <= 5:
+        rating = DEFAULT_RATING
+    return author.strip(), rating
+
+
+def default_group() -> int:
+    """Groupe d'accès proposé pour une photo qui n'en a pas encore."""
+    configured = read_preferences().get("default_group")
+    if isinstance(configured, bool) or not isinstance(configured, int) or configured < 1:
+        return DEFAULT_GROUP
+    return configured
+
+
 def initial_directory_from_preferences() -> Path:
     configured = preferences.value("initial_directory")
     if not isinstance(configured, str) or not configured.strip():
@@ -357,6 +532,8 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             self.send_thumbnail(query)
         elif parsed.path == "/api/save-metadata":
             self.save_job_status(query)
+        elif parsed.path == "/api/apply-defaults":
+            self.defaults_job_status(query)
         elif parsed.path == "/api/preferences":
             self.get_preferences()
         else:
@@ -366,6 +543,8 @@ class MotsclesHandler(BaseHTTPRequestHandler):
         route = urlparse(self.path).path
         if route == "/api/save-metadata":
             self.handle_save_metadata()
+        elif route == "/api/apply-defaults":
+            self.handle_apply_defaults()
         elif route == "/api/update-photo":
             self.handle_update_photo()
         elif route == "/api/change-directory":
@@ -374,23 +553,24 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             self.handle_set_directory()
         elif route == "/api/preferences":
             self.save_preferences()
+        elif route == "/api/shutdown":
+            self.handle_shutdown()
         else:
             self.send_error(404)
+
+    def handle_shutdown(self):
+        self.send_json({"status": "shutting_down"})
+        threading.Thread(target=self.server.shutdown, daemon=True).start()
 
     # ------------------------------------------------------------------ #
     # Preferences
     # ------------------------------------------------------------------ #
     def get_preferences(self):
-        settings = read_preferences()
-        author = settings.get("default_author")
-        rating = settings.get("default_rating")
-        if not isinstance(author, str) or not author.strip():
-            author = DEFAULT_AUTHOR
-        if not isinstance(rating, int) or not 1 <= rating <= 5:
-            rating = DEFAULT_RATING
+        author, rating = default_author_rating()
         self.send_json({
             "default_author": author,
             "default_rating": rating,
+            "default_group": default_group(),
             "initial_directory": preferences.value("initial_directory", ""),
         })
 
@@ -406,6 +586,15 @@ class MotsclesHandler(BaseHTTPRequestHandler):
                 rating = data["default_rating"]
                 if isinstance(rating, (int, float)) and 1 <= rating <= 5:
                     changes["default_rating"] = int(rating)
+            if "default_group" in data:
+                group = data["default_group"]
+                if (
+                    not isinstance(group, bool)
+                    and isinstance(group, (int, float))
+                    and int(group) == group
+                    and group >= 1
+                ):
+                    changes["default_group"] = int(group)
             settings = write_preferences(changes)
             self.send_json({"preferences": settings})
         except (ValueError, json.JSONDecodeError) as error:
@@ -473,6 +662,15 @@ class MotsclesHandler(BaseHTTPRequestHandler):
     # ------------------------------------------------------------------ #
     # Photos listing
     # ------------------------------------------------------------------ #
+    def photo_files(self) -> list[Path]:
+        return sorted(
+            (
+                path for path in self.photos_dir.iterdir()
+                if path.is_file() and path.suffix.lower() in PHOTO_EXTENSIONS
+            ),
+            key=lambda path: path.name.casefold(),
+        )
+
     def list_photos(self, query: dict[str, list[str]]):
         try:
             offset = max(0, int(query.get("offset", ["0"])[0]))
@@ -480,13 +678,7 @@ class MotsclesHandler(BaseHTTPRequestHandler):
         except ValueError:
             self.send_json({"error": "Paramètres de pagination invalides."}, 400)
             return
-        files = sorted(
-            (
-                path for path in self.photos_dir.iterdir()
-                if path.is_file() and path.suffix.lower() in PHOTO_EXTENSIONS
-            ),
-            key=lambda path: path.name.casefold(),
-        )
+        files = self.photo_files()
         page = files[offset:offset + limit]
         metadata_by_path = {}
         metadata_error = ""
@@ -494,9 +686,22 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             metadata_by_path = read_photo_metadata([path.resolve() for path in page])
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
             metadata_error = str(error)
+        relpaths = {
+            path: _photo_relpath(path)
+            for path in page
+        }
+        indexed_relpaths = [value for value in relpaths.values() if value]
+        identified = identified_person_paths(indexed_relpaths)
+        groups = photo_groups(indexed_relpaths)
         self.send_json({
             "photos": [
-                self.photo_listing(path, metadata_by_path, metadata_error)
+                self.photo_listing(
+                    path,
+                    metadata_by_path,
+                    metadata_error,
+                    bool(relpaths[path] and relpaths[path] in identified),
+                    groups.get(relpaths[path], DEFAULT_GROUP),
+                )
                 for path in page
             ],
             "offset": offset,
@@ -505,7 +710,14 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             "directory": str(self.photos_dir),
         })
 
-    def photo_listing(self, path: Path, metadata_by_path: dict, metadata_error: str) -> dict:
+    def photo_listing(
+        self,
+        path: Path,
+        metadata_by_path: dict,
+        metadata_error: str,
+        has_identified_person: bool,
+        group: int,
+    ) -> dict:
         metadata = metadata_by_path.get(str(path.resolve()))
         if metadata is None:
             photo_data = {
@@ -520,6 +732,8 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             "name": path.name,
             "thumbnail": f"/api/thumbnail?name={quote(path.name)}",
             **photo_data,
+            "groupe": group,
+            "hasIdentifiedPerson": has_identified_person,
             "metadataError": metadata_error,
         }
 
@@ -562,12 +776,31 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             if not isinstance(name, str) or self.photo_path(name) is None:
                 raise ValueError("Photo absente du dossier sélectionné.")
             keywords = self.validate_keywords(data.get("keywords")) if "keywords" in data else None
+            keyword_operations = (
+                self.validate_keyword_operations(data.get("keywordOperations"))
+                if "keywordOperations" in data
+                else None
+            )
             rating = self.validate_rating(data.get("rating")) if "rating" in data else None
             author = self.validate_author(data.get("author")) if "author" in data else None
-            if keywords is None and rating is None and author is None:
+            group = self.validate_group(data.get("groupe")) if "groupe" in data else None
+            if keywords is not None and keyword_operations is not None:
+                raise ValueError("Fournissez soit les mots-clés, soit les opérations, pas les deux.")
+            if (
+                keywords is None
+                and keyword_operations is None
+                and rating is None
+                and author is None
+                and group is None
+            ):
                 raise ValueError("Aucune modification fournie.")
             metadata = write_photo_metadata(
-                self.photo_path(name), keywords, rating, author, environment.photos_root()
+                self.photo_path(name),
+                keywords,
+                rating,
+                author,
+                keyword_operations=keyword_operations,
+                group=group,
             )
             _read_photo_metadata.cache_clear()
             self.send_json({"photoName": name, "metadata": metadata})
@@ -575,6 +808,132 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             self.send_json({"error": str(error)}, 400)
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
             self.send_json({"error": str(error)}, 500)
+
+    # ------------------------------------------------------------------ #
+    # Default author and rating
+    # ------------------------------------------------------------------ #
+    def handle_apply_defaults(self):
+        try:
+            author, rating = default_author_rating()
+            paths = self.photo_files()
+            job_id = uuid.uuid4().hex
+            job = {
+                "total": len(paths),
+                "done": 0,
+                "complete": False,
+                "updated": [],
+                "skipped": 0,
+                "metadata": {},
+                "errors": [],
+            }
+            with jobs_lock:
+                completed_jobs = [
+                    key for key, value in jobs.items() if value["complete"]
+                ]
+                while len(jobs) >= 20 and completed_jobs:
+                    jobs.pop(completed_jobs.pop(0), None)
+                jobs[job_id] = job
+            threading.Thread(
+                target=self.run_apply_defaults_job,
+                args=(job_id, paths, author, rating),
+                daemon=True,
+            ).start()
+            self.send_json({
+                "jobId": job_id,
+                "total": len(paths),
+                "default_author": author,
+                "default_rating": rating,
+            }, 202)
+        except (OSError, RuntimeError) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def run_apply_defaults_job(
+        self,
+        job_id: str,
+        paths: list[Path],
+        author: str,
+        rating: int,
+    ):
+        try:
+            metadata_by_path = read_photo_metadata([path.resolve() for path in paths])
+            pending = []
+            for path in paths:
+                metadata = metadata_by_path.get(str(path.resolve()))
+                if metadata is None:
+                    with jobs_lock:
+                        jobs[job_id]["errors"].append({
+                            "filename": path.name,
+                            "message": "Métadonnées illisibles.",
+                        })
+                        jobs[job_id]["done"] += 1
+                    continue
+                current = read_photo_keywords_rating_author(metadata)
+                missing_author = not current["author"]
+                missing_rating = current["rating"] is None
+                if not missing_author and not missing_rating:
+                    with jobs_lock:
+                        jobs[job_id]["skipped"] += 1
+                        jobs[job_id]["done"] += 1
+                    continue
+                pending.append((path, missing_author, missing_rating))
+
+            if pending:
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    futures = {
+                        executor.submit(
+                            write_photo_metadata,
+                            path,
+                            None,
+                            rating if missing_rating else None,
+                            author if missing_author else None,
+                        ): path.name
+                        for path, missing_author, missing_rating in pending
+                    }
+                    for future in as_completed(futures):
+                        name = futures[future]
+                        try:
+                            metadata = future.result()
+                            with jobs_lock:
+                                jobs[job_id]["updated"].append(name)
+                                jobs[job_id]["metadata"][name] = metadata
+                        except Exception as error:
+                            with jobs_lock:
+                                jobs[job_id]["errors"].append({
+                                    "filename": name,
+                                    "message": str(error),
+                                })
+                        finally:
+                            with jobs_lock:
+                                jobs[job_id]["done"] += 1
+        except Exception as error:
+            print(f"Job {job_id} interrompu : {error}", flush=True)
+            with jobs_lock:
+                jobs[job_id]["errors"].append({
+                    "filename": "",
+                    "message": str(error),
+                })
+                jobs[job_id]["done"] = jobs[job_id]["total"]
+        finally:
+            _read_photo_metadata.cache_clear()
+            with jobs_lock:
+                if job_id in jobs:
+                    jobs[job_id]["complete"] = True
+
+    def defaults_job_status(self, query: dict[str, list[str]]):
+        job_id = query.get("jobId", [""])[0]
+        with jobs_lock:
+            job = jobs.get(job_id)
+            if job is not None:
+                job = {
+                    **job,
+                    "updated": list(job["updated"]),
+                    "metadata": dict(job["metadata"]),
+                    "errors": list(job["errors"]),
+                }
+        if job is None:
+            self.send_json({"error": "Cette application des valeurs par défaut est introuvable."}, 404)
+            return
+        self.send_json({"jobId": job_id, **job})
 
     # ------------------------------------------------------------------ #
     # Batch save
@@ -592,9 +951,23 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             ):
                 raise ValueError(f"Sélectionnez de 1 à {MAX_SELECTED_PHOTOS} photos.")
             keywords = self.validate_keywords(data.get("keywords")) if "keywords" in data else None
+            keyword_operations = (
+                self.validate_keyword_operations(data.get("keywordOperations"))
+                if "keywordOperations" in data
+                else None
+            )
             rating = self.validate_rating(data.get("rating")) if "rating" in data else None
             author = self.validate_author(data.get("author")) if "author" in data else None
-            if keywords is None and rating is None and author is None:
+            group = self.validate_group(data.get("groupe")) if "groupe" in data else None
+            if keywords is not None and keyword_operations is not None:
+                raise ValueError("Fournissez soit les mots-clés, soit les opérations, pas les deux.")
+            if (
+                keywords is None
+                and keyword_operations is None
+                and rating is None
+                and author is None
+                and group is None
+            ):
                 raise ValueError("Aucune modification fournie.")
             paths = []
             for name in names:
@@ -609,6 +982,7 @@ class MotsclesHandler(BaseHTTPRequestHandler):
                 "done": 0,
                 "complete": False,
                 "updated": [],
+                "metadata": {},
                 "errors": [],
             }
             with jobs_lock:
@@ -621,7 +995,10 @@ class MotsclesHandler(BaseHTTPRequestHandler):
 
             threading.Thread(
                 target=self.run_save_job,
-                args=(job_id, paths, keywords, rating, author),
+                args=(
+                    job_id, paths, keywords, rating, author,
+                    keyword_operations, group,
+                ),
                 daemon=True,
             ).start()
             self.send_json({"jobId": job_id}, 202)
@@ -640,6 +1017,21 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             raise ValueError("Mots-clés en double (insensible à la casse).")
         return cleaned
 
+    def validate_keyword_operations(self, value) -> dict | None:
+        if value is None:
+            return None
+        if not isinstance(value, dict):
+            raise ValueError("Les opérations sur les mots-clés sont invalides.")
+        additions = self.validate_keywords(value.get("add", [])) or []
+        removals = self.validate_keywords(value.get("remove", [])) or []
+        clear = bool(value.get("clear"))
+        overlap = {kw.casefold() for kw in additions} & {kw.casefold() for kw in removals}
+        if overlap:
+            raise ValueError("Un mot-clé ne peut pas être ajouté et retiré à la fois.")
+        if not clear and not additions and not removals:
+            return None
+        return {"add": additions, "remove": removals, "clear": clear}
+
     @staticmethod
     def validate_rating(value) -> int | None:
         if value is None:
@@ -656,6 +1048,19 @@ class MotsclesHandler(BaseHTTPRequestHandler):
             raise ValueError("L’auteur doit être une chaîne de caractères.")
         return value.strip()
 
+    @staticmethod
+    def validate_group(value) -> int | None:
+        if value is None:
+            return None
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or int(value) != value
+            or value < 1
+        ):
+            raise ValueError("Le groupe doit être un entier positif.")
+        return int(value)
+
     def save_job_status(self, query: dict[str, list[str]]):
         job_id = query.get("jobId", [""])[0]
         with jobs_lock:
@@ -664,6 +1069,7 @@ class MotsclesHandler(BaseHTTPRequestHandler):
                 job = {
                     **job,
                     "updated": list(job["updated"]),
+                    "metadata": dict(job["metadata"]),
                     "errors": list(job["errors"]),
                 }
         if job is None:
@@ -678,21 +1084,30 @@ class MotsclesHandler(BaseHTTPRequestHandler):
         keywords: list[str] | None,
         rating: int | None,
         author: str | None,
+        keyword_operations: dict | None,
+        group: int | None,
     ):
         try:
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = {
                     executor.submit(
-                        write_photo_metadata, path, keywords, rating, author, environment.photos_root()
+                        write_photo_metadata,
+                        path,
+                        keywords,
+                        rating,
+                        author,
+                        keyword_operations,
+                        group,
                     ): path.name
                     for path in paths
                 }
                 for future in as_completed(futures):
                     name = futures[future]
                     try:
-                        future.result()
+                        metadata = future.result()
                         with jobs_lock:
                             jobs[job_id]["updated"].append(name)
+                            jobs[job_id]["metadata"][name] = metadata
                     except Exception as error:
                         with jobs_lock:
                             jobs[job_id]["errors"].append({

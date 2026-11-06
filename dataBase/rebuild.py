@@ -249,6 +249,13 @@ def load_thesaurus(directory: Path | str | None):
     return annotations.load_thesaurus(directory)
 
 
+def load_taxonomy(
+    taxref_directory: Path | str | None,
+    thesaurus_directory: Path | str | None = None,
+):
+    return annotations.load_taxonomy(taxref_directory, thesaurus_directory)
+
+
 def _choose_node(candidates):
     if not candidates:
         return None
@@ -325,6 +332,7 @@ def parse_record(
             _first(exif, "ExposureCompensation", "Photo.ExposureBiasValue",
                    "ExposureBiasValue", "Photo.ExposureCompensation")
         ),
+        "flash": _int(_first(exif, "Flash", "Photo.Flash")),
         "width": _int(_first(exif, "ExifImageWidth", "ImageWidth", "Photo.ExifImageWidth")),
         "height": _int(_first(exif, "ExifImageHeight", "ImageHeight", "Photo.ExifImageHeight")),
         "orientation": _int(_first(exif, "Orientation")),
@@ -354,9 +362,13 @@ def parse_record(
         return annotations.taxon_for_text(thesaurus, text) is not None
 
     keywords = []
+    # Seuls IPTC:Keywords et XMP-dc:Subject font foi. Les champs dérivés de
+    # Lightroom (WeightedFlatSubject, LastKeywordXMP) peuvent conserver des
+    # mots-clés supprimés et ne doivent pas les réintroduire lors d'une
+    # reconstruction de photos.db.
     for category, keys in (
         (iptc, ("Keywords",)),
-        (xmp, ("Subject", "WeightedFlatSubject", "LastKeywordXMP")),
+        (xmp, ("Subject",)),
     ):
         for key in keys:
             keywords.extend(
@@ -432,6 +444,11 @@ def legacy_records(db_path: Path | str | None, root: Path) -> dict[str, dict]:
                     "correction": row["exposure_compensation"],
                     "rating": row["rating"],
                     "author": row["author"],
+                    "groupe": (
+                        row["groupe"]
+                        if "groupe" in row.keys()
+                        else 1
+                    ),
                     "largeur": row["width"],
                     "hauteur": row["height"],
                 }
@@ -564,6 +581,7 @@ def classify(
     conn: sqlite3.Connection,
     thesaurus,
     person_index: dict[str, int],
+    taxonomy=None,
 ) -> tuple[list[int], list[dict], list[str]]:
     person_ids: list[int] = []
     for name in facets.get("regions") or []:
@@ -576,6 +594,7 @@ def classify(
         facets.get("hierarchies") or [],
         thesaurus,
         person_index,
+        taxonomy=taxonomy,
     )
     person_ids.extend(keyword_person_ids)
     return sorted(set(person_ids)), taxa, keyword_labels
@@ -597,6 +616,7 @@ def _apply_legacy_fallback(record: dict, old: dict | None) -> None:
         "height": _int(_legacy_value(old, "hauteur")),
         "rating": _int(_legacy_value(old, "rating")),
         "author": _legacy_value(old, "author"),
+        "groupe": _int(_legacy_value(old, "groupe")),
     }
     for key, value in fallback.items():
         if record.get(key) is None and value not in (None, ""):
@@ -614,6 +634,7 @@ def import_record(
     person_index: dict[str, int],
     legacy: dict[str, dict],
     stats: dict,
+    taxonomy=None,
 ) -> None:
     relpath = path.relative_to(root).as_posix()
     record, facets = parse_record(
@@ -636,8 +657,12 @@ def import_record(
         "mtime_ns": stat.st_mtime_ns,
     })
     photo_id = photos_db.upsert_photo(conn, record)
+    if record.get("groupe") is not None:
+        photos_db.set_photo_group(conn, photo_id, int(record["groupe"]))
 
-    person_ids, taxa, keyword_labels = classify(facets, conn, thesaurus, person_index)
+    person_ids, taxa, keyword_labels = classify(
+        facets, conn, thesaurus, person_index, taxonomy=taxonomy
+    )
     photos_db.set_photo_people(conn, photo_id, person_ids, replace=True)
     keyword_ids = photos_db.get_or_create_keywords(conn, keyword_labels)
     photos_db.set_photo_keywords(conn, photo_id, keyword_ids, replace=True)
@@ -681,6 +706,7 @@ def process_batch(
     person_index: dict[str, int],
     legacy: dict[str, dict],
     stats: dict,
+    taxonomy=None,
 ) -> None:
     try:
         metadata = get_metadata_many([str(path) for path in paths])
@@ -690,7 +716,10 @@ def process_batch(
             print(f"  erreur {paths[0]}: {error}", flush=True)
             return
         for path in paths:
-            process_batch(conn, [path], root, thesaurus, person_index, legacy, stats)
+            process_batch(
+                conn, [path], root, thesaurus, person_index, legacy, stats,
+                taxonomy=taxonomy,
+            )
         return
     for path in paths:
         categories = metadata.get(str(path))
@@ -699,7 +728,8 @@ def process_batch(
             continue
         try:
             import_record(
-                conn, path, root, categories, thesaurus, person_index, legacy, stats
+                conn, path, root, categories, thesaurus, person_index, legacy,
+                stats, taxonomy=taxonomy,
             )
         except Exception as error:
             stats["errors"] += 1
@@ -717,6 +747,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--db", help="Base cible (par défaut celle de preferences.json).")
     parser.add_argument("--root", help="Racine des photos (par défaut celle de preferences.json).")
     parser.add_argument("--thesaurus", help="Dossier des thésaurus (par défaut faune/Thesaurus).")
+    parser.add_argument("--taxref", help="Dossier TAXREF (par défaut faune/TAXREF).")
     parser.add_argument("--legacy-db", help="Ancienne base pour reprendre les personnes et les champs absents.")
     parser.add_argument("--limit", type=int, default=0, help="Limite le nombre de fichiers (test).")
     parser.add_argument("--replace", action="store_true", help="Remplace la base cible après sauvegarde.")
@@ -732,12 +763,19 @@ def main(argv: list[str] | None = None) -> int:
     if not root.is_dir():
         print(f"Racine introuvable : {root}", file=sys.stderr)
         return 2
-    thesaurus = load_thesaurus(args.thesaurus or environment.thesaurus_dir())
+    taxonomy = load_taxonomy(
+        args.taxref or environment.taxref_dir(),
+        args.thesaurus or environment.thesaurus_dir(),
+    )
+    thesaurus = getattr(taxonomy, "thesaurus", None) if taxonomy is not None else None
+    if thesaurus is None:
+        thesaurus = load_thesaurus(args.thesaurus or environment.thesaurus_dir())
     if args.dry_run:
         files = list(iter_files(root, args.limit))
         print(f"{len(files)} fichier(s) à importer depuis {root}")
         print(f"Base cible : {target}")
         print(f"Thésaurus : {'oui' if thesaurus is not None else 'non'}")
+        print(f"TAXREF : {'oui' if taxonomy is not None else 'non'}")
         return 0
 
     legacy_source = Path(args.legacy_db).expanduser() if args.legacy_db else (
@@ -784,7 +822,8 @@ def main(argv: list[str] | None = None) -> int:
         files = list(iter_files(root, args.limit))
         print(
             f"Import de {len(files)} fichier(s) depuis {root} "
-            f"(thésaurus : {'oui' if thesaurus is not None else 'non'})",
+            f"(thésaurus : {'oui' if thesaurus is not None else 'non'}, "
+            f"TAXREF : {'oui' if taxonomy is not None else 'non'})",
             flush=True,
         )
         started = time.monotonic()
@@ -792,7 +831,10 @@ def main(argv: list[str] | None = None) -> int:
         for index_value, path in enumerate(files, start=1):
             batch.append(path)
             if len(batch) >= 100:
-                process_batch(conn, batch, root, thesaurus, person_index, legacy, stats)
+                process_batch(
+                    conn, batch, root, thesaurus, person_index, legacy, stats,
+                    taxonomy=taxonomy,
+                )
                 batch = []
                 elapsed = max(time.monotonic() - started, 0.001)
                 print(
@@ -801,7 +843,10 @@ def main(argv: list[str] | None = None) -> int:
                     flush=True,
                 )
         if batch:
-            process_batch(conn, batch, root, thesaurus, person_index, legacy, stats)
+            process_batch(
+                conn, batch, root, thesaurus, person_index, legacy, stats,
+                taxonomy=taxonomy,
+            )
 
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         for key, value in (

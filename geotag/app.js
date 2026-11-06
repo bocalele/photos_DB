@@ -119,6 +119,7 @@
       : null;
     byId("photo-count").textContent =
       `${photos.length} photo(s) · ${selectedNames.size} sélectionnée(s)`;
+    byId("select-all").disabled = photos.length === 0;
     byId("deselect-photos").disabled = selectedNames.size === 0;
     grid.replaceChildren();
     if (!photos.length) {
@@ -346,6 +347,12 @@
   byId("thumbnail-size").addEventListener("input", event => {
     byId("photo-grid").style.setProperty("--tile-size", `${event.target.value}px`);
   });
+  byId("select-all").addEventListener("click", () => {
+    selectedNames.clear();
+    for (const photo of photos) selectedNames.add(photo.name);
+    lastClickedIndex = photos.length - 1;
+    renderPhotos();
+  });
   byId("deselect-photos").addEventListener("click", () => {
     selectedNames.clear();
     lastClickedIndex = -1;
@@ -445,6 +452,27 @@
       localStorage.setItem(STORAGE_KEY, String(ratio));
     });
   })();
+
+  async function exitApplication() {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "photos-exit" }, "*");
+      return;
+    }
+    try {
+      await fetch("/api/shutdown", { method: "POST", keepalive: true });
+    } catch (_) {
+      // Le serveur peut déjà être arrêté.
+    }
+    window.open("", "_self");
+    window.close();
+    setTimeout(() => {
+      document.body.innerHTML =
+        '<main style="display:grid;place-items:center;height:100vh;font-family:sans-serif;background:#171a27;color:#edf0f7">' +
+        '<div style="text-align:center"><h1>Serveur arrêté</h1><p>Vous pouvez fermer cette fenêtre.</p></div></main>';
+    }, 250);
+  }
+
+  byId("exit-app")?.addEventListener("click", exitApplication);
 
   initializeMap();
   loadPhotos();

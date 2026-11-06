@@ -7,7 +7,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Geotag Photos</string>
 	<key>CFBundleExecutable</key>
-	<string>GeotagLauncher</string>
+	<string>applet</string>
 	<key>CFBundleIconFile</key>
 	<string>Geotag</string>
 	<key>CFBundleIdentifier</key>
@@ -20,7 +20,7 @@
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>Geotag Photos ouvre le Terminal pour lancer le serveur local de géolocalisation.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

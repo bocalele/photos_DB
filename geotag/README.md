@@ -18,18 +18,25 @@ Si le chemin indiqué n’existe pas ou si le fichier est invalide, le dossier
 courant est utilisé.
 
 Pour lancer l’application depuis le Dock, ouvrez `Geotag.app` dans ce dossier
-avec Finder, puis faites glisser son icône dans le Dock. L’application ouvre une
-fenêtre Terminal dédiée, lance le serveur et ouvre Safari à la bonne adresse.
-Laissez le fichier `Lancer Geotag.command` à côté de `Geotag.app` ; utilisez
-`Ctrl+C` dans la fenêtre Terminal pour arrêter le serveur.
+avec Finder, puis faites glisser son icône dans le Dock. L’icône sert de
+lanceur : le serveur démarre en arrière-plan et Safari s’ouvre à la bonne
+adresse. Un nouveau clic rouvre l’interface déjà démarrée. Laissez le fichier
+`Lancer Geotag.command` à côté de `Geotag.app` ; le bouton **Quitter** de
+l’application arrête le serveur.
 
 Puis ouvrir <http://127.0.0.1:8000> dans un navigateur. Sélectionnez une ou
-plusieurs photos, puis faites un clic droit sur la carte. Les coordonnées GPS,
+plusieurs photos — **Shift + clic** sélectionne une plage et **Tout
+sélectionner** coche le dossier courant — puis faites un clic droit sur la
+carte. Les coordonnées GPS,
 le sous-lieu et le pays proposés apparaissent dans une fenêtre modifiable.
 « Enregistrer dans les photos » écrit directement les métadonnées dans les
 fichiers sélectionnés : GPS EXIF, sous-lieu et pays IPTC, ainsi que lieu et pays
 XMP. Une barre de progression suit les écritures en parallèle ; les erreurs
 éventuelles sont indiquées par fichier.
+
+Les métadonnées sont la source de vérité : `photos.db` n’est pas modifiée
+immédiatement. Le bouton **photos.db** de la barre d’Annotations reconstruit
+l’index du dossier courant, avec les lieux et les autres champs dérivés.
 
 Les métadonnées existantes sont lues à l’ouverture de la galerie pour afficher
 les indicateurs GPS et lieu et le sous-lieu/pays associés à chaque photo. Les

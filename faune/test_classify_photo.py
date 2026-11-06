@@ -55,6 +55,39 @@ class TaxrefIndexTests(unittest.TestCase):
         )
         self.assertIsNone(taxref.resolve_hierarchical_path("Animaux|Espèce inconnue"))
 
+    def test_resolve_taxon_prefers_taxref_combined_vernacular(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        taxon = taxref.resolve_taxon("Gendarme, Pyrrhocore, Soldat, Suisse")
+
+        self.assertEqual(taxon["scientificName"], "Pyrrhocoris apterus")
+        self.assertEqual(taxon["authority"], "taxref")
+
+    def test_resolve_taxon_prefers_mouton_domestique_over_old_thesaurus(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        taxon = taxref.resolve_taxon("Mouton domestique")
+
+        self.assertEqual(taxon["scientificName"], "Ovis aries")
+        self.assertEqual(taxon["authority"], "taxref")
+        self.assertEqual(taxon["lineage"][-1], "Mouton domestique")
+
+    def test_resolve_hierarchy_keeps_taxref_lineage(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        taxon = taxref.resolve_taxon("Mouton domestique")
+        resolved = taxref.resolve_hierarchy("|".join(taxon["lineage"]))
+
+        self.assertEqual(resolved["scientificName"], "Ovis aries")
+        self.assertEqual(resolved["authority"], "taxref")
+
+    def test_resolve_hierarchy_corrects_legacy_mouflon_label(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        resolved = taxref.resolve_hierarchy(
+            "Mammifères|Artiodactyles|Bovidés|Mouflon"
+        )
+
+        self.assertEqual(resolved["scientificName"], "Ovis aries")
+        self.assertEqual(resolved["vernacularName"], "Mouton domestique")
+        self.assertEqual(resolved["authority"], "taxref")
+
     def test_species_search_matches_scientific_names(self):
         taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
         results = taxref.search_species("Corvus monedula")
@@ -136,6 +169,17 @@ class TaxrefIndexTests(unittest.TestCase):
                 )
             finally:
                 classifier_server.jobs.pop(job_id, None)
+
+    def test_marks_prediction_absent_from_taxref_and_thesaurus_as_custom(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        result = prediction_details(
+            {"species": "Species inconnue du catalogue", "score": 0.42},
+            taxref,
+        )
+
+        self.assertTrue(result["custom"])
+        self.assertEqual(result["lineage"], [])
+        self.assertEqual(result["scientificName"], "Species inconnue du catalogue")
 
     def test_uses_thesaurus_when_species_is_absent_from_taxref(self):
         taxref = TaxrefIndex(
@@ -224,6 +268,187 @@ class TaxrefIndexTests(unittest.TestCase):
         self.assertTrue(result["keywordPresent"])
         self.assertTrue(result["hierarchyPresent"])
         self.assertEqual(result["keywords"], ["Choucas des tours", "Oiseaux"])
+
+    def test_class_options_use_broad_thesaurus_classes(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        options = taxref.class_options()
+        labels = {item["label"] for item in options}
+
+        self.assertTrue(options)
+        self.assertIn("Oiseaux", labels)
+        self.assertIn("Plantes terrestres", labels)
+        self.assertIn("Insectes s.l.", labels)
+        self.assertLess(len(options), 50)
+        self.assertTrue(taxref.is_class_name("Oiseaux"))
+        self.assertTrue(taxref.is_class_name("Plantes terrestres"))
+        # Les anciens taxons manuels peuvent encore porter une classe TAXREF.
+        self.assertTrue(taxref.is_class_name("Aves"))
+        self.assertFalse(taxref.is_class_name("Classe inventée"))
+
+    def test_photo_taxonomy_recognizes_manual_taxon(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        result = classifier_server.photo_taxonomy(
+            {
+                "IPTC": {"Keywords": ["Oiseaux", "Petit oiseau inconnu"]},
+                "XMP": {
+                    "dc.subject": ["Oiseaux", "Petit oiseau inconnu"],
+                    "lr.hierarchicalSubject": ["Oiseaux|Petit oiseau inconnu"],
+                },
+            },
+            taxref,
+        )
+
+        self.assertTrue(result["customTaxon"])
+        self.assertEqual(result["keywordTaxon"]["scientificName"], "Petit oiseau inconnu")
+        self.assertEqual(result["keywordTaxon"]["taxonClass"], "Oiseaux")
+        self.assertFalse(result["keywordPresent"])
+        self.assertFalse(result["hierarchyPresent"])
+
+    def test_custom_taxon_requires_a_known_class(self):
+        taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+        handler = classifier_server.ClassifierHandler.__new__(
+            classifier_server.ClassifierHandler
+        )
+        handler.taxref = taxref
+
+        taxon = handler.custom_taxon({
+            "scientificName": "Petit oiseau inconnu",
+            "vernacularName": "Petit oiseau inconnu",
+            "taxonClass": "Oiseaux",
+        })
+        self.assertEqual(taxon["lineage"], ["Oiseaux", "Petit oiseau inconnu"])
+        self.assertTrue(taxon["custom"])
+
+        plant = handler.custom_taxon({
+            "scientificName": "Plante inconnue",
+            "vernacularName": "Plante inconnue",
+            "taxonClass": "Plantes terrestres",
+        })
+        self.assertEqual(
+            plant["lineage"], ["Plantes terrestres", "Plante inconnue"]
+        )
+
+        with self.assertRaises(ValueError):
+            handler.custom_taxon({
+                "scientificName": "Petit oiseau inconnu",
+                "taxonClass": "Classe inventée",
+            })
+
+    def test_manual_taxon_is_removed_when_a_taxref_name_is_validated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            photo = Path(directory) / "bird.psd"
+            photo.touch()
+            taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+            new_taxon = taxref.resolve_species("Corvus corone")
+            existing = {
+                "IPTC": {"Keywords": ["Oiseaux", "Petit oiseau inconnu"]},
+                "XMP": {
+                    "dc.subject": ["Oiseaux", "Petit oiseau inconnu"],
+                    "lr.hierarchicalSubject": ["Oiseaux|Petit oiseau inconnu"],
+                },
+            }
+            old_taxon = classifier_server.photo_taxonomy(existing, taxref)["keywordTaxon"]
+            with (
+                patch("server.get_metadata_many", side_effect=[
+                    {str(photo): existing},
+                    {str(photo): {
+                        "IPTC": {"Keywords": ["Oiseaux", "Corvus corone", "Corneille noire"]},
+                        "XMP": {
+                            "dc.subject": ["Oiseaux", "Corvus corone", "Corneille noire"],
+                            "lr.hierarchicalSubject": ["|".join(new_taxon["lineage"])],
+                        },
+                    }},
+                ]),
+                patch("server.set_metadata") as write_metadata,
+            ):
+                classifier_server.write_photo_taxon(
+                    photo, new_taxon, True, taxref, previous_taxon=old_taxon
+                )
+
+            write_metadata.assert_called_once_with(
+                photo,
+                {
+                    "IPTC": {"Keywords": ["Oiseaux", "Corvus corone", "Corneille noire"]},
+                    "XMP": {
+                        "Subject": ["Oiseaux", "Corvus corone", "Corneille noire"],
+                        "HierarchicalSubject": ["|".join(new_taxon["lineage"])],
+                    },
+                },
+            )
+
+    def test_clear_photo_fauna_removes_taxon_and_keeps_other_keywords(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            photo = root / "bird.psd"
+            photo.touch()
+            taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")
+            taxon = taxref.resolve_species("Corvus monedula")
+            existing = {
+                "IPTC": {
+                    "Keywords": [
+                        "Choucas des tours", "Corvus monedula", "Oiseaux",
+                        "Juvénile", "Jean Dupont",
+                    ],
+                },
+                "XMP": {
+                    "dc.subject": [
+                        "Choucas des tours", "Corvus monedula", "Oiseaux",
+                        "Juvénile", "Jean Dupont",
+                    ],
+                    "lr.hierarchicalSubject": [
+                        "|".join(taxon["lineage"]),
+                        "Personnes|Jean Dupont",
+                    ],
+                },
+            }
+            updated = {
+                "IPTC": {"Keywords": ["Juvénile", "Jean Dupont"]},
+                "XMP": {
+                    "dc.subject": ["Juvénile", "Jean Dupont"],
+                    "lr.hierarchicalSubject": ["Personnes|Jean Dupont"],
+                },
+            }
+            with (
+                patch("server.get_metadata_many", side_effect=[
+                    {str(photo): existing},
+                    {str(photo): updated},
+                ]),
+                patch("server.set_metadata") as write_metadata,
+                patch.object(
+                    classifier_server.photos_db,
+                    "taxa_for_path",
+                    return_value=[{
+                        "name": "Choucas des tours",
+                        "scientific_name": "Corvus monedula",
+                        "path": "/".join(taxon["lineage"]),
+                    }],
+                ),
+                patch.object(
+                    classifier_server.photos_db, "record_taxon_for_path"
+                ) as clear_taxa,
+                patch.object(
+                    classifier_server.photos_db,
+                    "record_keywords_rating_author_for_path",
+                ) as record_keywords,
+            ):
+                result = classifier_server.clear_photo_fauna(photo, taxref, root)
+
+            write_metadata.assert_called_once_with(
+                photo,
+                {
+                    "IPTC": {"Keywords": ["Juvénile", "Jean Dupont"]},
+                    "XMP": {
+                        "Subject": ["Juvénile", "Jean Dupont"],
+                        "HierarchicalSubject": ["Personnes|Jean Dupont"],
+                        "WeightedFlatSubject": ["Juvénile", "Jean Dupont"],
+                    },
+                },
+            )
+            clear_taxa.assert_not_called()
+            record_keywords.assert_not_called()
+            self.assertIsNone(result["keywordTaxon"])
+            self.assertIsNone(result["hierarchyTaxon"])
+            self.assertEqual(result["keywords"], ["Juvénile", "Jean Dupont"])
 
     def test_photo_taxonomy_resolves_scientific_keyword_without_vernacular_flag(self):
         taxref = TaxrefIndex(CLASSIFIER_DIR / "TAXREF" / "TAXREFv18.txt")

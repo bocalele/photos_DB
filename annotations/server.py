@@ -3,7 +3,7 @@
 
 Une seule fenêtre, une barre en haut pour passer d'une app à l'autre :
 
-    Géotag · Faune · Visages · Mots-clés
+    Classement · Géotag · Faune · Visages · Mots-clés
 
 Chaque app reste autonome (son propre serveur, son propre environnement) :
 ce programme les lance sur des ports locaux, avec **le même dossier de photos**,
@@ -11,7 +11,7 @@ et affiche leur interface dans un cadre. Il ne réimplémente rien : il orchestr
 
 Points importants :
 
-- le dossier courant est unique et propagé aux quatre apps ;
+- le dossier courant est unique et propagé aux applications ;
 - changer de dossier dans une app est détecté (via le `preferences.json`
   partagé) et répercuté sur les autres ;
 - l'application globale ne dépend que de la bibliothèque standard.
@@ -24,6 +24,7 @@ import json
 import os
 import signal
 import socket
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -32,7 +33,7 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
@@ -45,8 +46,16 @@ if str(PROJECT_DIR) not in sys.path:
 
 from tools import environment, preferences  # noqa: E402
 
-# Ordre demandé : Géotag, Faune, Visages, Mots-clés.
+# Ordre demandé : Classement, Géotag, Faune, Visages, Mots-clés.
 APPS = [
+    {
+        "id": "organize",
+        "label": "Classement",
+        "icon": "folder",
+        "directory": PROJECT_DIR / "organize",
+        "environment": PROJECT_DIR,
+        "description": "Déplacer photos et dossiers, mettre à jour photos.db et face.db",
+    },
     {
         "id": "geotag",
         "label": "Géotag",
@@ -191,13 +200,108 @@ def environment_for(spec: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 
+def photos_scope(directory: Path) -> str:
+    """Chemin de ``directory`` relatif à la racine photo."""
+    root = environment.photos_root().expanduser().resolve()
+    try:
+        relative = Path(directory).expanduser().resolve().relative_to(root)
+    except ValueError:
+        return ""
+    value = relative.as_posix()
+    return "" if value == "." else value
+
+
+def scope_covers(synced_scope: str | None, current_scope: str) -> bool:
+    """Vrai si une synchronisation couvre déjà le dossier courant."""
+    if synced_scope is None:
+        return False
+    if synced_scope == "":
+        return True
+    return (
+        current_scope == synced_scope
+        or current_scope.startswith(synced_scope.rstrip("/") + "/")
+    )
+
+
+def database_status(directory: Path, revision: int | None = None) -> dict:
+    """État de fraîcheur de photos.db par rapport aux métadonnées.
+
+    La base reste un index dérivé : elle est « propre » lorsque la révision
+    enregistrée par la dernière synchronisation est au moins égale à la
+    révision courante et que cette synchronisation couvre le dossier affiché.
+    Une base absente ou illisible est considérée comme à mettre à jour.
+    """
+    current_revision = (
+        preferences.metadata_revision() if revision is None else int(revision)
+    )
+    current_scope = photos_scope(directory)
+    target = environment.photos_db()
+    synced_revision = 0
+    synced_scope: str | None = None
+    synced_at: str | None = None
+    sync_complete = False
+    sync_errors = 0
+
+    if target.is_file():
+        try:
+            conn = sqlite3.connect(
+                f"file:{quote(str(target))}?mode=ro",
+                uri=True,
+                timeout=2,
+            )
+            try:
+                rows = dict(
+                    conn.execute(
+                        "SELECT key, value FROM meta WHERE key IN "
+                        "('synced_revision', 'synced_scope', 'last_sync_at', "
+                        "'sync_complete', 'sync_errors')"
+                    ).fetchall()
+                )
+            finally:
+                conn.close()
+            try:
+                synced_revision = max(
+                    0, int(rows.get("synced_revision", "0"))
+                )
+            except (TypeError, ValueError):
+                synced_revision = 0
+            try:
+                sync_errors = max(0, int(rows.get("sync_errors", "0")))
+            except (TypeError, ValueError):
+                sync_errors = 0
+            synced_scope = rows.get("synced_scope")
+            synced_at = rows.get("last_sync_at")
+            sync_complete = rows.get("sync_complete") == "1"
+        except sqlite3.Error:
+            # Une base verrouillée ou illisible ne doit pas empêcher
+            # l'interface de s'afficher : on la signale simplement comme sale.
+            pass
+
+    dirty = (
+        not sync_complete
+        or current_revision > synced_revision
+        or not scope_covers(synced_scope, current_scope)
+    )
+    return {
+        "metadataRevision": current_revision,
+        "syncedRevision": synced_revision,
+        "syncedScope": synced_scope,
+        "syncedAt": synced_at,
+        "syncComplete": sync_complete,
+        "syncErrors": sync_errors,
+        "dirty": dirty,
+    }
+
+
 def sync_photos_database() -> dict:
     """Met à jour photos.db pour le dossier de travail courant.
 
     Un seul script fait le reset et les mises à jour :
-    ``python -m dataBase.sync update <dossier> --json``. On utilise
+    ``python -m dataBase.sync update <dossier> --prune --json``. On utilise
     l'environnement racine (pandas + ExifTool), pas l'environnement Visages
-    qui ne contient pas pandas.
+    qui ne contient pas pandas. ``--prune`` retire les lignes dont le fichier
+    a disparu du dossier courant, afin que les couleurs de Classement restent
+    cohérentes après un déplacement effectué hors de l'application.
     """
     spec = next(app for app in APPS if app["id"] == "geotag")
     runtime = globals().get("RUNTIME")
@@ -208,6 +312,7 @@ def sync_photos_database() -> dict:
         "dataBase.sync",
         "update",
         str(scope),
+        "--prune",
         "--json",
     ]
     try:
@@ -228,9 +333,18 @@ def sync_photos_database() -> dict:
         raise RuntimeError(message or "La mise à jour de photos.db a échoué.")
     lines = [line for line in result.stdout.splitlines() if line.strip()]
     try:
-        return json.loads(lines[-1])
+        payload = json.loads(lines[-1])
     except (IndexError, json.JSONDecodeError) as error:
         raise RuntimeError("Réponse inattendue de dataBase.sync.") from error
+    status = database_status(scope)
+    payload["revision"] = status["metadataRevision"]
+    payload["databaseRevision"] = status["syncedRevision"]
+    payload["databaseScope"] = status["syncedScope"]
+    payload["databaseSyncedAt"] = status["syncedAt"]
+    payload["databaseSyncComplete"] = status["syncComplete"]
+    payload["databaseSyncErrors"] = status["syncErrors"]
+    payload["databaseDirty"] = status["dirty"]
+    return payload
 
 
 # --------------------------------------------------------------------------- #
@@ -358,9 +472,12 @@ class Runtime:
         self.lock = threading.RLock()
         self.directory = directory
         self.apps = {spec["id"]: AppProcess(spec) for spec in APPS}
-        self.active = preferences.active_app()
-        if self.active not in self.apps:
-            self.active = "geotag"
+        self.default_active = preferences.default_active_app()
+        if self.default_active not in self.apps:
+            self.default_active = "organize"
+        # Le dernier onglet est conservé pour information, mais le lancement
+        # part volontairement du défaut configuré.
+        self.active = self.default_active
         self.stop_event = threading.Event()
         self.preferences_lock = threading.Lock()
         # Dernier dossier vu dans le preferences.json partagé.
@@ -370,9 +487,19 @@ class Runtime:
 
     def state(self) -> dict:
         with self.lock:
+            revision = preferences.metadata_revision()
+            database = database_status(self.directory, revision)
             return {
                 "directory": str(self.directory),
                 "active": self.active,
+                "defaultActive": self.default_active,
+                "revision": revision,
+                "databaseRevision": database["syncedRevision"],
+                "databaseScope": database["syncedScope"],
+                "databaseSyncedAt": database["syncedAt"],
+                "databaseSyncComplete": database["syncComplete"],
+                "databaseSyncErrors": database["syncErrors"],
+                "databaseDirty": database["dirty"],
                 "apps": [
                     {
                         "id": app.id,
@@ -601,6 +728,8 @@ class ShellHandler(BaseHTTPRequestHandler):
                 payload = self.read_json()
                 RUNTIME.restart_app(str(payload.get("app") or ""))
                 self.send_json(RUNTIME.state(), 202)
+            elif route == "/api/shutdown":
+                self.handle_shutdown()
             else:
                 self.send_error(404)
         except (ValueError, FileNotFoundError) as error:
@@ -608,6 +737,15 @@ class ShellHandler(BaseHTTPRequestHandler):
         except Exception as error:  # noqa: BLE001
             print(f"Erreur : {error}", flush=True)
             self.send_json({"error": str(error)}, 500)
+
+    def handle_shutdown(self):
+        self.send_json({"status": "shutting_down"})
+
+        def stop():
+            RUNTIME.shutdown()
+            self.server.shutdown()
+
+        threading.Thread(target=stop, daemon=True).start()
 
     def send_static(self, filename: str, content_type: str):
         path = APP_DIR / filename
@@ -628,7 +766,7 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Application globale d'annotation (Géotag, Faune, Visages, Mots-clés)."
+        description="Application globale d'annotation (Classement, Géotag, Faune, Visages, Mots-clés)."
     )
     parser.add_argument(
         "directory",

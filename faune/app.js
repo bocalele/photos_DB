@@ -8,12 +8,17 @@
   const chosenTaxa = new Map();
   const savedTaxa = new Map();
   const taxonSaveErrors = new Map();
+  const taxonNotices = new Map();
+  const taxonNoticeErrors = new Set();
   const taxonSearchTimers = new Map();
   let loaded = false;
   let loading = false;
   let classifying = false;
   let totalPhotos = 0;
   let thumbnailObserver;
+  let classesPromise = null;
+  let classDialogResolve = null;
+  const DEFAULT_TAXON_CLASS = "Plantes terrestres";
 
   const byId = id => document.getElementById(id);
 
@@ -34,7 +39,8 @@
         );
         photos.push(...data.photos);
         for (const photo of data.photos) {
-          if (photo.keywordTaxon) savedTaxa.set(photo.name, photo.keywordTaxon);
+          const savedTaxon = photo.keywordTaxon || photo.hierarchyTaxon;
+          if (savedTaxon) savedTaxa.set(photo.name, savedTaxon);
           if (!photo.metadataRead && photo.metadataError) {
             byId("photo-count").title =
               `Lecture de métadonnées impossible : ${photo.metadataError}`;
@@ -46,6 +52,7 @@
       } while (photos.length < totalPhotos);
       loaded = true;
       renderPhotos();
+      notifyPendingTaxa();
     } catch (error) {
       showMessage(`Impossible de charger les photos : ${error.message}`, true);
     } finally {
@@ -60,6 +67,7 @@
     byId("select-all").disabled = photos.length === 0;
     byId("deselect-photos").disabled = selectedNames.size === 0;
     byId("classify-photos").disabled = selectedNames.size === 0 || classifying;
+    byId("clear-fauna").disabled = selectedNames.size === 0 || classifying;
   }
 
   function isValidatedChoice(name) {
@@ -68,6 +76,24 @@
       || classifications.get(name)?.results?.[0]
       || saved;
     return Boolean(saved && current?.scientificName === saved.scientificName);
+  }
+
+  function pendingTaxonNames() {
+    const names = [];
+    for (const [name, chosen] of chosenTaxa) {
+      if (!chosen) continue;
+      if (savedTaxa.get(name)?.scientificName === chosen.scientificName) continue;
+      names.push(name);
+    }
+    return names;
+  }
+
+  function notifyPendingTaxa() {
+    if (window.parent === window) return;
+    window.parent.postMessage(
+      { type: "fauna-pending", names: pendingTaxonNames() },
+      "*"
+    );
   }
 
   function showMessage(message, isError = false) {
@@ -239,12 +265,18 @@
     decision.className = "species-decision";
     const label = document.createElement("span");
     label.className = "species-label";
-    label.textContent = currentTaxon
+    const isPending = chosenTaxa.has(photoName)
+      && !isValidatedChoice(photoName);
+    label.classList.toggle("pending", isPending);
+    const currentLabel = currentTaxon
       ? currentTaxon.vernacularName || currentTaxon.scientificName
       : "Espèce non déterminée";
+    label.textContent = isPending ? `À valider — ${currentLabel}` : currentLabel;
     label.title = currentTaxon?.scientificName || "Choisir une espèce dans la taxonomie";
     decision.appendChild(label);
 
+    const actions = document.createElement("div");
+    actions.className = "decision-actions";
     const confirmLabel = document.createElement("label");
     confirmLabel.className = "confirm-label";
     const checkbox = document.createElement("input");
@@ -259,7 +291,24 @@
     );
     checkbox.title = checkbox.getAttribute("aria-label");
     confirmLabel.appendChild(checkbox);
-    decision.appendChild(confirmLabel);
+    actions.appendChild(confirmLabel);
+    if (isSaved) {
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "taxon-delete";
+      deleteButton.textContent = "✕";
+      deleteButton.title = "Supprimer les données Faune de cette photo";
+      deleteButton.setAttribute(
+        "aria-label",
+        `Supprimer les données Faune de ${photoName}`
+      );
+      deleteButton.addEventListener("click", event => {
+        event.stopPropagation();
+        clearFauna([photoName]);
+      });
+      actions.appendChild(deleteButton);
+    }
+    decision.appendChild(actions);
     checkbox.addEventListener("change", () => saveTaxon(photoName, currentTaxon, checkbox));
     display.appendChild(decision);
 
@@ -332,6 +381,14 @@
       error.textContent = `Impossible d’enregistrer : ${saveError}`;
       display.appendChild(error);
     }
+    const notice = taxonNotices.get(photoName);
+    if (notice) {
+      const message = document.createElement("div");
+      message.className =
+        `taxon-replace-notice${taxonNoticeErrors.has(photoName) ? " error" : ""}`;
+      message.textContent = notice;
+      display.appendChild(message);
+    }
 
     return display;
   }
@@ -351,6 +408,85 @@
     button.addEventListener("click", () => {
       chosenTaxa.set(photoName, taxon);
       taxonSaveErrors.delete(photoName);
+      menu.open = false;
+      updateClassificationCard(photoName);
+    });
+    return button;
+  }
+
+  async function loadClasses() {
+    if (!classesPromise) {
+      classesPromise = requestJson("/api/classes")
+        .then(data => data.classes || [])
+        .catch(error => {
+          classesPromise = null;
+          throw error;
+        });
+    }
+    return classesPromise;
+  }
+
+  function finishClassDialog(value) {
+    byId("class-overlay").hidden = true;
+    const resolve = classDialogResolve;
+    classDialogResolve = null;
+    if (resolve) resolve(value);
+  }
+
+  async function promptTaxonClass(name) {
+    const overlay = byId("class-overlay");
+    const select = byId("class-select");
+    const error = byId("class-error");
+    const confirm = byId("class-confirm");
+    byId("class-taxon-name").textContent = name;
+    error.hidden = true;
+    error.textContent = "";
+    select.replaceChildren();
+    confirm.disabled = true;
+    overlay.hidden = false;
+
+    return new Promise(resolve => {
+      classDialogResolve = resolve;
+      loadClasses()
+        .then(classes => {
+          if (!classDialogResolve) return;
+          if (!classes.length) throw new Error("Aucune classe disponible.");
+          for (const item of classes) {
+            const option = document.createElement("option");
+            option.value = item.label;
+            option.textContent = item.label === item.scientificName
+              ? item.label
+              : `${item.label} — ${item.scientificName}`;
+            select.appendChild(option);
+          }
+          if (classes.some(item => item.label === DEFAULT_TAXON_CLASS)) {
+            select.value = DEFAULT_TAXON_CLASS;
+          }
+          confirm.disabled = false;
+          select.focus();
+        })
+        .catch(loadError => {
+          error.textContent = `Impossible de charger les classes : ${loadError.message}`;
+          error.hidden = false;
+        });
+    });
+  }
+
+  function makeCustomTaxonChoice(photoName, name, menu) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "taxon-suggestion custom-taxon";
+    button.textContent = `Créer « ${name} »…`;
+    button.title = "La classe sera demandée à la validation.";
+    button.addEventListener("click", () => {
+      chosenTaxa.set(photoName, {
+        scientificName: name,
+        vernacularName: name,
+        lineage: [name],
+        custom: true,
+      });
+      taxonSaveErrors.delete(photoName);
+      taxonNotices.delete(photoName);
       menu.open = false;
       updateClassificationCard(photoName);
     });
@@ -380,8 +516,10 @@
         if (!data.taxa.length) {
           const empty = document.createElement("span");
           empty.className = "no-taxa";
-          empty.textContent = "Aucune espèce correspondante (nom vernaculaire ou scientifique) dans TAXREF.";
+          empty.textContent =
+            "Aucune correspondance dans TAXREF ni dans les thésaurus.";
           suggestions.appendChild(empty);
+          suggestions.appendChild(makeCustomTaxonChoice(photoName, query, menu));
         }
       } catch (error) {
         const message = document.createElement("span");
@@ -399,6 +537,25 @@
       checkbox.title = "Choisis une espèce avant de la valider.";
       return;
     }
+
+    let taxonToSave = taxon;
+    if (checkbox.checked && taxon?.custom && !taxon.taxonClass) {
+      const className = await promptTaxonClass(
+        taxon.vernacularName || taxon.scientificName
+      );
+      if (!className) {
+        checkbox.checked = false;
+        return;
+      }
+      taxonToSave = {
+        ...taxon,
+        lineage: [className, taxon.scientificName],
+        taxonClass: className,
+        custom: true,
+      };
+      chosenTaxa.set(photoName, taxonToSave);
+    }
+
     checkbox.disabled = true;
     try {
       const data = await requestJson("/api/confirm", {
@@ -406,24 +563,66 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           photoName,
-          scientificName: taxon.scientificName,
+          scientificName: taxonToSave.scientificName,
+          vernacularName: taxonToSave.vernacularName || taxonToSave.scientificName,
+          taxonClass: taxonToSave.taxonClass || null,
+          custom: Boolean(taxonToSave.custom),
           validated: checkbox.checked,
         }),
       });
       const photo = photos.find(item => item.name === photoName);
       if (photo) Object.assign(photo, data.metadata);
-      if (data.metadata.keywordTaxon) savedTaxa.set(photoName, data.metadata.keywordTaxon);
+      const savedTaxon = data.metadata.keywordTaxon || data.metadata.hierarchyTaxon;
+      if (savedTaxon) savedTaxa.set(photoName, savedTaxon);
       else savedTaxa.delete(photoName);
+      if (!checkbox.checked) chosenTaxa.delete(photoName);
       taxonSaveErrors.delete(photoName);
+
+      const replacedNames = data.replacedPhotoNames || [];
+      const replacementErrors = data.replacementErrors || [];
+      for (const [name, metadata] of Object.entries(data.replacedMetadata || {})) {
+        const otherPhoto = photos.find(item => item.name === name);
+        if (otherPhoto) Object.assign(otherPhoto, metadata);
+        const replacedTaxon = metadata.keywordTaxon || metadata.hierarchyTaxon;
+        if (replacedTaxon) savedTaxa.set(name, replacedTaxon);
+        else savedTaxa.delete(name);
+        chosenTaxa.delete(name);
+        classifications.delete(name);
+        taxonSaveErrors.delete(name);
+        taxonNotices.delete(name);
+        taxonNoticeErrors.delete(name);
+        updatePhotoIndicators(name);
+        updateCardSelection(name);
+        updateClassificationCard(name);
+      }
+
+      taxonNotices.delete(photoName);
+      taxonNoticeErrors.delete(photoName);
+      if (replacedNames.length || replacementErrors.length) {
+        const parts = [];
+        if (replacedNames.length) {
+          parts.push(
+            `Taxon remplacé sur ${replacedNames.length} autre(s) photo(s).`
+          );
+        }
+        if (replacementErrors.length) {
+          parts.push(`${replacementErrors.length} remplacement(s) en erreur.`);
+          taxonNoticeErrors.add(photoName);
+        }
+        taxonNotices.set(photoName, parts.join(" "));
+      }
+
       updatePhotoIndicators(photoName);
       updateCardSelection(photoName);
       checkbox.title = checkbox.checked
-        ? `Validé : ${taxon.vernacularName || taxon.scientificName}`
+        ? `Validé : ${taxonToSave.vernacularName || taxonToSave.scientificName}` +
+          (replacedNames.length ? ` · remplacé sur ${replacedNames.length} photo(s)` : "")
         : "Retiré des mots-clés de cette photo";
       updateClassificationCard(photoName);
     } catch (error) {
       checkbox.checked = Boolean(
-        taxon && savedTaxa.get(photoName)?.scientificName === taxon.scientificName
+        taxonToSave
+        && savedTaxa.get(photoName)?.scientificName === taxonToSave.scientificName
       );
       checkbox.title = error.message;
       checkbox.setAttribute("aria-invalid", "true");
@@ -434,6 +633,46 @@
     }
   }
 
+  async function clearFauna(names) {
+    const targets = [...new Set(names)].filter(Boolean);
+    if (!targets.length || classifying) return;
+
+    byId("clear-fauna").disabled = true;
+    let statusError = null;
+    try {
+      const data = await requestJson("/api/clear-fauna", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoNames: targets }),
+      });
+      for (const [name, metadata] of Object.entries(data.metadata || {})) {
+        const photo = photos.find(item => item.name === name);
+        if (photo) Object.assign(photo, metadata);
+        savedTaxa.delete(name);
+        chosenTaxa.delete(name);
+        taxonSaveErrors.delete(name);
+        taxonNotices.delete(name);
+        taxonNoticeErrors.delete(name);
+        updatePhotoIndicators(name);
+        updateCardSelection(name);
+        updateClassificationCard(name);
+      }
+      const failures = Object.entries(data.errors || {});
+      for (const [name, error] of failures) {
+        taxonSaveErrors.set(name, error);
+        updateClassificationCard(name);
+      }
+      if (failures.length) {
+        statusError = `${failures.length} photo(s) n’ont pas pu être nettoyées.`;
+      }
+    } catch (error) {
+      statusError = `Suppression des données Faune impossible : ${error.message}`;
+    } finally {
+      updatePhotoCount();
+    }
+    if (statusError) showMessage(statusError, true);
+  }
+
   function updateClassificationCard(name) {
     const caption = cardsByName.get(name)?.querySelector(".photo-caption");
     if (!caption) return;
@@ -442,6 +681,7 @@
     existing?.remove();
     if (display) caption.appendChild(display);
     updateCardSelection(name);
+    notifyPendingTaxa();
   }
 
   function updatePhotoIndicators(name) {
@@ -494,6 +734,7 @@
     const errors = byId("classification-errors");
     classifying = true;
     button.disabled = true;
+    byId("clear-fauna").disabled = true;
     byId("select-all").disabled = true;
     byId("deselect-photos").disabled = true;
     panel.hidden = false;
@@ -543,9 +784,7 @@
       status.className = "error";
     } finally {
       classifying = false;
-      button.disabled = selectedNames.size === 0;
-      byId("select-all").disabled = photos.length === 0;
-      byId("deselect-photos").disabled = selectedNames.size === 0;
+      updatePhotoCount();
     }
   }
 
@@ -583,6 +822,8 @@
         chosenTaxa.clear();
         classifications.clear();
         taxonSaveErrors.clear();
+        taxonNotices.clear();
+        taxonNoticeErrors.clear();
         loadPhotos();
       }
     } catch (error) {
@@ -593,8 +834,45 @@
     }
   });
   byId("classify-photos").addEventListener("click", classifySelected);
+  byId("clear-fauna").addEventListener("click", () => {
+    clearFauna([...selectedNames]);
+  });
   byId("thumbnail-size").addEventListener("input", event => {
     byId("photo-grid").style.setProperty("--tile-size", `${event.target.value}px`);
+  });
+
+  async function exitApplication() {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "photos-exit" }, "*");
+      return;
+    }
+    try {
+      await fetch("/api/shutdown", { method: "POST", keepalive: true });
+    } catch (_) {
+      // Le serveur peut déjà être arrêté.
+    }
+    window.open("", "_self");
+    window.close();
+    setTimeout(() => {
+      document.body.innerHTML =
+        '<main style="display:grid;place-items:center;height:100vh;font-family:sans-serif;background:#171a27;color:#edf0f7">' +
+        '<div style="text-align:center"><h1>Serveur arrêté</h1><p>Vous pouvez fermer cette fenêtre.</p></div></main>';
+    }, 250);
+  }
+
+  byId("exit-app")?.addEventListener("click", exitApplication);
+  byId("class-cancel").addEventListener("click", () => finishClassDialog(null));
+  byId("class-confirm").addEventListener("click", () => {
+    const value = byId("class-select").value;
+    finishClassDialog(value || null);
+  });
+  byId("class-overlay").addEventListener("click", event => {
+    if (event.target.id === "class-overlay") finishClassDialog(null);
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !byId("class-overlay").hidden) {
+      finishClassDialog(null);
+    }
   });
 
   loadPhotos();

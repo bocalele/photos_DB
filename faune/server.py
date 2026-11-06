@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -27,6 +29,7 @@ from classify_photo import (
     TaxrefIndex,
     find_taxref_path,
     load_photo,
+    normalize_name,
     prediction_details,
 )
 from dataBase import annotations, photos_db
@@ -109,7 +112,7 @@ def photo_taxonomy(metadata: dict, taxref: TaxrefIndex) -> dict:
         ),
         None,
     )
-    hierarchy_taxon = next(
+    resolved_hierarchy_taxon = next(
         (
             taxon
             for path in hierarchical_keywords
@@ -117,20 +120,113 @@ def photo_taxonomy(metadata: dict, taxref: TaxrefIndex) -> dict:
         ),
         None,
     )
+    hierarchy_taxon = resolved_hierarchy_taxon
+
+    # Un taxon créé manuellement n'existe ni dans TAXREF ni dans les
+    # thésaurus. Il est conservé dans une arborescence « Classe|Nom » afin de
+    # rester vérifiable et de pouvoir être remplacé ultérieurement.
+    custom_taxon = None
+    if keyword_taxon is None and hierarchy_taxon is None:
+        for path in hierarchical_keywords:
+            segments = [
+                segment.strip()
+                for segment in re.split(r"[|/>\\]+", path)
+                if segment.strip()
+            ]
+            if len(segments) < 2 or not taxref.is_class_name(segments[0]):
+                continue
+            name = segments[-1]
+            custom_taxon = {
+                "scientificName": name,
+                "vernacularName": name,
+                "lineage": segments,
+                "taxonClass": segments[0],
+                "custom": True,
+            }
+            break
+
+    if custom_taxon is not None:
+        custom_keys = {
+            normalize_name(custom_taxon["scientificName"]),
+            normalize_name(custom_taxon["vernacularName"]),
+        } - {""}
+        if any(normalize_name(keyword) in custom_keys for keyword in keywords):
+            keyword_taxon = custom_taxon
+        if hierarchy_taxon is None:
+            hierarchy_taxon = custom_taxon
+
     return {
         "keywords": keywords,
         "hierarchicalKeywords": hierarchical_keywords,
         "keywordTaxon": keyword_taxon,
         "hierarchyTaxon": hierarchy_taxon,
         "keywordPresent": vernacular_taxon is not None,
-        "hierarchyPresent": hierarchy_taxon is not None,
+        "hierarchyPresent": resolved_hierarchy_taxon is not None,
+        "customTaxon": custom_taxon is not None,
         "metadataRead": True,
     }
 
 
+def taxon_in_taxref(taxref: TaxrefIndex, taxon: dict | None) -> bool:
+    """Vrai si le nom scientifique est présent dans TAXREF lui-même.
+
+    Les thésaurus naturalistes servent de repli à Faune, mais ne constituent
+    pas TAXREF. Cette distinction permet de repérer les taxons dont le
+    référencement est incomplet.
+    """
+    if not taxon:
+        return False
+    scientific_name = str(taxon.get("scientificName") or "").strip()
+    return bool(scientific_name) and (
+        normalize_name(scientific_name) in taxref.species_by_name
+    )
+
+
+def taxon_to_replace(taxonomy: dict, taxref: TaxrefIndex) -> dict | None:
+    """Ancien taxon à remplacer sur les photos quand il est absent de TAXREF."""
+    old_taxon = taxonomy.get("keywordTaxon") or taxonomy.get("hierarchyTaxon")
+    if not old_taxon:
+        return None
+    if taxon_in_taxref(taxref, old_taxon):
+        return None
+    return old_taxon
+
+
+def taxonomy_contains_taxon(
+    taxonomy: dict, taxref: TaxrefIndex, old_taxon: dict | None
+) -> bool:
+    """Vrai si l’ancien taxon figure dans les mots-clés ou l’arborescence."""
+    if not old_taxon:
+        return False
+    old_key = normalize_name(old_taxon.get("scientificName") or "")
+    old_vernacular_key = normalize_name(old_taxon.get("vernacularName") or "")
+    if not old_key and not old_vernacular_key:
+        return False
+    for keyword in taxonomy.get("keywords", []):
+        match = taxref.resolve_vernacular(keyword) or taxref.resolve_species(keyword)
+        if match and normalize_name(match.get("scientificName") or "") == old_key:
+            return True
+        # Taxon manuel : il n'est résolu ni par TAXREF ni par le thésaurus.
+        if normalize_name(keyword) in {old_key, old_vernacular_key} - {""}:
+            return True
+    for hierarchy in taxonomy.get("hierarchicalKeywords", []):
+        match = taxref.resolve_hierarchical_path(hierarchy)
+        if match and normalize_name(match.get("scientificName") or "") == old_key:
+            return True
+        segments = [
+            normalize_name(segment)
+            for segment in re.split(r"[|/>\\]+", hierarchy)
+            if segment.strip()
+        ]
+        if segments and segments[-1] in {old_key, old_vernacular_key} - {""}:
+            return True
+    return False
+
+
 def write_photo_taxon(
     path: Path, taxon: dict, validated: bool, taxref: TaxrefIndex,
-    root: Path | None = None,
+    replace_only: str | None = None,
+    previous_taxon: dict | None = None,
 ) -> dict:
     records = get_metadata_many([str(path)], tags=CLASSIFICATION_METADATA_TAGS)
     metadata = records.get(str(path))
@@ -139,42 +235,94 @@ def write_photo_taxon(
     current = photo_taxonomy(metadata, taxref)
     keywords = current["keywords"]
     hierarchies = current["hierarchicalKeywords"]
-    taxon_keywords = {
-        value.casefold()
+    hierarchy_path = "|".join(taxon["lineage"])
+    replace_key = normalize_name(replace_only) if replace_only else None
+
+    previous_keys = {
+        normalize_name(value)
+        for value in (
+            (previous_taxon or {}).get("scientificName"),
+            (previous_taxon or {}).get("vernacularName"),
+        )
+        if value
+    }
+    target_keys = previous_keys | ({replace_key} if replace_key else set())
+    taxon_keys = {
+        normalize_name(value)
         for value in (taxon["scientificName"], taxon.get("vernacularName", ""))
         if value
     }
-    hierarchy_path = "|".join(taxon["lineage"])
+
+    def is_previous_taxon(value: str, *, hierarchical: bool = False) -> bool:
+        normalized = normalize_name(value)
+        if replace_key:
+            match = (
+                taxref.resolve_hierarchical_path(value)
+                if hierarchical
+                else taxref.resolve_vernacular(value) or taxref.resolve_species(value)
+            )
+            if match and normalize_name(match["scientificName"]) == replace_key:
+                return True
+        if normalized in target_keys:
+            return True
+        if hierarchical:
+            segments = [
+                normalize_name(segment)
+                for segment in re.split(r"[|/>\\]+", value)
+                if segment.strip()
+            ]
+            if segments and segments[-1] in target_keys:
+                return True
+        return False
+
+    def is_replaceable_taxon(value: str, *, hierarchical: bool = False) -> bool:
+        if is_previous_taxon(value, hierarchical=hierarchical):
+            return True
+        # En remplacement global, on ne touche qu'à l'ancien taxon ciblé.
+        if replace_key:
+            return False
+        match = (
+            taxref.resolve_hierarchical_path(value)
+            if hierarchical
+            else taxref.resolve_vernacular(value) or taxref.resolve_species(value)
+        )
+        return match is not None
+
+    def is_same_new_taxon(value: str, *, hierarchical: bool = False) -> bool:
+        if normalize_name(value) in taxon_keys:
+            return True
+        if hierarchical:
+            segments = [
+                normalize_name(segment)
+                for segment in re.split(r"[|/>\\]+", value)
+                if segment.strip()
+            ]
+            if segments and segments[-1] in taxon_keys:
+                return True
+        return False
 
     if validated:
         keywords = [
-            keyword
-            for keyword in keywords
-            if not (
-                taxref.resolve_vernacular(keyword)
-                or taxref.resolve_species(keyword)
-            )
+            keyword for keyword in keywords
+            if not is_replaceable_taxon(keyword)
         ]
         keywords = metadata_values(
             keywords, taxon["scientificName"], taxon.get("vernacularName", "")
         )
         hierarchies = [
-            hierarchy
-            for hierarchy in hierarchies
-            if taxref.resolve_hierarchical_path(hierarchy) is None
+            hierarchy for hierarchy in hierarchies
+            if not is_replaceable_taxon(hierarchy, hierarchical=True)
         ]
         hierarchies = metadata_values(hierarchies, hierarchy_path)
     else:
         keywords = [
-            keyword for keyword in keywords if keyword.casefold() not in taxon_keywords
+            keyword for keyword in keywords
+            if not is_same_new_taxon(keyword)
         ]
         hierarchies = [
             hierarchy
             for hierarchy in hierarchies
-            if not (
-                (match := taxref.resolve_hierarchical_path(hierarchy))
-                and match["scientificName"] == taxon["scientificName"]
-            )
+            if not is_same_new_taxon(hierarchy, hierarchical=True)
         ]
 
     set_metadata(
@@ -187,11 +335,136 @@ def write_photo_taxon(
             },
         },
     )
-    if root is not None:
-        try:
-            photos_db.record_taxon_for_path(root, path, taxon, validated)
-        except Exception as error:
-            print(f"Photos DB non mise à jour pour {path.name}: {error}", flush=True)
+    updated_records = get_metadata_many([str(path)], tags=CLASSIFICATION_METADATA_TAGS)
+    updated = updated_records.get(str(path))
+    if updated is None:
+        raise RuntimeError(f"ExifTool n’a pas pu relire les métadonnées de {path.name}.")
+    return photo_taxonomy(updated, taxref)
+
+
+def _taxon_cleanup_keys(
+    taxonomy: dict, taxref: TaxrefIndex, related_taxa: list[dict] | None = None
+) -> set[str]:
+    """Noms et niveaux taxonomiques à retirer des mots-clés plats.
+
+    Les taxons liés dans ``photo_taxa`` sont inclus même si leur arborescence
+    XMP a déjà disparu : la suppression des données Faune doit aussi nettoyer
+    ces restes.
+    """
+    keys: set[str] = set()
+
+    def add(value: str | None) -> None:
+        normalized = normalize_name(value or "")
+        if normalized:
+            keys.add(normalized)
+
+    for taxon in (
+        taxonomy.get("keywordTaxon"),
+        taxonomy.get("hierarchyTaxon"),
+        taxonomy.get("customTaxon"),
+    ):
+        if not taxon:
+            continue
+        add(taxon.get("scientificName"))
+        add(taxon.get("vernacularName"))
+        for segment in taxon.get("lineage") or []:
+            add(segment)
+
+    for taxon in related_taxa or []:
+        add(taxon.get("name"))
+        add(taxon.get("scientific_name"))
+        for segment in str(taxon.get("path") or "").split("/"):
+            add(segment)
+
+    for hierarchy in taxonomy.get("hierarchicalKeywords", []):
+        segments = [
+            segment
+            for segment in re.split(r"[|/>\\]+", hierarchy)
+            if segment.strip()
+        ]
+        if not segments:
+            continue
+        if (
+            taxref.resolve_hierarchical_path(hierarchy) is not None
+            or (len(segments) >= 2 and taxref.is_class_name(segments[0]))
+        ):
+            for segment in segments:
+                add(segment)
+
+    return keys
+
+
+def _is_taxon_keyword(
+    value: str, taxref: TaxrefIndex, taxon_keys: set[str]
+) -> bool:
+    if normalize_name(value) in taxon_keys:
+        return True
+    return bool(
+        taxref.resolve_vernacular(value)
+        or taxref.resolve_species(value)
+        or taxref.is_class_name(value)
+    )
+
+
+def _is_taxon_hierarchy(
+    value: str, taxref: TaxrefIndex, taxon_keys: set[str]
+) -> bool:
+    if normalize_name(value) in taxon_keys:
+        return True
+    segments = [
+        segment
+        for segment in re.split(r"[|/>\\]+", value)
+        if segment.strip()
+    ]
+    if segments and normalize_name(segments[-1]) in taxon_keys:
+        return True
+    if taxref.resolve_hierarchical_path(value) is not None:
+        return True
+    return len(segments) >= 2 and taxref.is_class_name(segments[0])
+
+
+def clear_photo_fauna(
+    path: Path, taxref: TaxrefIndex, root: Path | None = None
+) -> dict:
+    """Efface la détermination faunistique d’une photo.
+
+    Les mots-clés plats du couple nom vernaculaire/nom scientifique et les
+    arborescences taxonomiques sont retirés. Les relations ``photo_taxa``
+    suivront à la prochaine synchronisation ``photos.db``. Les autres
+    mots-clés et les arborescences de personnes sont conservés.
+    """
+    records = get_metadata_many([str(path)], tags=CLASSIFICATION_METADATA_TAGS)
+    metadata = records.get(str(path))
+    if metadata is None:
+        raise RuntimeError(f"ExifTool n’a renvoyé aucune métadonnée pour {path.name}.")
+    current = photo_taxonomy(metadata, taxref)
+    related_taxa = photos_db.taxa_for_path(root, path) if root is not None else []
+    taxon_keys = _taxon_cleanup_keys(current, taxref, related_taxa)
+
+    keywords = [
+        keyword
+        for keyword in current["keywords"]
+        if not _is_taxon_keyword(keyword, taxref, taxon_keys)
+    ]
+    hierarchies = [
+        hierarchy
+        for hierarchy in current["hierarchicalKeywords"]
+        if not _is_taxon_hierarchy(hierarchy, taxref, taxon_keys)
+    ]
+
+    set_metadata(
+        path,
+        {
+            "IPTC": {"Keywords": keywords or [""]},
+            "XMP": {
+                "Subject": keywords or [""],
+                "HierarchicalSubject": hierarchies or [""],
+                # Champ dérivé de Lightroom : le garder synchronisé évite
+                # qu’une ancienne détermination réapparaisse dans Lightroom.
+                "WeightedFlatSubject": keywords or [""],
+            },
+        },
+    )
     updated_records = get_metadata_many([str(path)], tags=CLASSIFICATION_METADATA_TAGS)
     updated = updated_records.get(str(path))
     if updated is None:
@@ -342,6 +615,8 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             self.send_job(query)
         elif parsed.path == "/api/taxa":
             self.search_taxa(query)
+        elif parsed.path == "/api/classes":
+            self.send_json({"classes": self.taxref.class_options()})
         else:
             self.send_error(404)
 
@@ -351,12 +626,20 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             self.handle_classify()
         elif route == "/api/confirm":
             self.handle_confirm()
+        elif route == "/api/clear-fauna":
+            self.handle_clear_fauna()
         elif route == "/api/change-directory":
             self.handle_change_directory()
         elif route == "/api/directory":
             self.handle_set_directory()
+        elif route == "/api/shutdown":
+            self.handle_shutdown()
         else:
             self.send_error(404)
+
+    def handle_shutdown(self):
+        self.send_json({"status": "shutting_down"})
+        threading.Thread(target=self.server.shutdown, daemon=True).start()
 
     def handle_classify(self):
         try:
@@ -407,6 +690,49 @@ class ClassifierHandler(BaseHTTPRequestHandler):
         try:
             data = self.read_request_json()
             self.confirm_taxon(data)
+        except (ValueError, json.JSONDecodeError) as error:
+            self.send_json({"error": str(error)}, 400)
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.send_json({"error": str(error)}, 500)
+
+    def handle_clear_fauna(self):
+        try:
+            data = self.read_request_json()
+            names = data.get("photoNames") if isinstance(data, dict) else None
+            if (
+                not isinstance(names, list)
+                or not names
+                or len(names) > MAX_SELECTED_PHOTOS
+                or any(not isinstance(name, str) for name in names)
+                or len(set(names)) != len(names)
+            ):
+                raise ValueError(f"Sélectionnez de 1 à {MAX_SELECTED_PHOTOS} photos.")
+            root = environment.photos_root()
+            cleared: list[str] = []
+            updated_metadata: dict[str, dict] = {}
+            errors: dict[str, str] = {}
+            with ThreadPoolExecutor(max_workers=min(6, len(names))) as executor:
+                futures = {}
+                for name in names:
+                    path = self.photo_path(name)
+                    if path is None:
+                        errors[name] = "Photo absente ou chemin invalide."
+                        continue
+                    futures[executor.submit(
+                        clear_photo_fauna, path, self.taxref, root
+                    )] = name
+                for future in as_completed(futures):
+                    name = futures[future]
+                    try:
+                        updated_metadata[name] = future.result()
+                        cleared.append(name)
+                    except Exception as error:
+                        errors[name] = str(error)
+            self.send_json({
+                "cleared": cleared,
+                "metadata": updated_metadata,
+                "errors": errors,
+            })
         except (ValueError, json.JSONDecodeError) as error:
             self.send_json({"error": str(error)}, 400)
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
@@ -506,6 +832,15 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             return None
         return resolved_path
 
+    def photo_files(self) -> list[Path]:
+        return sorted(
+            (
+                path for path in self.photos_dir.iterdir()
+                if path.is_file() and path.suffix.lower() in PHOTO_EXTENSIONS
+            ),
+            key=lambda path: path.name.casefold(),
+        )
+
     def list_photos(self, query: dict[str, list[str]]):
         try:
             offset = max(0, int(query.get("offset", ["0"])[0]))
@@ -513,13 +848,7 @@ class ClassifierHandler(BaseHTTPRequestHandler):
         except ValueError:
             self.send_json({"error": "Paramètres de pagination invalides."}, 400)
             return
-        files = sorted(
-            (
-                path for path in self.photos_dir.iterdir()
-                if path.is_file() and path.suffix.lower() in PHOTO_EXTENSIONS
-            ),
-            key=lambda path: path.name.casefold(),
-        )
+        files = self.photo_files()
         page = files[offset:offset + limit]
         metadata_by_path = {}
         metadata_error = ""
@@ -551,6 +880,7 @@ class ClassifierHandler(BaseHTTPRequestHandler):
                 "hierarchyTaxon": None,
                 "keywordPresent": False,
                 "hierarchyPresent": False,
+                "customTaxon": False,
                 "metadataRead": False,
             }
         else:
@@ -569,6 +899,42 @@ class ClassifierHandler(BaseHTTPRequestHandler):
             return
         self.send_json({"taxa": self.taxref.search_species(search)})
 
+    def custom_taxon(self, data: dict) -> dict:
+        """Construit un taxon manuel rattaché à une grande classe."""
+        name = str(
+            data.get("vernacularName")
+            or data.get("scientificName")
+            or ""
+        ).strip()
+        class_name = str(
+            data.get("taxonClass")
+            or data.get("className")
+            or ""
+        ).strip()
+        if len(name) < 2:
+            raise ValueError("Le nom du taxon est trop court.")
+        if any(separator in name for separator in ("|", "/", "\\", ">")):
+            raise ValueError("Le nom du taxon ne peut pas contenir de séparateur d’arborescence.")
+        if not self.taxref.is_class_name(class_name):
+            raise ValueError("Choisissez une classe pour ce taxon absent de TAXREF et des thésaurus.")
+        option = next(
+            (
+                item for item in self.taxref.class_options()
+                if normalize_name(item["label"]) == normalize_name(class_name)
+                or normalize_name(item["scientificName"]) == normalize_name(class_name)
+            ),
+            None,
+        )
+        if option is None:
+            raise ValueError("Classe inconnue.")
+        return {
+            "scientificName": name,
+            "vernacularName": name,
+            "lineage": [option["label"], name],
+            "taxonClass": option["label"],
+            "custom": True,
+        }
+
     def confirm_taxon(self, data: dict):
         filename = data.get("photoName")
         scientific_name = data.get("scientificName")
@@ -580,12 +946,97 @@ class ClassifierHandler(BaseHTTPRequestHandler):
         if not isinstance(validated, bool):
             raise ValueError("L’état de validation est invalide.")
         taxon = self.taxref.resolve_species(scientific_name)
+        if taxon is None and data.get("custom"):
+            taxon = self.custom_taxon(data)
         if taxon is None:
-            raise ValueError("Cette espèce est absente de la taxonomie TAXREF.")
-        metadata = write_photo_taxon(
-            self.photo_path(filename), taxon, validated, self.taxref, environment.photos_root()
+            raise ValueError(
+                "Cette espèce est absente de la taxonomie TAXREF et des thésaurus : "
+                "rattachez-la à une classe."
+            )
+        path = self.photo_path(filename)
+        before_records = get_metadata_many(
+            [str(path)], tags=CLASSIFICATION_METADATA_TAGS
         )
-        self.send_json({"taxon": taxon, "validated": validated, "metadata": metadata})
+        before = before_records.get(str(path))
+        old_taxonomy = photo_taxonomy(before, self.taxref) if before else {}
+        old_taxon = taxon_to_replace(old_taxonomy, self.taxref) if validated else None
+        metadata = write_photo_taxon(
+            path, taxon, validated, self.taxref,
+            previous_taxon=old_taxon if validated else None,
+        )
+        replaced_names: list[str] = []
+        replaced_metadata: dict[str, dict] = {}
+        replacement_errors: list[dict] = []
+        if (
+            old_taxon
+            and normalize_name(old_taxon.get("scientificName") or "")
+            != normalize_name(taxon.get("scientificName") or "")
+        ):
+            replaced_names, replaced_metadata, replacement_errors = (
+                self.replace_taxon_across_photos(
+                    old_taxon, taxon, exclude=filename
+                )
+            )
+        self.send_json({
+            "taxon": taxon,
+            "validated": validated,
+            "metadata": metadata,
+            "replacedPhotoNames": replaced_names,
+            "replacedMetadata": replaced_metadata,
+            "replacementErrors": replacement_errors,
+        })
+
+    def replace_taxon_across_photos(
+        self, old_taxon: dict, taxon: dict, exclude: str
+    ) -> tuple[list[str], dict[str, dict], list[dict]]:
+        """Remplace un taxon incomplet sur toutes les photos qui le portent."""
+        files = self.photo_files()
+        try:
+            records = get_metadata_many(
+                [str(path) for path in files],
+                tags=CLASSIFICATION_METADATA_TAGS,
+            )
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            return [], {}, [{"filename": "", "message": str(error)}]
+        targets = []
+        for path in files:
+            if path.name == exclude:
+                continue
+            metadata = records.get(str(path))
+            if metadata is None:
+                continue
+            taxonomy = photo_taxonomy(metadata, self.taxref)
+            if taxonomy_contains_taxon(taxonomy, self.taxref, old_taxon):
+                targets.append(path)
+
+        replaced_names: list[str] = []
+        replaced_metadata: dict[str, dict] = {}
+        errors: list[dict] = []
+        if not targets:
+            return replaced_names, replaced_metadata, errors
+        old_name = old_taxon.get("scientificName") or ""
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            futures = {
+                executor.submit(
+                    write_photo_taxon,
+                    path,
+                    taxon,
+                    True,
+                    self.taxref,
+                    replace_only=old_name,
+                    previous_taxon=old_taxon,
+                ): path.name
+                for path in targets
+            }
+            for future in as_completed(futures):
+                name = futures[future]
+                try:
+                    metadata = future.result()
+                    replaced_names.append(name)
+                    replaced_metadata[name] = metadata
+                except Exception as error:
+                    errors.append({"filename": name, "message": str(error)})
+        return replaced_names, replaced_metadata, errors
 
     def send_thumbnail(self, query: dict[str, list[str]]):
         name = query.get("name", [""])[0]

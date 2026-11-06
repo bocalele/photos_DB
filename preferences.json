@@ -1,6 +1,9 @@
 {
-  "initial_directory": "/Volumes/WD/PHOTOS/2026/Angleterre/PSD",
-  "active_app": "motscles",
+  "initial_directory": "/Volumes/WD/PHOTOS/2026/DIVERS/PSD",
+  "active_app": "faune",
+  "default_active_app": "faune",
+  "default_select_app": "faune",
+  "metadata_revision": 2368,
   "environment": {
     "photos_root": "/Volumes/WD/PHOTOS",
     "data_dir": "/Volumes/WD/PHOTOS/_DATA",
@@ -18,7 +21,8 @@
   "apps": {
     "motscles": {
       "default_author": "Pierre",
-      "default_rating": 3
+      "default_rating": 3,
+      "default_group": 1
     }
   }
 }

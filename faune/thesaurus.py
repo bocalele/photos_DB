@@ -44,6 +44,7 @@ class ThesaurusNode:
     english: str = ""
     parent: "ThesaurusNode | None" = None
     children: list["ThesaurusNode"] = field(default_factory=list)
+    normalized_path: tuple[str, ...] = field(default_factory=tuple, repr=False)
 
     def path(self) -> list["ThesaurusNode"]:
         nodes: list[ThesaurusNode] = []
@@ -125,16 +126,28 @@ class ThesaurusIndex:
                 del stack[depth + 1 :]
 
     def _build_indexes(self) -> None:
+        # Les nœuds sont ajoutés dans l'ordre parent → enfant. Mémoriser le
+        # chemin normalisé évite de recalculer et normaliser tous les ancêtres
+        # pour chacun des 200 000 nœuds au démarrage.
         for node in self.nodes:
+            parent_path = node.parent.normalized_path if node.parent else ()
+            node.normalized_path = parent_path + (normalize_search_text(node.name),)
             if node.scientific:
                 self.by_scientific.setdefault(normalize_name(node.scientific), node)
             self.by_vernacular.setdefault(normalize_search_text(node.name), []).append(node)
-            key = tuple(normalize_search_text(item) for item in node.lineage())
-            self.by_path.setdefault(key, node)
+            self.by_path.setdefault(node.normalized_path, node)
 
     # ------------------------------------------------------------------ #
     # Résolution
     # ------------------------------------------------------------------ #
+
+    def root_names(self) -> list[str]:
+        """Racines des thésaurus, utilisées comme grandes classes."""
+        roots: dict[str, str] = {}
+        for node in self.nodes:
+            if node.parent is None:
+                roots.setdefault(normalize_name(node.name), node.name)
+        return sorted(roots.values(), key=normalize_search_text)
 
     def node_for_scientific(self, scientific_name: str) -> ThesaurusNode | None:
         return self.by_scientific.get(normalize_name(scientific_name))
@@ -190,8 +203,7 @@ class ThesaurusIndex:
         for candidate in self.nodes:
             if not candidate.scientific:
                 continue
-            lineage = tuple(normalize_search_text(item) for item in candidate.lineage())
-            if lineage[-len(segments):] == tuple(segments):
+            if candidate.normalized_path[-len(segments):] == tuple(segments):
                 return {
                     "scientificName": candidate.scientific,
                     "vernacularName": candidate.name,

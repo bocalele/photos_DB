@@ -7,11 +7,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>Annotations</string>
 	<key>CFBundleExecutable</key>
-	<string>AnnotationsLauncher</string>
-	<key>CFBundleIdentifier</key>
-	<string>org.photos.annotations</string>
+	<string>applet</string>
 	<key>CFBundleIconFile</key>
 	<string>Annotations</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.photos.annotations</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -20,7 +20,7 @@
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>Annotations ouvre le Terminal pour lancer l’interface locale d’annotation des photos.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

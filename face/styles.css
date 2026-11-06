@@ -23,6 +23,8 @@ button {
   cursor: pointer;
 }
 button:hover { background: #3a415e; }
+button.exit-button { color: #ff8787; border-color: #ff878755; }
+button.exit-button:hover { background: #ff87871f; }
 button:disabled { opacity: .6; cursor: default; }
 input:not([type="range"]) {
   min-width: 0;
@@ -138,6 +140,18 @@ button.secondary:hover { background: #3a415e; }
 }
 .photo-card:hover { border-color: #ffffff2e; }
 .photo-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px #f1be4c40; }
+.photo-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px #f1be4c40; }
+.photo-checkbox {
+  position: absolute;
+  z-index: 2;
+  top: 7px;
+  left: 7px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
 .photo-card img {
   display: block;
   width: 100%;
@@ -180,6 +194,7 @@ button.secondary:hover { background: #3a415e; }
 .face-card img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #11131c; }
 .face-card .face-card-body { padding: 6px 8px 8px; }
 .face-card .face-card-name { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.face-card .face-card-name.no-proposal { color: var(--muted); font-style: italic; }
 .face-card .face-card-meta { display: flex; justify-content: space-between; gap: 6px; color: var(--muted); font-size: 10px; }
 .face-card .face-card-score { color: var(--accent); font-variant-numeric: tabular-nums; }
 
@@ -196,10 +211,11 @@ button.secondary:hover { background: #3a415e; }
   background: var(--panel);
   border-bottom: 1px solid #ffffff18;
 }
+.viewer-shortcuts { margin: 3px 0 0; font-size: 10px; }
 .viewer-title { min-width: 0; }
 .viewer-header h2 { margin: 0 0 3px; overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
 .viewer-header p { margin: 0; font-size: 12px; }
-.viewer-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.viewer-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
 .viewer-actions button { padding: 8px 11px; font-size: 12px; }
 
 .stage-wrap {
@@ -225,6 +241,9 @@ button.secondary:hover { background: #3a415e; }
 .face-box:hover { box-shadow: 0 0 0 2px #ffffff55; }
 .face-box.selected { border-color: #ffffff; box-shadow: 0 0 0 2px #f1be4c, 0 0 0 5px #f1be4c55; }
 .face-box.named { border-color: var(--valid); }
+.face-box.ignored { border-color: #8f96ad; border-style: dashed; }
+.face-box.invalid { border-color: var(--danger); border-style: dashed; opacity: .55; }
+.face-box.invalid:hover { opacity: .85; }
 .face-box.unknown { border-color: #8f96ad; }
 .face-chip {
   position: absolute;
@@ -243,6 +262,8 @@ button.secondary:hover { background: #3a415e; }
   white-space: nowrap;
 }
 .face-box.named .face-chip { color: var(--valid); }
+.face-box.ignored .face-chip { color: #b8bfd0; }
+.face-box.invalid .face-chip { color: var(--danger); }
 .face-box.unknown .face-chip { color: var(--muted); }
 .face-chip .score { color: var(--muted); }
 
@@ -257,6 +278,8 @@ button.secondary:hover { background: #3a415e; }
 .position { color: var(--muted); font-size: 12px; }
 .editor-status { font-size: 13px; }
 .editor-status.named { color: var(--valid); }
+.editor-status.ignored { color: #b8bfd0; }
+.editor-status.invalid { color: var(--danger); }
 .editor-status.proposed { color: var(--accent); }
 .editor-status.none { color: var(--muted); }
 .alternatives { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
@@ -285,7 +308,7 @@ button.secondary:hover { background: #3a415e; }
 .person-result:hover, .person-result.active, .person-result:focus { background: #3a415e; }
 .person-result.create { color: var(--accent); }
 .person-result.create::before { content: "+ "; }
-.editor-actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.editor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
 .save-status { color: var(--muted); font-size: 12px; }
 .save-status.error { color: var(--danger); }
 
@@ -323,5 +346,7 @@ button.secondary:hover { background: #3a415e; }
   .face-editor { min-height: 150px; padding: 10px; }
 }
 
-/* Intégrée dans l’application Annotations : le dossier se change depuis la barre globale. */
-.embedded #change-directory { display: none; }
+/* Intégrée dans l’application Annotations : le dossier et l’arrêt sont gérés
+   depuis la barre globale, avec un seul bouton Quitter. */
+.embedded #change-directory,
+.embedded #exit-app { display: none; }

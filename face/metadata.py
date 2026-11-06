@@ -29,6 +29,7 @@ if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
 from dataBase import face_db  # noqa: E402
+from tools import preferences  # noqa: E402
 
 REGION_TAGS = (
     "-XMP-mwg-rs:RegionName",
@@ -334,3 +335,9 @@ def write_regions(
     if result.returncode:
         message = result.stderr.strip() or result.stdout.strip() or "Erreur ExifTool."
         raise RuntimeError(f"Écriture des métadonnées impossible : {message}")
+    # Comme tools.setMetaData : signaler aux applications ouvertes que le
+    # fichier a changé et que photos.db doit être resynchronisée.
+    try:
+        preferences.touch_metadata_revision()
+    except OSError:
+        pass

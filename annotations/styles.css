@@ -12,6 +12,7 @@
   --faune: #6cc070;
   --face: #7aa2f7;
   --motscles: #e07a5f;
+  --organize: #b48ead;
   --danger: #ef6b6b;
 }
 
@@ -40,6 +41,8 @@ button {
   cursor: pointer;
 }
 button:hover { background: #3a415e; }
+button.exit-button { color: #ff8787; border-color: #ff878755; }
+button.exit-button:hover { background: #ff87871f; }
 button.secondary { background: transparent; }
 button.secondary:hover { background: #ffffff12; }
 button.ghost {
@@ -61,6 +64,22 @@ button.sync-button svg {
 }
 button.sync-button:disabled { cursor: progress; opacity: .65; }
 button.sync-button.busy svg { animation: sync-pulse 1s ease-in-out infinite; }
+button.sync-button .sync-state {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #71d3a4;
+}
+button.sync-button.dirty {
+  border-color: #f1be4c66;
+  background: #f1be4c0f;
+}
+button.sync-button.dirty .sync-state {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px #f1be4c22;
+}
+button.primary { background: #d9a93f; color: #15171f; border-color: #f1be4c; font-weight: 600; }
+button.primary:hover { background: #f1be4c; }
 @keyframes sync-pulse { 50% { opacity: .2; } }
 
 /* ------------------------------------------------------------------ barre */
@@ -271,6 +290,39 @@ button.sync-button.busy svg { animation: sync-pulse 1s ease-in-out infinite; }
 }
 .notice[hidden] { display: none; }
 .notice.error { border-color: #ef6b6b66; color: #ffd7d7; }
+
+/* ------------------------------------------------------- avant de quitter */
+
+.exit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #05070bc4;
+  backdrop-filter: blur(4px);
+}
+.exit-overlay[hidden] { display: none; }
+
+.exit-dialog {
+  width: min(560px, 92vw);
+  padding: 24px 26px;
+  border: 1px solid #ffffff1c;
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 24px 70px #000b;
+}
+.exit-dialog h2 { margin: 0 0 14px; font-size: 19px; }
+.exit-dialog p { margin: 0 0 10px; color: var(--text); line-height: 1.5; }
+.exit-dialog .exit-hint { color: var(--muted); font-size: 13px; }
+.exit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
 
 @media (max-width: 1080px) {
   .brand-name { display: none; }
